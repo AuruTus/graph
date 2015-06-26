@@ -1,0 +1,67 @@
+body {
+    //display: none;
+    background-color: #eee;
+    //color: #eee;
+}
+
+#content {
+    padding: 15px;
+    //margin: 60px 0 0 310px;
+}
+
+#side-bar {
+    //border-right: solid 1px 777;
+    padding: 15px;
+    margin: 50px 0 0 0;
+    //padding: 60px 0 0 15px;
+    //width: 290px;
+    //height: 100%;
+    //position: absolute;
+    //top: 0px;
+
+    background-color: #bbb;
+    //color: #eee;
+}
+
+/*
+.chord path {
+  fill-opacity: .67;
+  stroke: #333;
+  stroke-width: .5px;
+}
+*/
+
+h3 {
+    margin: 0;
+}
+
+.scene {
+    //border: solid 1px green;
+}
+
+svg {
+    //border: solid 1px green;
+    //background-color: lightblue;
+}
+svg text {
+    font-size: 12px;
+}
+svg .link {
+    stroke: gray;
+    stroke-opacity: .6;
+}
+svg .node {
+    stroke: #fff;
+    stroke-width: 1.5px;
+    fill: steelblue;
+    //r: 5;
+}
+
+.filter ul {
+    margin: 0 0 0 -30px;
+    list-style: none;
+}
+
+.btn-primary {
+    float: left;
+}

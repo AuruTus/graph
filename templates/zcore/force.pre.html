@@ -1,0 +1,145 @@
+{% extends "view.html" %}
+
+
+{% block side_bar %}
+<div class="filter">
+<h4>Фильтр по атрибутам</h4>
+<ul class='attributes'></ul>
+
+<textarea id="t"></textarea>
+
+
+<br />
+<input onClick="FilterSubmit()" type="button" value="Отфильтровать">
+</div>
+
+<script>
+
+/* Блок для вывода графа ************************************************************/
+var scale = 550,
+    width = 600,
+    height = 600
+
+
+function ForceLayout(containerID, id, attributesFilter){
+    this.color = d3.scale.category20()
+
+    this.force = d3.layout.force()
+        .charge(-20)
+        .linkDistance(30)
+        .size([width, height])
+
+    this.svg = d3.select(containerID).append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .append("g")
+            .attr('transform', 'translate(15,15)')
+
+}
+
+ForceLayout.prototype.show = function(gid, attributesFilter) {
+    //attributesFilter || attributesFilter='no'
+    var self = this,
+        force = this.force,
+        svg = this.svg
+        color = this.color,
+        url = '/json-force/' + gid + '/' + attributesFilter + '/'
+    
+    d3.json(url, function(error, graph) {
+
+        self.force
+            .nodes(graph.nodes)
+            .links(graph.links)
+            .start()
+
+        var link = svg.selectAll(".link")
+            .data(graph.links)
+            .enter().append("line")
+            .attr("class", "link")
+            .style("stroke", "gray")
+            //.style("stroke", function(d) { return color(d.attribute); })
+            //.style("stroke-width", function(d) { return Math.sqrt(d.attribute); })
+            //.text(function(d) { return d.title; });
+
+        var node = svg.selectAll(".node")
+            .data(graph.nodes)
+            .enter().append("circle")
+            .attr("class", "node")
+            .attr("r", 5)
+            //.style("fill", "gray")
+            .style("fill", function(d) { return color(d.attribute); })
+            .call(force.drag);
+
+        var nodeTitle = node.append("title")
+            .text(function(d) { 
+                var attributes = d.attributes
+                //console.log(attributes)
+                return d.data + '_' + d.id + '. Свойства: ' + attributes 
+            }) 
+            //.attr("transform", function(d){ return "translate("+d.x+","+d.y+")"; })
+
+        force.on("tick", function() {
+            link.attr("x1", function(d) { return d.source.x; })
+                .attr("y1", function(d) { return d.source.y; })
+                .attr("x2", function(d) { return d.target.x; })
+                .attr("y2", function(d) { return d.target.y; });
+
+            node.attr("cx", function(d) { return d.x; })
+                .attr("cy", function(d) { return d.y; })        
+        })
+    })
+}
+/* /Блок для вывода графа ************************************************************/
+
+
+/* Блок обработки фильтра ************************************************************/
+var filterAttributesID = '.filter .attributes',
+    gid = {{ graph.id }} 
+
+function AttributesFilter(containerID) {
+    url = '/json-attributes/'
+    zstr = "<li><input type='checkbox' value='zero' checked>Отсекать одиночные узлы</li>"
+
+    $.getJSON(url, function(data) {
+        $.each(data, function() {
+            zstr += "<li><input type='checkbox' value='" + this.name + "' checked>" + this.display + "</li>"
+        })
+        $(containerID).html(zstr)
+    })
+}
+
+
+function FilterSubmit() {
+    var allVals = [];
+    $(filterAttributesID + ' :checked').each(function() {
+        allVals.push($(this).val());
+    });
+    var attributesFilter = allVals.join(';')
+    $('#t').val(attributesFilter)
+    force.show(gid, attributesFilter)
+}
+
+$(function() {
+    //$(filterAttributesID + ' input').click(FilterSubmit);
+    //FilterSubmit();
+})
+
+AttributesFilter('.filter .attributes')
+//FilterSubmit('.filter .attributes')
+/* /Блок обработки фильтра ************************************************************/
+
+</script>
+
+{% endblock side_bar %}
+
+
+{% block content %}
+<div class='scene'></div>
+
+<script>
+var force = new ForceLayout('.scene', gid, 'no;first_name;full_name')
+FilterSubmit()
+</script>
+{% endblock content %}
+
+

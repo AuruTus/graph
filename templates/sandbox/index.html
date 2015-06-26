@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+<h1>File upload</h1>
+
+<!--
+<form action="/irepocore/camfileupload/img.jpg" method="put" id="file-upload-form" enctype="multipart/form-data">    
+    {{ form }}
+    <button type="submit" class="btn btn-primary" id='upload-btn'>Upload</button>
+</form>
+-->
+
+<form name="zform" id="zform">
+    {% csrf_token %}
+    <input id='zfile' type="file" name="zfile">
+    <input type="hidden" name="camID" value="3">
+</form>
+
+<script>
+// Загружаем переданный файл на сервер
+// обработка загрузки происходит на сервере по заранее определённому адресу - url
+function cam_file_upload(camFile) {
+    var xhr = new XMLHttpRequest();
+    var camID = $('#zform input[name=camID]').val()
+    var csrftoken = $('#zform input[name=csrfmiddlewaretoken]').val()
+console.log(csrftoken)
+
+
+    // обработчики успеха и ошибки
+    // если status == 200, то это успех, иначе ошибка
+    xhr.onload = xhr.onerror = function() {
+    if (this.status == 200 || this.status == 204) {
+          console.log("success");
+        } else {
+          console.log("error " + this.status);
+        }
+    }
+
+    // Адрес обработки загрузки файла на стороне сервера
+    var url = 'http://localhost:8000/sandbox/camfileupload/'
+
+    xhr.open("PUT", url, true);
+    xhr.setRequestHeader("X-CSRFToken", csrftoken);
+    var formData = new FormData();
+    formData.append("zfile", camFile);
+    formData.append("camID", camID);
+    //formData.append("csrfmiddlewaretoken", csrftoken);
+    xhr.send(formData);
+}
+
+// Получаем файл из html-элемента input, определённого в fileInputID
+$(function() {
+    $(fileInputID).change(function (){
+        var zfile = this.files[0];
+        if (zfile) {
+console.log(zfile)
+            cam_file_upload(zfile);
+        }
+    })
+})
+
+// Однозначно определяем html-элемент input, откуда брать файл для загрузки
+var fileInputID = '#zform input[name=zfile]'
+</script>
+
+{% endblock content %}
+
+

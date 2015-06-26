@@ -1,0 +1,205 @@
+{% extends "view.html" %}
+
+{% block side_bar %}
+<div class="filter">
+<h4>Фильтр по атрибутам</h4>
+<ul>
+    <li><input type="checkbox" name="" value=""> Наименование документа</li>
+    <li><input type="checkbox" name="" value=""> Дата документа</li>
+    <li><input type="checkbox" name="" value=""> Фамилия</li>
+    <li><input type="checkbox" name="" value=""> Имя</li>
+    <li><input type="checkbox" name="" value=""> Отчество</li>
+    <li><input type="checkbox" name="" value=""> Момент</li>
+    <li><input type="checkbox" name="" value=""> Полное наименование</li>
+</ul>
+<br />
+<input type="button" value="Отфильтровать">
+</div>
+<script>
+    //filter01 = new TypesFilter('.filter')
+</script>
+{% endblock side_bar %}
+
+
+{% block content %}
+
+<svg width="720" height="120" id='scene'>
+</svg>
+
+
+<script>
+
+var data1 = [32]
+var data2 = [32, 57]
+var data3 = [32, 57, 112]
+var data4 = [32, 57, 112, 293]
+
+// Пример, демонстрирующий возможности библиотеки d3js,
+// а именно методы: selectAll(), data(), enter(), append()
+
+// Класс для отображения и манипуляции svg-объектами типа circle (окружность)
+function Circle(containerID, data) {
+    // Определяем svg-сцену
+    svg = d3.select(containerID)
+
+    console.log('Circle created')
+
+    // Создаём начальную выборку svg-объектов типа circle (окружность)
+    this.update(data)
+}
+
+// Метод создания (затем обновлени) выборки для svg-элементов типа circle,
+// а так же создания (затем обновления) привязки массива с данными
+Circle.prototype.update = function(data) {
+    this.circle = svg.selectAll("circle")    // обновляем выборку svg-объектов типа circle
+        .data(data) // задаём массив с данными, который будет привязан к выборке
+
+    this.circle
+        .enter().append("circle") // обновляем svg-элементы выборки типа circle
+
+    this.circle
+        .exit().remove()
+
+    console.log('Circle updated')
+
+    // Задаём стили для созданных svg-окружностей
+    // без них будут созданы пустые теги вида: <circle></circle>
+    // и на сцене ничего не отобразиться
+    this.style()
+}
+
+Circle.prototype.style = function() {
+    this.circle.style("fill", "steelblue")
+    this.circle.attr("cy", 60)
+    this.circle.attr("cx", function(d, i) { return i * 100 + 30; })
+    this.circle.attr("r", function(d) { return Math.sqrt(d); })
+
+    console.log('Circle styled')
+}
+
+
+circle = new Circle("#scene", data1)
+
+</script>
+
+
+
+
+
+<div class='scene'></div>
+
+<script>
+/*
+var scale = 550,
+    width = 600,
+    height = 600
+
+
+function ChordLayout(containerID, id){
+    var meta = d3.select(containerID).append("h1")
+        .text("Chord diagram")
+
+    var url = 'http://127.0.0.1:8000/zcore/json-chord/' + id
+
+    d3.json(url, function(error, graph) {
+        var matrix = graph.matrix
+
+        var chord = d3.layout.chord()
+            .padding(.05)
+            .sortSubgroups(d3.descending)
+            .matrix(matrix);
+
+        var innerRadius = Math.min(width, height) * .41,
+            outerRadius = innerRadius * 1.1;
+
+        var fill = d3.scale.ordinal()
+            .domain(d3.range(4))
+            .range(["#000000", "#FFDD89", "#957244", "#F26223"]);
+
+        var svg = d3.select(containerID).append("svg")
+            .attr("width", width)
+            .attr("height", height)
+            .append("g")
+                .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+        svg.append("g").selectAll("path")
+            .data(chord.groups)
+            .enter().append("path")
+            .style("fill", function(d) { return fill(d.index); })
+            .style("stroke", function(d) { return fill(d.index); })
+            .attr("d", d3.svg.arc().innerRadius(innerRadius).outerRadius(outerRadius))
+            .on("mouseover", fade(.1))
+            .on("mouseout", fade(1));
+
+        var ticks = svg.append("g").selectAll("g")
+            .data(chord.groups)
+            .enter().append("g").selectAll("g")
+            .data(groupTicks)
+            .enter().append("g")
+            .attr("transform", function(d) {
+                return "rotate(" + (d.angle * 180 / Math.PI - 90) + ")"
+                + "translate(" + outerRadius + ",0)";
+        });
+
+        ticks.append("line")
+            .attr("x1", 1)
+            .attr("y1", 0)
+            .attr("x2", 5)
+            .attr("y2", 0)
+            .style("stroke", "#000");
+
+        ticks.append("text")
+            .attr("x", 8)
+            .attr("dy", ".35em")
+            .attr("transform", function(d) { return d.angle > Math.PI ? "rotate(180)translate(-16)" : null; })
+            .style("text-anchor", function(d) { return d.angle > Math.PI ? "end" : null; })
+            .text(function(d) { return d.label; });
+
+        svg.append("g")
+            .attr("class", "chord")
+            .selectAll("path")
+            .data(chord.chords)
+            .enter().append("path")
+            .attr("d", d3.svg.chord().radius(innerRadius))
+            .style("fill", function(d) { return fill(d.target.index); })
+            .style("opacity", 1);
+
+        // Returns an array of tick angles and labels, given a group.
+        function groupTicks(d) {
+            var zlabel = graph.nodes[d.index]['data']
+            var k = (d.endAngle - d.startAngle) / d.attribute;
+            return d3.range(0, d.attribute, 1000).map(function(v, i) {
+                return {
+                    angle: v * k + d.startAngle,
+                    label: zlabel
+                    //label: i % 5 ? null : v / 1000 + "k"
+                };
+            });
+        }
+
+        // Returns an event handler for fading a given chord group.
+        function fade(opacity) {
+            return function(g, i) {
+                svg.selectAll(".chord path")
+                .filter(function(d) { return d.source.index != i && d.target.index != i; })
+                .transition()
+                .style("opacity", opacity);
+            };
+        }
+
+    });
+}
+
+chord = new ChordLayout('.scene3', {{ graph.id }}, 'yes', 'first_name')
+
+*/
+
+</script>
+
+<button type="button" class="btn btn-success" onClick="circle.update(data2)">Success 2</button>
+<button type="button" class="btn btn-success" onClick="circle.update(data3)">Success 3</button>
+<button type="button" class="btn btn-success" onClick="circle.update(data4)">Success 4</button>
+
+{% endblock content %}
+
+
