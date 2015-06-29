@@ -10,44 +10,5 @@
   <body>
     <div id="content"></div>
     <script src="build/tutorial1.js"></script>
-    <script type="text/jsx">
-      // Your code here
-
-// tutorial1-raw.js
-var CommentBox = React.createClass({displayName: 'CommentBox',
-  render: function() {
-    return (
-      React.createElement('div', {className: "commentBox"},
-        "Hello, world! I am a CommentBox."
-      )
-    );
-  }
-});
-React.render(
-  React.createElement(CommentBox, null),
-  document.getElementById('content')
-);
-
-var CommentList = React.createClass({
-  render: function() {
-    return (
-      <div className="commentList">
-        Hello, world! I am a CommentList.
-      </div>
-    );
-  }
-});
-
-var CommentForm = React.createClass({
-  render: function() {
-    return (
-      <div className="commentForm">
-        Hello, world! I am a CommentForm.
-      </div>
-    );
-  }
-});
-
-    </script>
   </body>
 </html>

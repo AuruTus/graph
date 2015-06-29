@@ -1,52 +1,21 @@
-var data = [
-  {author: "Pete Hunt", text: "This is one comment"},
-  {author: "Jordan Walke", text: "This is *another* comment"}
-];
-
 var CommentBox = React.createClass({displayName: "CommentBox",
-  loadCommentsFromServer: function() {
-    $.ajax({
-      url: this.props.url,
-      dataType: 'json',
-      cache: false,
-      success: function(data) {
-        this.setState({data: data});
-      }.bind(this),
-      error: function(xhr, status, err) {
-        console.error(this.props.url, status, err.toString());
-      }.bind(this)
-    });
-  },
-  getInitialState: function() {
-    return {data: []};
-  },
-  componentDidMount: function() {
-    this.loadCommentsFromServer();
-    setInterval(this.loadCommentsFromServer, this.props.pollInterval);
-  },
   render: function() {
     return (
       React.createElement("div", {className: "commentBox"}, 
         React.createElement("h1", null, "Comments"), 
-        React.createElement(CommentList, {data: this.state.data}), 
+        React.createElement(CommentList, null), 
         React.createElement(CommentForm, null)
       )
     );
   }
 });
-    
+
 var CommentList = React.createClass({displayName: "CommentList",
   render: function() {
-    var commentNodes = this.props.data.map(function (comment) {
-      return (
-        React.createElement(Comment, {author: comment.author}, 
-          comment.text
-        )
-      );
-    });
     return (
       React.createElement("div", {className: "commentList"}, 
-        commentNodes
+        React.createElement(Comment, {author: "Pete Hunt"}, "This is one comment"), 
+        React.createElement(Comment, {author: "Jordan Walke"}, "This is *another* comment")
       )
     );
   }
@@ -77,8 +46,7 @@ var Comment = React.createClass({displayName: "Comment",
 });
 
 React.render(
-  React.createElement(CommentBox, {url: "comments.json", pollInterval: 2000}),
-  //<CommentBox url="http://127.0.0.1:3000/comments.json" pollInterval={20000} />,
+  React.createElement(CommentBox, null),
   document.getElementById('content')
 );
 

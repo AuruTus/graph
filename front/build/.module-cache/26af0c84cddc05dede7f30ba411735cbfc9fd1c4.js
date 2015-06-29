@@ -20,10 +20,6 @@ var CommentBox = React.createClass({displayName: "CommentBox",
   getInitialState: function() {
     return {data: []};
   },
-  componentDidMount: function() {
-    this.loadCommentsFromServer();
-    setInterval(this.loadCommentsFromServer, this.props.pollInterval);
-  },
   render: function() {
     return (
       React.createElement("div", {className: "commentBox"}, 
@@ -77,8 +73,7 @@ var Comment = React.createClass({displayName: "Comment",
 });
 
 React.render(
-  React.createElement(CommentBox, {url: "comments.json", pollInterval: 2000}),
-  //<CommentBox url="http://127.0.0.1:3000/comments.json" pollInterval={20000} />,
+  React.createElement(CommentBox, {url: "tutorial13.json"}),
   document.getElementById('content')
 );
 

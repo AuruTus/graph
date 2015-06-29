@@ -1,3 +1,7 @@
+$.ajaxPrefilter( "json script", function( options ) {
+  options.crossDomain = true;
+});
+
 var data = [
   {author: "Pete Hunt", text: "This is one comment"},
   {author: "Jordan Walke", text: "This is *another* comment"}
@@ -77,8 +81,7 @@ var Comment = React.createClass({displayName: "Comment",
 });
 
 React.render(
-  React.createElement(CommentBox, {url: "comments.json", pollInterval: 2000}),
-  //<CommentBox url="http://127.0.0.1:3000/comments.json" pollInterval={20000} />,
+  React.createElement(CommentBox, {url: "http://127.0.0.1:3000/comments.json", pollInterval: 20000}),
   document.getElementById('content')
 );
 
