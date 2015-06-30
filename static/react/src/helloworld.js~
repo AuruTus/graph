@@ -1,0 +1,5 @@
+React.render(
+  <h2>Hello, cat!</h2>,
+  document.getElementById('example')
+);
+
