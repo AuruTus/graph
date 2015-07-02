@@ -4,8 +4,6 @@
 
 {% block side_bar %}
 <div id="forceFilter">forceFilter</div>
-<br />
-<script src="{% static 'react/build/forceFilter.js' %}"></script>
 
 
 
@@ -86,7 +84,7 @@ ForceLayout.prototype.update = function(gid, attributesFilter) {
                     nodesList.shift()
                 }
                 nodesList.push(d.id)
-                console.log(d.id)
+                //console.log(d.id)
                 d3.select(this).style("fill", "orange")
             })
         node.exit().remove()
@@ -147,17 +145,17 @@ function filterSubmit() {
     allVals.push('yes')
     //nodesList = $('#nodes-list').val()
     allVals.push(nodesList.join('-'))
-console.log('nodesList ',nodesList)
+//console.log('nodesList ',nodesList)
     $(filterAttributesID + ' :checked').each(function() {
         allVals.push($(this).val());
     });
     var attributesFilter = allVals.join(';')
     $('#t').val(attributesFilter)
     force.update(gid, attributesFilter)
-console.log('attFilter ',attributesFilter)
+//console.log('attFilter ',attributesFilter)
     nodesList = []
     nodesList.push(0)
-console.log('nodesList ',nodesList)
+//console.log('nodesList ',nodesList)
 }
 
 AttributesFilter('.filter .attributes')
@@ -177,7 +175,10 @@ AttributesFilter('.filter .attributes')
 <script>
 var force = new ForceLayout('.scene', gid, 'no;first_name;full_name')
 filterSubmit()
+
+
 </script>
+<script src="{% static 'react/build/forceFilter.js' %}"></script>
 {% endblock content %}
 
 

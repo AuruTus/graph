@@ -541,22 +541,6 @@ def json_chord(request, id, removeStandalone, attributesFilter):
     return response 
 
 
-def json_attributes(request):
-    cursor = connections['mysql'].cursor()
-    cursor.execute("SELECT id, name, display FROM propertydefs")
-    attributes = cursor.fetchall()
-
-    data = attributes
-    content = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
-
-    response = HttpResponse()
-    #response['Content-Type'] = "text/javascript; charset=utf-8"
-    response['Content-Type'] = "text/javascript; charset=utf-8"
-    response.write(content)
-
-    return response 
-
-
 def add_node_from_db(id, G, nodeData=False):
 
     # Проверяем, передаётся ли в функцию значение поля data:
@@ -583,19 +567,26 @@ def add_node_from_db(id, G, nodeData=False):
 
 def json_attributes(request):
     cursor = connections['mysql'].cursor()
-    sql = "SELECT name, display FROM propertydefs"
-    cursor.execute(sql) # Выполняем sql-запрос
-    #attributes = cursor.fetchall() # Получаем массив значений результата sql-запроса
+    sql = "SELECT id, name, display FROM propertydefs"
 
-    #data = attributes
+    # Выполняем sql-запрос
+    cursor.execute(sql)
+
+    # Получаем массив значений результата sql-запроса в виде словаря:
+    # "ключ": "значение". Это необходимо для преоразования в json-формат
     data = dictfetchall(cursor)
 
     # Преобразуем данные в json-формат
-    result = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
+    content = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
 
-    response = HttpResponse() # Создаём объект response для динамического создания html-страницы
-    response['Content-Type'] = "text/javascript; charset=utf-8" # Объявляем основные мета-данные html-страницы
-    response.write(result) # Записываем в объкт response полученную структуру графа в json-формате
+    # Создаём объект response для динамического создания html-страницы
+    response = HttpResponse() 
+
+    # Объявляем основные мета-данные html-страницы
+    response['Content-Type'] = "text/javascript; charset=utf-8" 
+
+    # Записываем в объкт response полученную структуру графа в json-формате
+    response.write(content) 
 
     # возвращаем все необходимые фреймворку Django данные для окончательной генерации html-страницы
     return response 
