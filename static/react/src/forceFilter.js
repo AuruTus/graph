@@ -45,9 +45,12 @@ var ForceGraphFilter = React.createClass({
     handleSubmit: function(e) {
         e.preventDefault();
 
+        data = React.findDOMNode(this)
+console.log('data ',data)
+
         var allVals = []
         allVals.push('yes')
-console.log('allVals ',allVals)
+//console.log('allVals ',allVals)
         //nodesList = $('#nodes-list').val()
         //allVals.push(this.nodesList.join('-'))
     //console.log('nodesList ',nodesList)
