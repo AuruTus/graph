@@ -17,6 +17,18 @@ countries = "Австрия, Андорра, Албания, Беларусь, �
 trash = countries.split(', ')
 
 
+def printJSON(data):
+    print(json.dumps(data, indent=4, sort_keys=True))
+
+
+def returnErrorMessage(message):
+    response = HttpResponse()
+    response['Content-Type'] = "text/javascript; charset=utf-8"
+    print(message)
+    response.write(message)
+    return response 
+
+
 def get_node_attributes(element_id):
     sql = "SELECT prpdf.name, prpdf.display, prp.str_val FROM properties as prp, propertydefs as prpdf WHERE prp.def_id=prpdf.id AND target_id=" + str(element_id)
     cursor = connections['mysql'].cursor()
@@ -265,7 +277,7 @@ def to_spring(body):
 
 
 """
-def to_force(body, attributesFilter, removeStandalone=True):
+def to_force(body, graphFilter, removeStandalone=True):
     #attributes_filter = ['last_name', 'first_name']
     H = json.loads(body)
     G = json_graph.node_link_graph(H)
@@ -279,7 +291,7 @@ def to_force(body, attributesFilter, removeStandalone=True):
         #print('\n',node[1]['data'],'\n')
         attributes = node[1]['attributes']
         for attribute in attributes:
-            if attribute['val'] in attributesFilter:
+            if attribute['val'] in graphFilter:
                 filterBunch.append(node[0])
                 print(node[0])
                 print(attribute['val'],'\n')
@@ -404,24 +416,50 @@ def json_spring(request, id):
     return response 
 
 
-def json_force(request, id, attributesFilter):
+def json_force(request, id, graphFilter):
     graph = get_object_or_404(Graph, pk=id)
-    stack = attributesFilter.split(';')
-    zero = stack.pop(0)
-    #print('-->',zero)
+
+    # Преобразуем в объект json-массив параметров, полученных из url 
+    try: 
+        graphFilter = json.loads(graphFilter)
+        printJSON(graphFilter)
+    except:
+        returnErrorMessage('Неправильный json-массив')
+        raise
+
+    # Обрабатываем массив filterAttributes
+    try:
+        filterAttributes = graphFilter['filterAttributes']
+    except:
+        returnErrorMessage('Неправильный json-массив')
+        raise
+
+    # Обрабатываем массив filterNodes
+    try:
+        filterNodes = graphFilter['filterNodes']
+    except:
+        returnErrorMessage('Неправильный json-массив')
+        raise
+
+    # Обрабатываем массив filterOptions
+    try:
+        filterOptions = graphFilter['filterOptions']
+        zero = filterOptions['zero']
+    except:
+        returnErrorMessage('Неправильный json-массив')
+        raise
+
     H = json.loads(graph.body)
     G = json_graph.node_link_graph(H)
 
     # Если есть список id узлов, выбираем только их
-    nids = stack.pop(0)
-    #print('-->',nids)
-    if str(nids) == '0':
+    print('len ',len(filterNodes))
+    if len(filterNodes) == 0:
         GG = G
     else:
-        nids = nids.split('-')
         nodesList = []
-        for nid in nids:
-            nid = int(nid)
+        for nid in filterNodes:
+            print('nid ',nid)
             nodesList.append(nid)
             print('nodesList: ',nodesList)
             subs = nx.all_neighbors(G, nid)
@@ -436,7 +474,7 @@ def json_force(request, id, attributesFilter):
         attributes = node[1]['attributes']
 
         for attribute in attributes:
-            if attribute['val'] not in stack:
+            if attribute['val'] not in filterAttributes:
                 try:
                     GG.remove_node(nid)
                 except:
@@ -467,7 +505,7 @@ def json_force(request, id, attributesFilter):
     return response 
 
 
-def json_chord(request, id, removeStandalone, attributesFilter):
+def json_chord(request, id, removeStandalone, graphFilter):
     """
     graph = get_object_or_404(Graph, pk=id)
 
@@ -496,7 +534,7 @@ def json_chord(request, id, removeStandalone, attributesFilter):
 
 
     graph = get_object_or_404(Graph, pk=id)
-    attributesFilter = 'last_name'
+    graphFilter = 'last_name'
 
     H = json.loads(graph.body)
     G = json_graph.node_link_graph(H)
@@ -514,7 +552,7 @@ def json_chord(request, id, removeStandalone, attributesFilter):
         attributes = node[1]['attributes']
         for attribute in attributes:
             print(attribute['val'],'\n')
-            if attribute['val'] in attributesFilter:
+            if attribute['val'] in graphFilter:
                 filterBunch.append(node[0])
                 print(node[0])
                 #print(attribute['val'],'\n')

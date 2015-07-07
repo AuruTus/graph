@@ -31,7 +31,6 @@
 /* Блок для вывода графа ************************************************************/
 
 var nodesList = []
-nodesList.push(0)
 
 function ForceLayout(containerID, id, attributesFilter){
     scale = 550
@@ -53,19 +52,19 @@ function ForceLayout(containerID, id, attributesFilter){
                 //.attr('transform', 'translate(15,15)')
 }
 
-ForceLayout.prototype.update = function(gid, attributesFilter) {
-    //attributesFilter = typeof attributesFilter !== 'undefined' ?  attributesFilter : 'yes'
+ForceLayout.prototype.update = function(gid, graphFilter) {
+    // Преобразовываем массив json-данных graphFilter для передачи через url 
+    graphFilter = encodeURIComponent(JSON.stringify(graphFilter))
 
-    var self = this
-    var url = '/json-force/' + gid + '/' + attributesFilter + '/'
+    var url = '/json-force/' + gid + '/' + graphFilter + '/'
     
     d3.json(url, function(error, graph) {
-        self.force
+        this.force
             .nodes(graph.nodes)
             .links(graph.links)
             .start()
 
-        var link = self.svg.selectAll("line").data(graph.links)
+        var link = this.svg.selectAll("line").data(graph.links)
         link.enter().append("line")
             .attr("class", "link")
             //.style("stroke", function(d) { return color(d.attribute); })
@@ -73,19 +72,21 @@ ForceLayout.prototype.update = function(gid, attributesFilter) {
             //.text(function(d) { return d.title; });
         link.exit().remove()
 
-        var node = self.svg.selectAll("circle").data(graph.nodes)
+        var node = this.svg.selectAll("circle").data(graph.nodes)
         node.enter().append("circle")
+            //.attr("id", function(d) { return d.id })
             .attr("class", "node")
             .attr("r", 5)
-            //.style("fill", function(d) { return self.color(d.attribute); })
-            .call(self.force.drag)
+            //.style("fill", function(d) { return this.color(d.attribute); })
+            .call(this.force.drag)
             .on('click', function(d) {
-                if (nodesList[0] == 0) {
-                    nodesList.shift()
+                if (inArray(d.id, nodesList)) {
+                    nodesList.pop(d.id)
+                    d3.select(this).style("fill", "steelblue")
+                } else {
+                    nodesList.push(d.id)
+                    d3.select(this).style("fill", "orange")
                 }
-                nodesList.push(d.id)
-                //console.log(d.id)
-                d3.select(this).style("fill", "orange")
             })
         node.exit().remove()
 
@@ -97,7 +98,7 @@ ForceLayout.prototype.update = function(gid, attributesFilter) {
             }) 
             //.attr("transform", function(d){ return "translate("+d.x+","+d.y+")"; })
 
-        self.force.on("tick", function() {
+        this.force.on("tick", function() {
             link.attr("x1", function(d) { return d.source.x; })
                 .attr("y1", function(d) { return d.source.y; })
                 .attr("x2", function(d) { return d.target.x; })
@@ -106,7 +107,7 @@ ForceLayout.prototype.update = function(gid, attributesFilter) {
             node.attr("cx", function(d) { return d.x; })
                 .attr("cy", function(d) { return d.y; })        
         })
-    })
+    }.bind(this))
 }
 /* /Блок для вывода графа ************************************************************/
 
@@ -124,42 +125,6 @@ var toggleColor = (function(){
 var filterAttributesID = '.filter .attributes',
     gid = {{ graph.id }} 
 
-function AttributesFilter(containerID) {
-    url = '/json-attributes/'
-
-    zstr = '<div class="btn-group" data-toggle="buttons">'
-    //zstr += '<label class="btn btn-primary active" style="width:210px;text-align:left;"><input type="checkbox" autocomplete="off" checked value="zero"> Отсекать одиночные узлы</label>'
-
-    $.getJSON(url, function(data) {
-        $.each(data, function() {
-            zstr += ' <label class="btn btn-primary"><input type="checkbox" autocomplete="off" value="' + this.name + '">'  + this.display + '</label>'
-        })
-        zstr += '<button type="button" class="btn btn-warning" onClick="filterSubmit()">Отфильтровать</button>'
-        zstr += "</div>"
-        $(containerID).html(zstr)
-    })
-}
-
-function filterSubmit() {
-    var allVals = []
-    allVals.push('yes')
-    //nodesList = $('#nodes-list').val()
-    allVals.push(nodesList.join('-'))
-//console.log('nodesList ',nodesList)
-    $(filterAttributesID + ' :checked').each(function() {
-        allVals.push($(this).val());
-    });
-    var attributesFilter = allVals.join(';')
-    $('#t').val(attributesFilter)
-    force.update(gid, attributesFilter)
-//console.log('attFilter ',attributesFilter)
-    nodesList = []
-    nodesList.push(0)
-//console.log('nodesList ',nodesList)
-}
-
-AttributesFilter('.filter .attributes')
-
 
 //filterSubmit('.filter .attributes')
 /* /Блок обработки фильтра ************************************************************/
@@ -174,7 +139,6 @@ AttributesFilter('.filter .attributes')
 
 <script>
 var force = new ForceLayout('.scene', gid, 'no;first_name;full_name')
-filterSubmit()
 
 
 </script>

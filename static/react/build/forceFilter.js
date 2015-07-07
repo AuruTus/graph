@@ -40,49 +40,101 @@ var attributesList = ['yes','0']
 
 var ForceGraphFilter = React.createClass({displayName: "ForceGraphFilter",
     getInitialState: function() {
-        this.attributesList = ['nono']
         return {
+            filterAttributes: [],
+            //filterNodes: [],
+            filterOptions: {zero: 'yes'},
         }
+    },
+    componentDidMount: function() {
+        //this.graphUpdate()
+        //React.findDOMNode('ForceGraphFilter').graphUpdate()
+    },
+    handleReClick: function() {
+        // Формируем массив json-данных graphFilter
+        var graphFilter = { 
+            filterAttributes: this.state.filterAttributes ,
+            filterNodes: nodesList,
+            filterOptions: this.state.filterOptions
+        } 
+
+        // Перерисовываем граф
+        force.update(gid, graphFilter)
     },
     handleSubmit: function(e) {
         e.preventDefault();
         
-        console.log(attributesList)
+        // Формируем массив json-данных graphFilter
+        var graphFilter = { 
+            filterAttributes: this.state.filterAttributes ,
+            filterNodes: nodesList,
+            filterOptions: this.state.filterOptions
+        } 
 
+        // Перерисовываем граф
+        force.update(gid, graphFilter)
 
-        //allVals.push(nodesList.join('-'))
-        var attributesFilter = attributesList.join(';')
-        force.update(gid, attributesFilter)
+        nodesList = []
     },
     render: function() {
         return (
-            React.createElement("form", {onSubmit: this.handleSubmit}, 
-                React.createElement(AttributesList, {attributes: ATTRIBUTES}), 
+            React.createElement("form", {onSubmit: this.handleSubmit, ref: "forceGraphFilterForm"}, 
+                React.createElement(AttributesList, {
+                    attributes: ATTRIBUTES, 
+                    filterAttributes: this.state.filterAttributes, 
+                    reClick: this.handleReClick}
+                ), 
                 React.createElement("input", {type: "submit", className: "btn btn-warning", value: "Filter"})
             )
         );
-    }
+    },
+    graphUpdate: function() {
+        // Формируем массив json-данных graphFilter
+        var graphFilter = { 
+            filterAttributes: this.state.filterAttributes ,
+            filterNodes: nodesList,
+            filterOptions: this.state.filterOptions
+        } 
+
+        // Перерисовываем граф
+        force.update(gid, graphFilter)
+    },
 });
 
 var AttributesList = React.createClass({displayName: "AttributesList",
-    handleClick: function(value) {
-        //console.log('valvalval ',value)
-        return value
+    getInitialState: function() {
+        return {
+            initValues: ['doc_name', 'doc_timestamp']
+        }
+    },
+    handleReClick: function(value) {
+        if (value == '') {
+            attributesList.pop(value)
+            this.props.filterAttributes.pop(value)
+        } else {
+            attributesList.push(value)
+            this.props.filterAttributes.push(value)
+        }
+
+        // Передаём обработку клика родительскому компоненту
+        if (typeof this.props.reClick === 'function') {
+            //this.props.handleClick(e.target.value);
+            this.props.reClick();
+        }
     },
     render: function() {
-        thisHandleClick = this.handleClick
         var rows = []
-        this.props.attributes.forEach(function(attribute, thisHandleClick) {
-            rows.push(React.createElement(AttributeCheckbox, {key: attribute.id, display: attribute.display, value: attribute.name, onClick: thisHandleClick}))
-        })
+        this.props.attributes.forEach(function(attribute) {
+            rows.push(React.createElement(AttributeCheckbox, {
+                key: attribute.id, 
+                display: attribute.display, 
+                value: attribute.name, 
+                reClick: this.handleReClick, 
+                initValues: this.state.initValues}
+            ))
+        }.bind(this))
         return (
             React.createElement("div", {className: "btn-group", "data-toggle": "buttons"}, 
-            React.createElement("input", {
-                type: "checkbox", 
-                value: "test", 
-                ref: "filterCheckbox", 
-                onClick: this.handleClick}
-            ), 
             rows
             )
         );
@@ -91,32 +143,34 @@ var AttributesList = React.createClass({displayName: "AttributesList",
 
 var AttributeCheckbox = React.createClass({displayName: "AttributeCheckbox",
     getInitialState: function() {
-        return {value: ''}
+        var value = ''
+        var className = "btn btn-primary"
+        if (inArray(this.props.value, this.props.initValues)) {
+            value = this.props.value
+            this.props.reClick(value);
+            className = "btn btn-primary active"
+        }
+        return {
+            value: value,
+            className: className
+        }
     },
-    handleClick: function(e) {
-        console.log(this.props.onClick)
+    componentDidMount: function() {
+        //React.findDOMNode('ForceGraphFilter').graphUpdate()
+        //console.log('value ',this.state.value)
+    },
+    handleClick: function() {
         var value = (this.state.value == '') ? this.props.value: ''
-
-        if (this.state.value == '') {
-            attributesList.push(value)
-        } else {
-            attributesList.pop(value)
-        }
-
         this.setState({value: value});
-        //console.log('Click Cluck: ', value)
 
-        if (typeof this.props.onClick === 'function') {
-            //this.props.handleClick(e.target.value);
-            this.props.onClick(value);
+        // Передаём обработку клика родительскому компоненту
+        if (typeof this.props.reClick === 'function') {
+            this.props.reClick(value);
         }
-
-        //React.findDOMNode(ForceGraphFilter).handleSubmit
     },
     render: function() {
-        var value = this.state.value;
         return (
-            React.createElement("label", {className: "btn btn-primary", onClick: this.handleClick}, 
+            React.createElement("label", {className: this.state.className, onClick: this.handleClick}, 
             React.createElement("input", {
                 type: "checkbox", 
                 value: this.state.value, 
