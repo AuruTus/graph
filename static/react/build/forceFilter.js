@@ -36,41 +36,23 @@ var ATTRIBUTES = [
     }
 ]
  
+var attributesList = ['yes','0']
+
 var ForceGraphFilter = React.createClass({displayName: "ForceGraphFilter",
     getInitialState: function() {
-        this.attributesListArray = []
+        this.attributesList = ['nono']
         return {
         }
     },
     handleSubmit: function(e) {
         e.preventDefault();
+        
+        console.log(attributesList)
 
-        data = React.findDOMNode(this)
-console.log('data ',data)
 
-        var allVals = []
-        allVals.push('yes')
-//console.log('allVals ',allVals)
-        //nodesList = $('#nodes-list').val()
-        //allVals.push(this.nodesList.join('-'))
-    //console.log('nodesList ',nodesList)
-        //$(filterAttributesID + ' :checked').each(function() {
-            //allVals.push($(this).val());
-        //});
-        var attributesFilter = allVals.join(';')
-        //force.update(gid, attributesFilter)
-    //console.log('attFilter ',attributesFilter)
-        //nodesList = []
-        //nodesList.push(0)
-    //console.log('nodesList ',nodesList)
-
-        //var author = React.findDOMNode(this.refs.author).value.trim();
-        //var text = React.findDOMNode(this.refs.text).value.trim();
-        //this.props.onCommentSubmit({author: author, text: text});
-        // TODO: send request to the server
-        //React.findDOMNode(this.refs.author).value = '';
-        //React.findDOMNode(this.refs.text).value = '';
-        return;
+        //allVals.push(nodesList.join('-'))
+        var attributesFilter = attributesList.join(';')
+        force.update(gid, attributesFilter)
     },
     render: function() {
         return (
@@ -82,19 +64,54 @@ console.log('data ',data)
     }
 });
 
+var AttributesList = React.createClass({displayName: "AttributesList",
+    handleClick: function(value) {
+        //console.log('valvalval ',value)
+        return value
+    },
+    render: function() {
+        thisHandleClick = this.handleClick
+        var rows = []
+        this.props.attributes.forEach(function(attribute, thisHandleClick) {
+            rows.push(React.createElement(AttributeCheckbox, {key: attribute.id, display: attribute.display, value: attribute.name, onClick: thisHandleClick}))
+        })
+        return (
+            React.createElement("div", {className: "btn-group", "data-toggle": "buttons"}, 
+            React.createElement("input", {
+                type: "checkbox", 
+                value: "test", 
+                ref: "filterCheckbox", 
+                onClick: this.handleClick}
+            ), 
+            rows
+            )
+        );
+    }
+});
+
 var AttributeCheckbox = React.createClass({displayName: "AttributeCheckbox",
     getInitialState: function() {
         return {value: ''}
-        //return {value: this.props.value}
     },
     handleClick: function(e) {
-        //var checkbox = React.findDOMNode(this.refs.filterCheckbox)
-        //var checked = checkbox.value.trim()
+        console.log(this.props.onClick)
         var value = (this.state.value == '') ? this.props.value: ''
+
+        if (this.state.value == '') {
+            attributesList.push(value)
+        } else {
+            attributesList.pop(value)
+        }
+
         this.setState({value: value});
-console.log('Click Cluck: ', value)
-        //var type = React.findDOMNode(this.refs.filterCheckbox).type.trim()
-//console.log(type)
+        //console.log('Click Cluck: ', value)
+
+        if (typeof this.props.onClick === 'function') {
+            //this.props.handleClick(e.target.value);
+            this.props.onClick(value);
+        }
+
+        //React.findDOMNode(ForceGraphFilter).handleSubmit
     },
     render: function() {
         var value = this.state.value;
@@ -111,23 +128,6 @@ console.log('Click Cluck: ', value)
     }
 });
 
-var AttributesList = React.createClass({displayName: "AttributesList",
-    render: function() {
-        var rows = []
-        rows.push(React.createElement(AttributeCheckbox, {key: "hidden_2", display: "zero", value: "yes"}))
-        this.props.attributes.forEach(function(attribute) {
-            rows.push(React.createElement(AttributeCheckbox, {key: attribute.id, display: attribute.display, value: attribute.name}))
-        })
-        return (
-            React.createElement("div", {className: "btn-group", "data-toggle": "buttons"}, 
-            React.createElement("input", {type: "hidden", value: "yes", ref: "zero", key: "hidden_1"}), 
-            rows
-            )
-        );
-    }
-});
-
-
 
 React.render(
     React.createElement(ForceGraphFilter, null), 
@@ -135,3 +135,51 @@ React.render(
 );
 
 
+
+
+var ResistanceCalculator = React.createClass({displayName: "ResistanceCalculator",
+  getInitialState: function() {
+      return {bands: [0,0,0,0,0]};
+  },
+
+  handleBandSelectionChange: function(bandIndex, newValue) {
+    // for the sake of immutability, clone the array here
+    var bands = this.state.bands.slice(0);
+    bands[bandIndex] = newValue;
+    console.log(bandIndex, newValue); // yep, seems to work
+    this.setState({bands: bands});
+  },
+
+  render: function() {
+    return (
+      React.createElement("div", null, 
+        React.createElement("div", {bands: this.state.bands}), 
+        
+          this.state.bands.map(function(value, i) {
+            return (
+              React.createElement(BandSelector, {band: i, onChange: this.handleBandSelectionChange})
+            );
+          }, this)
+        
+      )
+    );
+  }
+});
+
+var BandSelector = React.createClass({displayName: "BandSelector",
+  handleChange: function(e) {
+    if (this.props.onChange)
+      this.props.onChange(this.props.band, e.target.value);
+  },
+
+  render: function() {
+    return (
+      React.createElement("select", {onChange: this.handleChange}, 
+        React.createElement("option", {value: "1"}, "1"), 
+        React.createElement("option", {value: "2"}, "2")
+      )
+    );
+  }
+});
+
+//React.render( <ResistanceCalculator />, document.getElementById('example'));
