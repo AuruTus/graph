@@ -93,13 +93,13 @@ var AttributesList = React.createClass({
     componentDidMount: function() {
         //console.log(this.props.filterAttributes)
     },
-    updateFilterAttributes: function(value) {
-        console.log('value ',value)
-        console.log('filterAttributes ',this.props.filterAttributes)
-        if (value == '') {
-            this.props.filterAttributes.pop(value)
-        } else {
+    updateFilterAttributes: function(state, value) {
+        //console.log('value ',value)
+        //console.log('filterAttributes ',this.props.filterAttributes)
+        if (state) {
             this.props.filterAttributes.push(value)
+        } else {
+            this.props.filterAttributes.pop(value)
         }
         console.log('filterAttributes ',this.props.filterAttributes)
 
@@ -130,14 +130,15 @@ var AttributesList = React.createClass({
 
 var AttributeCheckbox = React.createClass({
     getInitialState: function() {
-        var value = ''
+        var state = false
         var className = "btn btn-primary"
         if (inArray(this.props.value, this.props.initValues)) {
-            value = this.props.value
+            state = true
+            //console.log(state,this.props.value)
             className = "btn btn-primary active"
         }
         return {
-            value: value,
+            state: state,
             className: className
         }
     },
@@ -145,12 +146,13 @@ var AttributeCheckbox = React.createClass({
         //console.log(this.props.key,this.state.value)
     },
     handleClick: function() {
-        var value = (this.state.value == '') ? this.props.value: ''
-        this.setState({value: value})
+        var state = (this.state.state == true) ? false: true
+        this.setState({state: state})
+        console.log(state)
 
         // Передаём обработку родительскому компоненту
         if (typeof this.props.updateFilterAttributes === 'function') {
-            this.props.updateFilterAttributes(value)
+            this.props.updateFilterAttributes(state, this.props.value)
         }
     },
     render: function() {
@@ -158,7 +160,7 @@ var AttributeCheckbox = React.createClass({
             <label className={this.state.className} onClick={this.handleClick}>
             <input
                 type="checkbox" 
-                value={this.state.value}
+                value={this.props.value}
                 ref="filterCheckbox"
             />
             {this.props.display}
