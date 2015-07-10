@@ -1,30 +1,17 @@
 {% extends "base.html" %}
+{% load staticfiles %}
 
 
 {% block side_bar %}
 
-<div class="filter">
 <h4>Создание проекта</h4>
-<form action="/create-project">
-<ul>
-    <li><input type="checkbox" name="" value=""> Наименование документа</li>
-    <li><input type="checkbox" name="" value=""> Дата документа</li>
-    <li><input type="checkbox" name="" value=""> Фамилия</li>
-    <li><input type="checkbox" name="" value=""> Имя</li>
-    <li><input type="checkbox" name="" value=""> Отчество</li>
-    <li><input type="checkbox" name="" value=""> Момент</li>
-    <li><input type="checkbox" name="" value=""> Полное наименование</li>
-</ul>
-<br />
-<input type="submit" value="Создать проект">
-</form>
-</div>
+<div id="newProjectFilter">newProjectFilter</div>
+<script src="{% static 'react/build/newProjectFilter.js' %}"></script>
 
 {% endblock side_bar %}
 
 
 {% block content %}
-
 
 <h1>Проекты</h1>
 <ul>
@@ -37,3 +24,5 @@
 </ul>
 
 {% endblock content %}
+
+
