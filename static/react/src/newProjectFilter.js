@@ -63,8 +63,14 @@ var NewProjectFilter = React.createClass({
         client.open('GET', url)
         client.send()
 
-        console.log('click click')
-        location.reload()
+        client.onreadystatechange = function() {
+          if(this.readyState == this.HEADERS_RECEIVED) {
+            //console.log('click click')
+            //console.log(this.getAllResponseHeaders());
+            location.reload()
+          }
+        }
+
     },
     render: function() {
         return (
