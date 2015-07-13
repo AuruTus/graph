@@ -169,7 +169,6 @@ def to_spring(body):
     return data
 
 
-"""
 def to_force(body, graphFilter, removeStandalone=True):
     #attributes_filter = ['last_name', 'first_name']
     H = json.loads(body)
@@ -224,10 +223,8 @@ def to_force(body, graphFilter, removeStandalone=True):
     result = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
 
     return result
-"""
 
 
-"""
 def to_chord(body):
     H = json.loads(body)
     msize = len(H['nodes'])
@@ -262,7 +259,6 @@ def to_chord(body):
 
     data = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
     return data
-"""
 
 
 def view_force(request, id):
@@ -318,23 +314,23 @@ def json_force(request, id, graphFilter):
     # Преобразуем в объект json-массив параметров, полученных из url 
     try: 
         graphFilter = json.loads(graphFilter)
-        printJSON(graphFilter)
+        print_json(graphFilter)
     except:
-        returnErrorMessage('Неправильный json-массив')
+        returnErrorMessage('Неправильный json-массив graphFilter')
         raise
 
     # Обрабатываем массив filterAttributes
     try:
         filterAttributes = graphFilter['filterAttributes']
     except:
-        returnErrorMessage('Неправильный json-массив')
+        returnErrorMessage('Неправильный json-массив filterAttributes')
         raise
 
     # Обрабатываем массив filterNodes
     try:
         filterNodes = graphFilter['filterNodes']
     except:
-        returnErrorMessage('Неправильный json-массив')
+        returnErrorMessage('Неправильный json-массив filterNodes')
         raise
 
     # Обрабатываем массив filterOptions
@@ -504,7 +500,6 @@ def json_attributes(request):
 
 
 # Для тестовых целей: создание проекции данных с ограниченным числом узлов
-"""
 def json_semantic(request):
     G = nx.Graph() # Cоздаём пустой NetworkX-граф
 
@@ -569,7 +564,6 @@ def json_semantic(request):
 
     # возвращаем все необходимые фреймворку Django данные для окончательной генерации html-страницы
     return response 
-"""
 
 
 

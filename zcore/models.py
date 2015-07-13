@@ -48,17 +48,31 @@ def render_content(content):
 
 
 # Получение атрибутов информационного объекта вида узел
-def get_node_attributes(element_id):
-    sql = "SELECT prpdf.name, prpdf.display, prp.str_val FROM properties as prp, propertydefs as prpdf WHERE prp.def_id=prpdf.id AND target_id=" + str(element_id)
-    cursor = connections['mysql'].cursor()
-    data = []
+def get_node_attributes(element_id, filterAttributesString):
+    nodeAttributes = False
 
-    cursor.execute(sql)
-    attributes = cursor.fetchall()
-    for attribute in attributes:
-        data.append({'val':attribute[0],'name':attribute[1],'display':attribute[2]})
+    if filterAttributesString:
+        sql = "SELECT prpdf.name, prpdf.display, prp.str_val FROM properties as prp, propertydefs as prpdf WHERE prp.def_id=prpdf.id AND target_id=%i AND prpdf.name IN (%s)" % (element_id, filterAttributesString)
+        cursor = connections['mysql'].cursor()
+        data = []
+        cursor.execute(sql)
+        attributes = cursor.fetchall()
+        if attributes:
+            for attribute in attributes:
+                data.append({'val':attribute[0],'name':attribute[1],'display':attribute[2]})
+            nodeAttributes = data
 
-    return data
+    else:
+        sql = "SELECT prpdf.name, prpdf.display, prp.str_val FROM properties as prp, propertydefs as prpdf WHERE prp.def_id=prpdf.id AND target_id=%i" % (element_id)
+        cursor = connections['mysql'].cursor()
+        data = []
+        cursor.execute(sql)
+        attributes = cursor.fetchall()
+        for attribute in attributes:
+            data.append({'val':attribute[0],'name':attribute[1],'display':attribute[2]})
+        nodeAttributes = data
+
+    return nodeAttributes
 
 
 # Получение атрибутов информационного объекта вида дуга
@@ -67,7 +81,7 @@ def get_edge_attributes(element_id):
 
 
 # Добавляем узел в граф при создании многомерной проекции "семантической кучи"
-def add_node_from_db(id, G, nodeData=False):
+def add_node_from_db(id, G, filterAttributesString=False, nodeData=False):
 
     # Проверяем, передаётся ли в функцию значение поля data:
     # eсли значение не передаётся, мы совершаем дополнительный запрос к базе данных.
@@ -81,12 +95,13 @@ def add_node_from_db(id, G, nodeData=False):
         nodeData = row[0]
 
     # Для каждого узла с помощью отдельной функции получаем словарь атрибутов
-    nodeAttributes = get_node_attributes(id)
+    nodeAttributes = get_node_attributes(id, filterAttributesString)
 
     # Добавляем узел в граф вместе с полученным словарём атрибутов.
     # В качестве атрибута data указываем значение поля data, 
     # в последствии, это значение будет использованно в поиске по-умолчанию
-    G.add_node(id, data=nodeData, attributes=nodeAttributes)
+    if nodeAttributes:
+        G.add_node(id, data=nodeData, attributes=nodeAttributes)
 
     return True
 
@@ -242,17 +257,16 @@ def create_filtered_graph(graphFilter):
     # и добавляем в граф узлы
     for node in nodes:
 
-        filterAttributes = "'first_name', 'last_name'" 
+        # Формируем sql-запрос для выборки ИО, подходящих под параметры фильтра
+        filterAttributesString = "'" + "','".join(filterAttributes) + "'"
+        #sql = "SELECT prpdf.name, prpdf.display, prp.str_val FROM properties as prp, propertydefs as prpdf WHERE prp.def_id=prpdf.id AND target_id=%i AND prpdf.name IN (%s)" % (node[0], filterAttributesString)
 
-        sql = "SELECT prpdf.name, prpdf.display, prp.str_val FROM properties as prp, propertydefs as prpdf WHERE prp.def_id=prpdf.id AND target_id=%i AND prpdf.name IN (%s)" % (node[0], filterAttributes)
-
-        print('sql ',sql)
 
         # Вызываем функцию, добавляющую узел в граф, где:
         # node[0] - id узла;
         # G - граф;
         # node[1] - не обязательное поле data, которое мы используем в качестве одного из атрибутов узла;
-        add_node_from_db(node[0], G, node[1])
+        add_node_from_db(node[0], G, filterAttributesString, node[1])
 
 
     # Средствами бибилиотеки NetworkX,
@@ -269,8 +283,7 @@ def create_filtered_graph(graphFilter):
     graph.body = json.dumps(data) 
 
     # Сохраняем граф в собственную базу данных
-    #graph.save() 
-    #print_json(graph.body)
+    graph.save() 
 
     return graph.body
 

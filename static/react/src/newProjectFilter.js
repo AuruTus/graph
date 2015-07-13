@@ -62,6 +62,9 @@ var NewProjectFilter = React.createClass({
         var url = '/create-project/' + graphFilter
         client.open('GET', url)
         client.send()
+
+        console.log('click click')
+        location.reload()
     },
     render: function() {
         return (
@@ -70,7 +73,7 @@ var NewProjectFilter = React.createClass({
                     attributes={ATTRIBUTES} 
                     filterAttributes={this.state.filterAttributes}
                 />
-                <input type="submit" className="btn btn-warning" value="Filter" />
+                <input type="submit" className="btn btn-warning" value="Создать" />
             </form>
         );
     },
