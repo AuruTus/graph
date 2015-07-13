@@ -10,17 +10,14 @@ from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.db import connections
 
-from .models import Graph, Node
+from .models import Graph, Node, create_graph_method_01, create_filtered_graph, print_json
 
 
 countries = "Австрия, Андорра, Албания, Беларусь, Бельгия, Болгария, Босния и Герцеговина, Ватикан, Великобритания, Венгрия, Германия, Гибралтар, Греция, Дания, Ирландия, Исландия, Испания, Италия, Латвия, Литва, Лихтенштейн, Люксембург, Македония, Мальта, Молдавия, Монако, Нидерланды, Норвегия, Польша, Португалия, Россия, Румыния, Сан-Марино, Сербия и Черногория, Словакия, Словения, Украина, Фарерские острова, Финляндия, Франция, Хорватия, Черногория, Чехия, Швейцария, Швеция"
 trash = countries.split(', ')
 
 
-def printJSON(data):
-    print(json.dumps(data, indent=4, sort_keys=True))
-
-
+# Обработка вывода сообщения об ошибке
 def returnErrorMessage(message):
     response = HttpResponse()
     response['Content-Type'] = "text/javascript; charset=utf-8"
@@ -29,24 +26,7 @@ def returnErrorMessage(message):
     return response 
 
 
-def get_node_attributes(element_id):
-    sql = "SELECT prpdf.name, prpdf.display, prp.str_val FROM properties as prp, propertydefs as prpdf WHERE prp.def_id=prpdf.id AND target_id=" + str(element_id)
-    cursor = connections['mysql'].cursor()
-    data = []
-
-    cursor.execute(sql)
-    attributes = cursor.fetchall()
-    for attribute in attributes:
-        data.append({'val':attribute[0],'name':attribute[1],'display':attribute[2]})
-
-    return data
-
-def get_edge_attributes(element_id):
-    return ''
-
-def get_element_attributes(element_id):
-    return ''
-
+# Преобразование вложенных списков в одномерный массив
 def flatlist(list_of_lists):
     flattened = []
     for sublist in list_of_lists:
@@ -54,20 +34,24 @@ def flatlist(list_of_lists):
                 flattened.append(val)
     return flattened
 
+
+# Преобразование данных, полученных путем sql-запроса и представленных в виде словаря, 
+# в формат ключ: значение 
 def dictfetchall(cursor):
-    "Returns all rows from a cursor as a dict"
     desc = cursor.description
     return [
         dict(zip([col[0] for col in desc], row))
         for row in cursor.fetchall()
     ]
 
+# Подготока данных и вызов рендеринга шаблона вывода index.html
 def index(request):
     graphs = Graph.objects.order_by('-pk')    
     context = {'graphs': graphs}
     return render(request, 'zcore/index.html', context)
 
 
+# Для тестовых целей: создание Петерсон-графа
 def make_petersen(request):
     P = nx.petersen_graph()
     graph = Graph()
@@ -88,6 +72,7 @@ def make_petersen(request):
     return HttpResponseRedirect('/')
 
 
+# Для тестовых целей: создание древовидного графа
 def make_balanced_tree(request):
     n,m = 3,5
     G = nx.balanced_tree(n,m)
@@ -101,6 +86,7 @@ def make_balanced_tree(request):
     return HttpResponseRedirect('/zcore/')
 
 
+# Для тестовых целей: создание разнообразных графов средствами библиотеки NetworkX
 def make_random(request):
     #maxn,maxe = 3, 4
     maxn,maxe = 20, 40
@@ -129,108 +115,15 @@ def make_random(request):
 
     return HttpResponseRedirect('/')
 
-def create_project(request, _offset=0, _rows=5000):
-    create_graph2()
 
+# Создание нового проекта
+def create_project(request, graphFilter):
+    # Создание графа - многомерной проекции "семантической кучи" - с заданными атрибутами узлов
+    data = create_filtered_graph(graphFilter)
+
+    content = {'content': data}
+    #return render(request, 'content.html', content)
     return HttpResponseRedirect('/') # Переадресуем на главную страницу
-
-
-def create_graph2():
-    G = nx.Graph() # Cоздаём пустой NetworkX-граф
-    cursor = connections['mysql'].cursor()
-
-    sql = "SELECT rel.id, rel.arg1, rel.arg2, el.data FROM relations as rel, elements as el WHERE rel.id = el.id"
-
-    cursor.execute(sql) # Выполняем sql-запрос
-    edges = cursor.fetchall() # Получаем массив значений результата sql-запроса
-
-    # Проходимся в цикле по всем строкам результата sql-запроса и добавляем в граф дуги.
-    for edge in edges:
-
-        # Для каждой дуги с помощью отдельной функции получаем словарь атрибутов.
-        edgeAttributes = get_edge_attributes(edge[0])
-
-        G.add_edge(edge[1], edge[2], id=edge[0], data=edge[3], attributes=edgeAttributes)
-        add_node_from_db(int(edge[1]), G)
-        add_node_from_db(int(edge[2]), G)
-
-    # Средствами бибилиотеки NetworkX,
-    # экспортируем граф в виде подходящeм для json-сериализации
-    data = json_graph.node_link_data(G)
-
-    # Создаём экземпляр класса Graph, для хранения структуры графа в базе данных
-    graph = Graph() 
-
-    graph.title = "Semantic" # Определяем заголовок графа
-    graph.body = json.dumps(data) # Преобразуем данные в json-формат
-    graph.save() # Сохраняем граф в собственную базу данных
-
-    return True
-
-
-def create_graph(_offset=0, _rows=5000):
-    offset = _offset # Начало первой возвращаемой строки
-    rows = _rows # Максимальное количество возвращаемых строк
-
-    G = nx.Graph() # Cоздаём пустой NetworkX-граф
-
-    # Создаём объект типа cusros, который позволяет нам подключиться и работаться с базой данных,
-    # содержащей данные многомерной матрицы
-    cursor = connections['mysql'].cursor()
-
-    # Формируем sql-запрос к таблице elements, содержащей информационные объекты (далее ИО).
-    # Данные объекты, не имеющих связей - ent_or_rel=0 -  являются вершинами нашего графа
-    sql = "SELECT el.id, el.data  FROM elements as el WHERE el.ent_or_rel=0"
-
-    cursor.execute(sql) # Выполняем sql-запрос
-    nodes = cursor.fetchall() # Получаем массив значений результата sql-запроса
-
-    # В цикле проходимся по каждой строке результата запроса
-    # и добавляем в граф узлы
-    for node in nodes:
-
-        # Вызываем функцию, добавляющую узел в граф, где:
-        # node[0] - id узла;
-        # G - граф;
-        # node[1] - не обязательное поле data, которое мы используем в качестве одного из атрибутов узла;
-        add_node_from_db(node[0], G, node[1])
-
-        # Далее для этого узла ищем дуги и добавляем их в граф:
-        # формируем sql-запрос к таблице relations, описывающей связи между ИО,
-        # и таблице elements, откуда мы получаем поле data для текстового обозначения связи.
-        # Эти связи являются дугами нашего графа.
-        sql = "SELECT rel.id, rel.arg1, rel.arg2, el.data FROM relations as rel, elements as el WHERE rel.id = el.id AND (rel.arg1="+str(node[0])+" OR rel.arg2="+str(node[0])+")"
-
-        cursor.execute(sql) # Выполняем sql-запрос
-        edges = cursor.fetchall() # Получаем массив значений результата sql-запроса
-
-        # Проходимся в цикле по всем строкам результата sql-запроса и добавляем в граф дуги.
-        for edge in edges:
-
-            # Для каждой дуги с помощью отдельной функции получаем словарь атрибутов.
-            edgeAttributes = get_edge_attributes(edge[0])
-
-            # Добавляем в граф дугу с атрибутами id и data,
-            # а также, с полученным отдельно словарем атрибутов - attributes
-            # Возможна ситуация, когда один из узлов дуги ещё не добавлен в граф,
-            # В этом случае, при выполнении функции add_edge() узел будет добавлен автоматически, 
-            # но без необходимых аттрибутов: это исправляется вызовом функции add_node_from_db().
-            G.add_edge(edge[1], edge[2], id=edge[0], data=edge[3], attributes=edgeAttributes)
-            add_node_from_db(int(edge[1]), G) # Добавляем к первому узлу дуги необходимые аттрибуты
-            add_node_from_db(int(edge[2]), G) # Добавляем ко второму узлу дуги необходимые аттрибуты
-
-    # Средствами бибилиотеки NetworkX,
-    # экспортируем граф в виде подходящeм для json-сериализации
-    data = json_graph.node_link_data(G)
-
-    # Создаём экземпляр класса Graph, для хранения структуры графа в базе данных
-    graph = Graph() 
-
-    graph.title = "Semantic" # Определяем заголовок графа
-    graph.body = json.dumps(data) # Преобразуем данные в json-формат
-    graph.save() # Сохраняем граф в собственную базу данных
-
-    return True
 
 
 def to_circular(body):
@@ -331,7 +224,7 @@ def to_force(body, graphFilter, removeStandalone=True):
     result = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
 
     return result
-    """
+"""
 
 
 """
@@ -369,7 +262,7 @@ def to_chord(body):
 
     data = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
     return data
-    """
+"""
 
 
 def view_force(request, id):
@@ -384,6 +277,7 @@ def view_chord(request, id):
     return render(request, 'zcore/chord.html', context)
 
 
+# Преобразование графа для вывода по алгоритму circular
 def json_circular(request, id):
     graph = get_object_or_404(Graph, pk=id)
 
@@ -397,6 +291,7 @@ def json_circular(request, id):
     #response.write(graph.body)
     return response 
 
+# Преобразование графа для вывода по алгоритму spring
 def json_spring(request, id):
     graph = get_object_or_404(Graph, pk=id)
 
@@ -416,6 +311,7 @@ def json_spring(request, id):
     return response 
 
 
+# Визуализация графа по алгоритму force-direct
 def json_force(request, id, graphFilter):
     graph = get_object_or_404(Graph, pk=id)
 
@@ -579,30 +475,7 @@ def json_chord(request, id, removeStandalone, graphFilter):
     return response 
 
 
-def add_node_from_db(id, G, nodeData=False):
-
-    # Проверяем, передаётся ли в функцию значение поля data:
-    # eсли значение не передаётся, мы совершаем дополнительный запрос к базе данных.
-    # Это необходимо когда id узла полученно каким-то другим способом.
-    # Например, в результате запроса к таблице связей relations.
-    if not nodeData:
-        cursor = connections['mysql'].cursor()
-        sql = "SELECT el.data  FROM elements as el WHERE el.id="+str(id)
-        cursor.execute(sql)
-        row = cursor.fetchone()
-        nodeData = row[0]
-
-    # Для каждого узла с помощью отдельной функции получаем словарь атрибутов
-    nodeAttributes = get_node_attributes(id)
-
-    # Добавляем узел в граф вместе с полученным словарём атрибутов.
-    # В качестве атрибута data указываем значение поля data, 
-    # в последствии, это значение будет использованно в поиске по-умолчанию
-    G.add_node(id, data=nodeData, attributes=nodeAttributes)
-
-    return True
-
-
+# Получаем словарь атрибутов в формате json
 def json_attributes(request):
     cursor = connections['mysql'].cursor()
     sql = "SELECT id, name, display FROM propertydefs"
@@ -630,6 +503,8 @@ def json_attributes(request):
     return response 
 
 
+# Для тестовых целей: создание проекции данных с ограниченным числом узлов
+"""
 def json_semantic(request):
     G = nx.Graph() # Cоздаём пустой NetworkX-граф
 
@@ -694,5 +569,7 @@ def json_semantic(request):
 
     # возвращаем все необходимые фреймворку Django данные для окончательной генерации html-страницы
     return response 
+"""
+
 
 

@@ -14,7 +14,7 @@ urlpatterns += [
     url(r'^force/(?P<id>[-\w]+)/$', 'zcore.views.view_force', name='viewForce'),
     url(r'^chord/(?P<id>[-\w]+)/$', 'zcore.views.view_chord', name='viewChord'),
 
-    url(r'^create-project/$', 'zcore.views.create_project'),
+    url(r'^create-project/(?P<graphFilter>.*)/$', 'zcore.views.create_project'),
 
     url(r'^json-force/(?P<id>[-\w]+)/(?P<graphFilter>.*)/$', 'zcore.views.json_force', name='jsonForce'),
     url(r'^json-attributes/$', 'zcore.views.json_attributes', name='jsonAttributes'),
