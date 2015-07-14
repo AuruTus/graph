@@ -10,7 +10,33 @@ from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.db import connections
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+
 from .models import Graph, Node, create_graph_method_01, create_filtered_graph, print_json
+
+
+def responseJSON(data):
+    try:
+        # Преобразуем переданные данные в формат json
+        jsonContent = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
+
+        # Создаём объект response для динамического создания html-страницы
+        response = HttpResponse() 
+
+        # Объявляем основные мета-данные html-страницы
+        response['Content-Type'] = "text/javascript; charset=utf-8" 
+
+        # Записываем в объкт response полученную структуру графа в json-формате
+        response.write(jsonContent) 
+
+        responseJSON = response
+
+    except:
+        print('Неправильный формат данных для преобразования в json-формат')
+        responseJSON = False
+
+    return responseJSON
 
 
 countries = "Австрия, Андорра, Албания, Беларусь, Бельгия, Болгария, Босния и Герцеговина, Ватикан, Великобритания, Венгрия, Германия, Гибралтар, Греция, Дания, Ирландия, Исландия, Испания, Италия, Латвия, Литва, Лихтенштейн, Люксембург, Македония, Мальта, Молдавия, Монако, Нидерланды, Норвегия, Польша, Португалия, Россия, Румыния, Сан-Марино, Сербия и Черногория, Словакия, Словения, Украина, Фарерские острова, Финляндия, Франция, Хорватия, Черногория, Чехия, Швейцария, Швеция"
@@ -345,7 +371,6 @@ def json_force(request, id, graphFilter):
     G = json_graph.node_link_graph(H)
 
     # Если есть список id узлов, выбираем только их
-    print('len ',len(filterNodes))
     if len(filterNodes) == 0:
         GG = G
     else:
@@ -565,5 +590,23 @@ def json_semantic(request):
     # возвращаем все необходимые фреймворку Django данные для окончательной генерации html-страницы
     return response 
 
+
+class HeapInfo(APIView):
+
+    def get(self, request):
+        cursor = connections['mysql'].cursor() # Устанавливаем соединения с базой данных 'mysql'
+        sql = "SELECT count(id) as nodes FROM db_fcp_vis.elements WHERE ent_or_rel=0"
+        cursor.execute(sql) # Выполняем sql-запрос
+        nodes = cursor.fetchall()[0][0]
+
+        sql = "SELECT count(id) as edges FROM db_fcp_vis.elements WHERE ent_or_rel=1"
+        cursor.execute(sql) # Выполняем sql-запрос
+        edges = cursor.fetchall()[0][0]
+
+        objects = nodes + edges
+
+        data = {'objects': objects, 'nodes': nodes, 'edges': edges}
+
+        return responseJSON(data)
 
 

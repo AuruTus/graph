@@ -33,6 +33,15 @@ class Method(models.Model):
 """
 
 
+def dictfetchall(cursor):
+    "Returns all rows from a cursor as a dict"
+    desc = cursor.description
+    return [
+        dict(zip([col[0] for col in desc], row))
+        for row in cursor.fetchall()
+    ]
+
+
 # Отформатированный вывод данных в формате json
 def print_json(data):
     print(json.dumps(data, indent=4, sort_keys=True))
@@ -52,22 +61,25 @@ def get_node_attributes(element_id, filterAttributesString):
     nodeAttributes = False
 
     if filterAttributesString:
-        sql = "SELECT prpdf.name, prpdf.display, prp.str_val FROM properties as prp, propertydefs as prpdf WHERE prp.def_id=prpdf.id AND target_id=%i AND prpdf.name IN (%s)" % (element_id, filterAttributesString)
         cursor = connections['mysql'].cursor()
-        data = []
+        sql = "SELECT prpdf.name, prpdf.display, prp.str_val \
+            FROM properties as prp, propertydefs as prpdf \
+            WHERE prp.def_id=prpdf.id AND prp.target_id=%i AND prpdf.name IN (%s)" \
+            % (element_id, filterAttributesString)
         cursor.execute(sql)
         attributes = cursor.fetchall()
+        data = []
         if attributes:
             for attribute in attributes:
                 data.append({'val':attribute[0],'name':attribute[1],'display':attribute[2]})
             nodeAttributes = data
 
     else:
-        sql = "SELECT prpdf.name, prpdf.display, prp.str_val FROM properties as prp, propertydefs as prpdf WHERE prp.def_id=prpdf.id AND target_id=%i" % (element_id)
         cursor = connections['mysql'].cursor()
-        data = []
+        sql = "SELECT prpdf.name, prpdf.display, prp.str_val FROM properties as prp, propertydefs as prpdf WHERE prp.def_id=prpdf.id AND target_id=%i" % (element_id)
         cursor.execute(sql)
         attributes = cursor.fetchall()
+        data = []
         for attribute in attributes:
             data.append({'val':attribute[0],'name':attribute[1],'display':attribute[2]})
         nodeAttributes = data
@@ -76,12 +88,40 @@ def get_node_attributes(element_id, filterAttributesString):
 
 
 # Получение атрибутов информационного объекта вида дуга
-def get_edge_attributes(element_id):
+def get_edge_attributes_from_db(element_id):
     return ''
 
 
+def add_neighbour_nodes_from_db(nid, G, filterAttributesString):
+    cursor = connections['mysql'].cursor()
+    sql = "SELECT rel.id, rel.arg1, rel.arg2, el.data \
+        FROM relations as rel, elements as el \
+        WHERE rel.id = el.id AND (rel.arg1=%i OR rel.arg2=%i)" \
+        % (nid, nid)
+    cursor.execute(sql) # Выполняем sql-запрос
+    edges = dictfetchall(cursor) # Получаем массив значений результата sql-запроса в виде словаря
+
+    # Проходимся в цикле по всем строкам результата sql-запроса 
+    # и, в зависимости от результата фильтрации, добавляем в граф дуги
+    for edge in edges:
+        # Для каждой дуги с помощью отдельной функции получаем словарь атрибутов.
+        edgeAttributes = get_edge_attributes_from_db(edge['id'])
+
+        # Если другая вершина дуги подходит по параметрам фильтра, добавляем дугу
+        if nid == edge['arg1']:
+            checkedID = edge['arg2']
+        else:
+            checkedID = edge['arg1']
+        nodeAttributes = get_node_attributes(checkedID, filterAttributesString)
+        if nodeAttributes:
+            print('checkid',nid,'-',checkedID)
+            G.add_edge(edge['arg1'], edge['arg2'], id=edge['id'], data=edge['data'], attributes=edgeAttributes)
+
+    return True
+
 # Добавляем узел в граф при создании многомерной проекции "семантической кучи"
-def add_node_from_db(id, G, filterAttributesString=False, nodeData=False):
+def add_node_from_db(nid, G, filterAttributesString=False, nodeData=False):
+    nodeAdded = False
 
     # Проверяем, передаётся ли в функцию значение поля data:
     # eсли значение не передаётся, мы совершаем дополнительный запрос к базе данных.
@@ -89,21 +129,24 @@ def add_node_from_db(id, G, filterAttributesString=False, nodeData=False):
     # Например, в результате запроса к таблице связей relations.
     if not nodeData:
         cursor = connections['mysql'].cursor()
-        sql = "SELECT el.data  FROM elements as el WHERE el.id="+str(id)
+        sql = "SELECT el.data  FROM elements as el WHERE el.id=%i" % (nid)
+        print('sql ',sql)
         cursor.execute(sql)
         row = cursor.fetchone()
         nodeData = row[0]
+        print('nodeData ',nodeData)
 
     # Для каждого узла с помощью отдельной функции получаем словарь атрибутов
-    nodeAttributes = get_node_attributes(id, filterAttributesString)
+    nodeAttributes = get_node_attributes(nid, filterAttributesString)
 
     # Добавляем узел в граф вместе с полученным словарём атрибутов.
     # В качестве атрибута data указываем значение поля data, 
     # в последствии, это значение будет использованно в поиске по-умолчанию
     if nodeAttributes:
-        G.add_node(id, data=nodeData, attributes=nodeAttributes)
+        G.add_node(nid, data=nodeData, attributes=nodeAttributes)
+        nodeAdded = nid
 
-    return True
+    return nodeAdded
 
 
 # Для тестовых целей:
@@ -146,7 +189,7 @@ def create_graph_method_01():
         for edge in edges:
 
             # Для каждой дуги с помощью отдельной функции получаем словарь атрибутов.
-            edgeAttributes = get_edge_attributes(edge[0])
+            edgeAttributes = get_edge_attributes_from_db(edge[0])
 
             # Добавляем в граф дугу с атрибутами id и data,
             # а также, с полученным отдельно словарем атрибутов - attributes
@@ -190,7 +233,7 @@ def create_graph_method_02():
     for edge in edges:
 
         # Для каждой дуги с помощью отдельной функции получаем словарь атрибутов.
-        edgeAttributes = get_edge_attributes(edge[0])
+        edgeAttributes = get_edge_attributes_from_db(edge[0])
 
         G.add_edge(edge[1], edge[2], id=edge[0], data=edge[3], attributes=edgeAttributes)
         add_node_from_db(int(edge[1]), G)
@@ -266,7 +309,10 @@ def create_filtered_graph(graphFilter):
         # node[0] - id узла;
         # G - граф;
         # node[1] - не обязательное поле data, которое мы используем в качестве одного из атрибутов узла;
-        add_node_from_db(node[0], G, filterAttributesString, node[1])
+        nodeAdded = add_node_from_db(node[0], G, filterAttributesString, node[1])
+        # Если узел был добавлен, добавляем всех его соседей с учётом фильтра
+        if nodeAdded:
+            add_neighbour_nodes_from_db(node[0], G, filterAttributesString)
 
 
     # Средствами бибилиотеки NetworkX,
@@ -281,6 +327,12 @@ def create_filtered_graph(graphFilter):
 
     # Преобразуем данные в json-формат
     graph.body = json.dumps(data) 
+
+    numberOfNodes = G.number_of_nodes()
+    print('Gnodes',numberOfNodes)
+
+    numberOfEdges = G.number_of_edges()
+    print('Gedges',numberOfEdges)
 
     # Сохраняем граф в собственную базу данных
     graph.save() 

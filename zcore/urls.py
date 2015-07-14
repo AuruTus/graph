@@ -3,8 +3,11 @@ from django.conf.urls import url
 
 from . import views
 
-"""
 urlpatterns = [
+
+    url(r'^heap-info/$', views.HeapInfo.as_view(), name='heapInfo'),
+    
+"""
     url(r'^$', views.index, name='index'),
 
     url(r'^make-petersen/$', views.make_petersen),
@@ -21,6 +24,6 @@ urlpatterns = [
     url(r'^json-attributes/$', views.json_attributes),
 
     url(r'^semantic/$', views.json_semantic),
+"""
 ]
 
-"""

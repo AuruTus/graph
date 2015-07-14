@@ -3,8 +3,9 @@
 
 
 {% block side_bar %}
+<div id="heap-info"></div>
+<script src="{% static 'react/build/HeapInfo.js' %}"></script>
 
-<h4>Создание проекта</h4>
 <div id="newProjectFilter">newProjectFilter</div>
 <script src="{% static 'react/build/newProjectFilter.js' %}"></script>
 
@@ -12,7 +13,6 @@
 
 
 {% block content %}
-
 <h1>Проекты</h1>
 <ul>
 {% for graph in graphs %}
