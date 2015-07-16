@@ -16,6 +16,11 @@ from rest_framework.response import Response
 from .models import Graph, Node, create_graph_method_01, create_filtered_graph, print_json
 
 
+def pdev(str):
+    print('\n',str,'\n')
+    return True
+
+
 def responseJSON(data):
     try:
         # Преобразуем переданные данные в формат json
@@ -348,7 +353,6 @@ def json_force(request, id, graphFilter):
     # Обрабатываем массив filterAttributes
     try:
         attributesState = graphFilter['attributesState']
-        print('attributesState ', attributesState)
     except:
         returnErrorMessage('Неправильный json-массив attributesState')
         raise
@@ -371,26 +375,13 @@ def json_force(request, id, graphFilter):
     graphData = json.loads(graph.body)
     G0 = json_graph.node_link_graph(graphData)
 
-    #print(graph.body)
-
-    #print(json_graph.node_link_data(G))
     numberOfNodes = G0.number_of_nodes()
-    print('Gnodes',numberOfNodes)
+    pdev('Gnodes %i' % (numberOfNodes))
     numberOfEdges = G0.number_of_edges()
-    print('Gedges',numberOfEdges)
-    G1 = G0
-    nodes = G0.nodes()
-    #nodes = G0.nodes(data=True)
-    for node in nodes:
-        print(G0[node])
-        pass
-        #print(node,'-',G0.degree(node),'-',G0[node])
+    pdev('Gedges %i' %(numberOfEdges))
 
-    # Если есть список id узлов, выбираем только их
-    if len(filterNodes) == 0:
-        G1 = G0
-        #print('len ',len(filterNodes))
-    else:
+    # Если передан массив фильтра узлов графа filterNodes, производим фильтрацию узлов
+    if len(filterNodes) > 0:
         nodesList = []
         for nid in filterNodes:
             print('nid ',nid)
@@ -401,20 +392,26 @@ def json_force(request, id, graphFilter):
                 nodesList.append(sub)
         print('nodesList: ',nodesList)
         G1 = G0.subgraph(nodesList)
+    else:
+        G1 = G0
 
-    nodes = G1.nodes(data=True)
-    for node in nodes:
-        #print(G1.degree(node),'-',G1[node])
-        #print(GG.degree(node))
-        nid = int(node[0])
-        attributes = node[1]['attributes']
+    # Если передан массив фильтра атрибутов attributesState, производим фильтрацию аттрибутов
+    if len(attributesState) > 0:
+        pdev('Производим фильтрацию по переданным в attributesState атрибутам')
+        nodes = G1.nodes(data=True)
+        for node in nodes:
+            #print(G1.degree(node),'-',G1[node])
+            #print(GG.degree(node))
+            nid = int(node[0])
+            attributes = node[1]['attributes']
 
-        for attribute in attributes:
-            if attribute['val'] not in attributesState:
-                try:
-                    G1.remove_node(nid)
-                except:
-                    pass
+            for attribute in attributes:
+                if attribute['val'] not in attributesState:
+                    try:
+                        G1.remove_node(nid)
+                    except:
+                        pdev('Узел с id ',nid,' не найден')
+                        pass
 
     # Если стоит фильтр на одиночные вершины - убираем их из графа
     nodes = G1.nodes()
@@ -430,6 +427,7 @@ def json_force(request, id, graphFilter):
     numberOfEdges = G1.number_of_edges()
     data['graph'].append({'numberOfEdges': numberOfEdges})
 
+    #data = G0data
     result = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
     #result=graph.body
 
