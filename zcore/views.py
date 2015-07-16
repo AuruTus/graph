@@ -348,7 +348,7 @@ def json_force(request, id, graphFilter):
     # Обрабатываем массив filterAttributes
     try:
         attributesState = graphFilter['attributesState']
-        print_json(attributesState)
+        print('attributesState ', attributesState)
     except:
         returnErrorMessage('Неправильный json-массив attributesState')
         raise
@@ -365,15 +365,31 @@ def json_force(request, id, graphFilter):
         filterOptions = graphFilter['filterOptions']
         zero = filterOptions['zero']
     except:
-        returnErrorMessage('Неправильный json-массив')
+        returnErrorMessage('Неправильный json-массив filterOptions')
         raise
 
-    H = json.loads(graph.body)
-    G = json_graph.node_link_graph(H)
+    graphData = json.loads(graph.body)
+    G0 = json_graph.node_link_graph(graphData)
+
+    #print(graph.body)
+
+    #print(json_graph.node_link_data(G))
+    numberOfNodes = G0.number_of_nodes()
+    print('Gnodes',numberOfNodes)
+    numberOfEdges = G0.number_of_edges()
+    print('Gedges',numberOfEdges)
+    G1 = G0
+    nodes = G0.nodes()
+    #nodes = G0.nodes(data=True)
+    for node in nodes:
+        print(G0[node])
+        pass
+        #print(node,'-',G0.degree(node),'-',G0[node])
 
     # Если есть список id узлов, выбираем только их
     if len(filterNodes) == 0:
-        GG = G
+        G1 = G0
+        #print('len ',len(filterNodes))
     else:
         nodesList = []
         for nid in filterNodes:
@@ -384,36 +400,38 @@ def json_force(request, id, graphFilter):
             for sub in subs:
                 nodesList.append(sub)
         print('nodesList: ',nodesList)
-        GG = G.subgraph(nodesList)
+        G1 = G0.subgraph(nodesList)
 
-    nodes = GG.nodes(data=True)
+    nodes = G1.nodes(data=True)
     for node in nodes:
+        #print(G1.degree(node),'-',G1[node])
+        #print(GG.degree(node))
         nid = int(node[0])
         attributes = node[1]['attributes']
 
         for attribute in attributes:
-            if attribute['val'] not in filterAttributes:
+            if attribute['val'] not in attributesState:
                 try:
-                    GG.remove_node(nid)
+                    G1.remove_node(nid)
                 except:
                     pass
 
     # Если стоит фильтр на одиночные вершины - убираем их из графа
-    nodes = GG.nodes()
+    nodes = G1.nodes()
     for node in nodes:
-        if zero == 'no' and GG.degree(node) < 1:
-            GG.remove_node(node)
+        if zero == 'no' and G1.degree(node) < 1:
+            G1.remove_node(node)
 
-    data = json_graph.node_link_data(GG)
+    data = json_graph.node_link_data(G1)
 
-    numberOfNodes = GG.number_of_nodes()
+    numberOfNodes = G1.number_of_nodes()
     data['graph'].append({'numberOfNodes': numberOfNodes})
 
-    numberOfEdges = GG.number_of_edges()
+    numberOfEdges = G1.number_of_edges()
     data['graph'].append({'numberOfEdges': numberOfEdges})
 
-
     result = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
+    #result=graph.body
 
     content = result
     response = HttpResponse()

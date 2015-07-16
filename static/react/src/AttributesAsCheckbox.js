@@ -42,12 +42,6 @@ var AttributesAsCheckbox = React.createClass({
     },
     componentDidMount: function() {
         //console.log('AttributesAsCheckbox didmount')
-        // Возвращаем выходные данные родительскому компоненту
-        /*
-        if (typeof this.props.reClick === 'function') {
-            this.props.reClick(this.props.attributesState)
-        }
-        */
     },
     handleReClick: function(value, checked) {
         this.props.attributesState[value] = checked
@@ -59,16 +53,33 @@ var AttributesAsCheckbox = React.createClass({
         }
     },
     render: function() {
+        // почему рендер вызыввается два раза?
+        //console.log('render')
         var rows = []
         this.state.attributes.forEach(function(attribute) {
+
+            // Производим начальную инициализацию чекбоксов и массива attributesState
+            var value = attribute.name
+            var checked = false
+            if (inArray(attribute.name, this.state.initValues)) {
+                checked = true
+            }
+            this.props.attributesState[value] = checked
+
             rows.push(<AttributeCheckbox 
                 key={attribute.id} 
                 display={attribute.display} 
                 value={attribute.name} 
                 reClick={this.handleReClick} 
-                initValues={this.state.initValues}
+                checked={checked}
             />)
         }.bind(this))
+
+        // Возвращаем выходные данные родительскому компоненту
+        if (typeof this.props.reClick === 'function') {
+            this.props.reClick(this.props.attributesState)
+        }
+
         return (
             <div className="btn-group" data-toggle="buttons">
             {rows}
@@ -79,30 +90,22 @@ var AttributesAsCheckbox = React.createClass({
 
 var AttributeCheckbox = React.createClass({
     getInitialState: function() {
-        var checked = false
         var className = "btn btn-primary"
-        if (inArray(this.props.value, this.props.initValues)) {
-            checked = true
+
+        if (this.props.checked) {
             className = "btn btn-primary active"
         }
 
-        // Передаём обработку инициализации родительскому компоненту
-        if (typeof this.props.reClick === 'function') {
-            this.props.reClick(this.props.value, checked);
-        }
-
         return {
-            checked: checked,
             className: className
         }
     },
     handleClick: function() {
-        var checked = (this.state.checked == true) ? false: true
-        this.setState({checked: checked});
+        this.props.checked = (this.props.checked == true) ? false: true
 
         // Передаём обработку клика родительскому компоненту
         if (typeof this.props.reClick === 'function') {
-            this.props.reClick(this.props.value, checked);
+            this.props.reClick(this.props.value, this.props.checked);
         }
     },
     render: function() {
@@ -113,7 +116,6 @@ var AttributeCheckbox = React.createClass({
             >
             <input
                 type="checkbox" 
-                defaultChecked={this.state.checked}
                 ref="AttributeCheckbox"
             />
             {this.props.display}

@@ -9,9 +9,7 @@ var ForceGraphFilter = React.createClass({
         }
     },
     componentDidMount: function() {
-        console.log('ForceFilter didmount')
-        // Перерисовываем граф
-        //this.graphUpdate()        
+        //console.log('ForceFilter didmount')
     },
     graphUpdate: function() {
         // Формируем массив json-данных graphFilter
@@ -20,10 +18,10 @@ var ForceGraphFilter = React.createClass({
             filterNodes: nodesList,
             filterOptions: this.state.filterOptions
         } 
-        console.log('state attributesState ',this.state.attributesState)
+        console.log('graphUpdate state attributesState ',this.state.attributesState)
 
         // Перерисовываем граф
-        //force.update(gid, graphFilter)
+        force.update(gid, graphFilter)
     },
     handleReClick: function() {
         // Перерисовываем граф
