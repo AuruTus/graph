@@ -13,10 +13,8 @@ var HeapInfo = React.createClass({
         })
     },
     getInitialState: function() {
-        return {data: []}
-    },
-    componentDidMount: function() {
         this.loadDataFromServer()
+        return {data: []}
     },
     render: function() {
         return (

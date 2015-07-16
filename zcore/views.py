@@ -347,9 +347,10 @@ def json_force(request, id, graphFilter):
 
     # Обрабатываем массив filterAttributes
     try:
-        filterAttributes = graphFilter['filterAttributes']
+        attributesState = graphFilter['attributesState']
+        print_json(attributesState)
     except:
-        returnErrorMessage('Неправильный json-массив filterAttributes')
+        returnErrorMessage('Неправильный json-массив attributesState')
         raise
 
     # Обрабатываем массив filterNodes

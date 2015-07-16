@@ -114,7 +114,7 @@ def add_neighbour_nodes_from_db(nid, G, filterAttributesString):
             checkedID = edge['arg1']
         nodeAttributes = get_node_attributes(checkedID, filterAttributesString)
         if nodeAttributes:
-            print('checkid',nid,'-',checkedID)
+            #print('checkid',nid,'-',checkedID)
             G.add_edge(edge['arg1'], edge['arg2'], id=edge['id'], data=edge['data'], attributes=edgeAttributes)
 
     return True
@@ -130,11 +130,9 @@ def add_node_from_db(nid, G, filterAttributesString=False, nodeData=False):
     if not nodeData:
         cursor = connections['mysql'].cursor()
         sql = "SELECT el.data  FROM elements as el WHERE el.id=%i" % (nid)
-        print('sql ',sql)
         cursor.execute(sql)
         row = cursor.fetchone()
         nodeData = row[0]
-        print('nodeData ',nodeData)
 
     # Для каждого узла с помощью отдельной функции получаем словарь атрибутов
     nodeAttributes = get_node_attributes(nid, filterAttributesString)
@@ -152,7 +150,6 @@ def add_node_from_db(nid, G, filterAttributesString=False, nodeData=False):
 # Для тестовых целей:
 # Создание графа - многомерной проекции "семантической кучи" - первым методом
 def create_graph_method_01():
-    print('Create projection using method 01')
     G = nx.Graph() # Cоздаём пустой NetworkX-граф
 
     # Создаём объект типа cusros, который позволяет нам подключиться и работаться с базой данных,
@@ -217,7 +214,6 @@ def create_graph_method_01():
 # Для тестовых целей:
 # Создание графа - многомерной проекции "семантической кучи" - вторым методом
 def create_graph_method_02():
-    print('Create projection using method 02')
     # Cоздаём пустой NetworkX-граф
     G = nx.Graph()
 

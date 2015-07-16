@@ -1,77 +1,56 @@
 var attributesList = ['yes','0']
 
 var ForceGraphFilter = React.createClass({
-    loadDataFromServer: function() {
-        $.ajax({
-            url: this.props.url,
-            dataType: 'json',
-            cache: false,
-            success: function(data) {
-                this.setState({attributes: data});
-            }.bind(this),
-            error: function(xhr, status, err) {
-                console.error(this.props.url, status, err.toString())
-            }.bind(this)
-        })
-    },
     getInitialState: function() {
         return {
             attributes: [],
-            filterAttributes: [],
+            attributesState: [],
             filterOptions: {zero: 'yes'},
         }
     },
     componentDidMount: function() {
-        this.loadDataFromServer()
+        console.log('ForceFilter didmount')
+        // Перерисовываем граф
+        //this.graphUpdate()        
+    },
+    graphUpdate: function() {
+        // Формируем массив json-данных graphFilter
+        var graphFilter = { 
+            attributesState: this.state.attributesState ,
+            filterNodes: nodesList,
+            filterOptions: this.state.filterOptions
+        } 
+        console.log('state attributesState ',this.state.attributesState)
+
+        // Перерисовываем граф
+        //force.update(gid, graphFilter)
     },
     handleReClick: function() {
-        // Формируем массив json-данных graphFilter
-        var graphFilter = { 
-            filterAttributes: this.state.filterAttributes ,
-            filterNodes: nodesList,
-            filterOptions: this.state.filterOptions
-        } 
-
         // Перерисовываем граф
-        force.update(gid, graphFilter)
+        this.graphUpdate()        
     },
     handleSubmit: function(e) {
-        e.preventDefault();
+        e.preventDefault()
         
-        // Формируем массив json-данных graphFilter
-        var graphFilter = { 
-            filterAttributes: this.state.filterAttributes ,
-            filterNodes: nodesList,
-            filterOptions: this.state.filterOptions
-        } 
-
         // Перерисовываем граф
-        force.update(gid, graphFilter)
+        this.graphUpdate()        
 
         nodesList = []
     },
     render: function() {
         return (
             <form onSubmit={this.handleSubmit} ref="forceGraphFilterForm">
-                <AttributesCheck
-                    attributes={this.state.attributes} 
-                    filterAttributes={this.state.filterAttributes}
+                <AttributesAsCheckbox
+                    //attributes={this.state.attributes} 
+
+                    // массив статусов чекбоксов всех атрибутов
+                    attributesState={this.state.attributesState}
+
                     reClick={this.handleReClick}
                 />
                 <input type="submit" className="btn btn-warning" value="Filter" />
             </form>
         );
-    },
-    graphUpdate: function() {
-        // Формируем массив json-данных graphFilter
-        var graphFilter = { 
-            filterAttributes: this.state.filterAttributes ,
-            filterNodes: nodesList,
-            filterOptions: this.state.filterOptions
-        } 
-
-        // Перерисовываем граф
-        force.update(gid, graphFilter)
     },
 });
 
@@ -160,7 +139,7 @@ var AttributeCheckbox = React.createClass({
 
 
 React.render(
-    <ForceGraphFilter url="/json-attributes/" />, 
+    <ForceGraphFilter />,
     document.getElementById('forceFilter')
 );
 
