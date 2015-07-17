@@ -13,12 +13,7 @@ from django.db import connections
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from .models import Graph, Node, create_graph_method_01, create_filtered_graph, print_json
-
-
-def pdev(str):
-    print('\n',str,'\n')
-    return True
+from .models import Graph, Node, create_filtered_graph, print_json, pdev
 
 
 def responseJSON(data):
@@ -367,7 +362,6 @@ def json_force(request, id, graphFilter):
     # Обрабатываем массив filterOptions
     try:
         filterOptions = graphFilter['filterOptions']
-        zero = filterOptions['zero']
     except:
         returnErrorMessage('Неправильный json-массив filterOptions')
         raise
@@ -380,22 +374,20 @@ def json_force(request, id, graphFilter):
     numberOfEdges = G0.number_of_edges()
     pdev('Gedges %i' %(numberOfEdges))
 
-    # Если передан массив фильтра узлов графа filterNodes, производим фильтрацию узлов
+    # Если передан массив узлов графа filterNodes, производим фильтрацию узлов
     if len(filterNodes) > 0:
+        pdev('Производим фильтрацию по переданным в filterNodes узлам')
         nodesList = []
         for nid in filterNodes:
-            print('nid ',nid)
             nodesList.append(nid)
-            print('nodesList: ',nodesList)
-            subs = nx.all_neighbors(G, nid)
+            subs = nx.all_neighbors(G0, nid)
             for sub in subs:
                 nodesList.append(sub)
-        print('nodesList: ',nodesList)
         G1 = G0.subgraph(nodesList)
     else:
         G1 = G0
 
-    # Если передан массив фильтра атрибутов attributesState, производим фильтрацию аттрибутов
+    # Если передан массив атрибутов attributesState, производим фильтрацию аттрибутов
     if len(attributesState) > 0:
         pdev('Производим фильтрацию по переданным в attributesState атрибутам')
         nodes = G1.nodes(data=True)
@@ -414,10 +406,15 @@ def json_force(request, id, graphFilter):
                         pass
 
     # Если стоит фильтр на одиночные вершины - убираем их из графа
-    nodes = G1.nodes()
-    for node in nodes:
-        if zero == 'no' and G1.degree(node) < 1:
-            G1.remove_node(node)
+    # Если передан массив дополнительных опций filterOptions, производим фильтрацию по выбранным опциям
+    if len(filterOptions) > 0:
+        pdev('Производим фильтрацию в соответствии с переданными опциями в filterOptions')
+        zero = filterOptions['zero']
+        nodes = G1.nodes()
+        for node in nodes:
+            if zero == 'no' and G1.degree(node) < 1:
+                #print('nid ',node,' degree ',G1.degree(node))
+                G1.remove_node(node)
 
     data = json_graph.node_link_data(G1)
 
@@ -536,73 +533,6 @@ def json_attributes(request):
 
     # Записываем в объкт response полученную структуру графа в json-формате
     response.write(content) 
-
-    # возвращаем все необходимые фреймворку Django данные для окончательной генерации html-страницы
-    return response 
-
-
-# Для тестовых целей: создание проекции данных с ограниченным числом узлов
-def json_semantic(request):
-    G = nx.Graph() # Cоздаём пустой NetworkX-граф
-
-    # Создаём объект типа cusros, который позволяет нам подключиться и работаться с базой данных,
-    # содержащей данные многомерной матрицы
-    cursor = connections['mysql'].cursor()
-
-    offset = 0 # Начало первой возвращаемой строки
-    rows = 100 # Максимальное количество возвращаемых строк
-
-    # Формируем sql-запрос к таблице elements, содержащей информационные объекты (далее ИО).
-    # Данные объекты, не имеющих связей - ent_or_rel=0 -  являются вершинами нашего графа
-    sql = "SELECT el.id, el.data  FROM elements as el WHERE el.ent_or_rel=0 LIMIT "+str(offset)+","+str(rows)
-
-    cursor.execute(sql) # Выполняем sql-запрос
-    nodes = cursor.fetchall() # Получаем массив значений результата sql-запроса
-
-    # В цикле проходимся по каждой строке результата запроса
-    # и добавляем в граф узлы
-    for node in nodes:
-
-        # Вызываем функцию, добавляющую узел в граф, где:
-        # node[0] - id узла;
-        # G - граф;
-        # node[1] - не обязательное поле data, которое мы используем в качестве одного из атрибутов узла;
-        add_node_from_db(node[0], G, node[1])
-
-        # Далее для этого узла ищем дуги и добавляем их в граф:
-        # формируем sql-запрос к таблице relations, описывающей связи между ИО,
-        # и таблице elements, откуда мы получаем поле data для текстового обозначения связи.
-        # Эти связи являются дугами нашего графа.
-        sql = "SELECT rel.id, rel.arg1, rel.arg2, el.data FROM relations as rel, elements as el WHERE rel.id = el.id AND (rel.arg1="+str(node[0])+" OR rel.arg2="+str(node[0])+")"
-
-        cursor.execute(sql) # Выполняем sql-запрос
-        edges = cursor.fetchall() # Получаем массив значений результата sql-запроса
-
-        # Проходимся в цикле по всем строкам результата sql-запроса и добавляем в граф дуги.
-        for edge in edges:
-
-            # Для каждой дуги с помощью отдельной функции получаем словарь атрибутов.
-            edgeAttributes = get_edge_attributes(edge[0])
-
-            # Добавляем в граф дугу с атрибутами id и data,
-            # а также, с полученным отдельно словарем атрибутов - attributes
-            # Возможна ситуация, когда один из узлов дуги ещё не добавлен в граф,
-            # В этом случае, при выполнении функции add_edge() узел будет добавлен автоматически, 
-            # но без необходимых аттрибутов: это исправляется вызовом функции add_node_from_db().
-            G.add_edge(edge[1], edge[2], id=edge[0], data=edge[3], attributes=edgeAttributes)
-            add_node_from_db(int(edge[1]), G) # Добавляем к первому узлу дуги необходимые аттрибуты
-            add_node_from_db(int(edge[2]), G) # Добавляем ко второму узлу дуги необходимые аттрибуты
-
-    # Средствами бибилиотеки NetworkX,
-    # экспортируем граф в виде подходящeм для json-сериализации
-    graphData = json_graph.node_link_data(G)
-
-    # Преобразуем данные в json-формат
-    result = json.dumps(graphData, sort_keys=True, indent=4, separators=(',', ': '))
-
-    response = HttpResponse() # Создаём объект response для динамического создания html-страницы
-    response['Content-Type'] = "text/javascript; charset=utf-8" # Объявляем основные мета-данные html-страницы
-    response.write(result) # Записываем в объкт response полученную структуру графа в json-формате
 
     # возвращаем все необходимые фреймворку Django данные для окончательной генерации html-страницы
     return response 

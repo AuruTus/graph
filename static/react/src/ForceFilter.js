@@ -5,7 +5,7 @@ var ForceGraphFilter = React.createClass({
         return {
             attributes: [],
             attributesState: [],
-            filterOptions: {zero: 'yes'},
+            optionsState: [],
         }
     },
     componentDidMount: function() {
@@ -16,16 +16,22 @@ var ForceGraphFilter = React.createClass({
         var graphFilter = { 
             attributesState: this.state.attributesState ,
             filterNodes: nodesList,
-            filterOptions: this.state.filterOptions
+            filterOptions: this.state.optionsState,
         } 
         console.log('graphUpdate state attributesState ',this.state.attributesState)
 
         // Перерисовываем граф
         force.update(gid, graphFilter)
     },
+    handleOptionsFilterReClick: function(state) {
+        // Перерисовываем граф
+        //this.graphUpdate()        
+        console.log('state-- ',state)
+    },
     handleReClick: function() {
         // Перерисовываем граф
-        this.graphUpdate()        
+        //this.graphUpdate()        
+        //console.log(this.state.optionsState)
     },
     handleSubmit: function(e) {
         e.preventDefault()
@@ -38,107 +44,34 @@ var ForceGraphFilter = React.createClass({
     render: function() {
         return (
             <form onSubmit={this.handleSubmit} ref="forceGraphFilterForm">
-                <AttributesAsCheckbox
-                    //attributes={this.state.attributes} 
-
-                    // массив статусов чекбоксов всех атрибутов
+                <input type="submit" className="btn btn-warning" value="Отфильтровать" />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                <AttributesFilter
+                    // массив значений фильтра атрибутов
                     attributesState={this.state.attributesState}
+
+                    // массив значений фильтра опций
+                    optionsState={this.state.optionsState}
 
                     reClick={this.handleReClick}
                 />
-                <input type="submit" className="btn btn-warning" value="Filter" />
+                <br />
+                <br />
+                <OptionsFilter 
+                    // массив значений фильтра опций
+                    optionsState={this.state.optionsState}
+
+                    reClick={this.handleOptionsFilterReClick}
+                />
             </form>
         );
     },
 });
 
-/*
-var AttributesList = React.createClass({
-    getInitialState: function() {
-        return {
-            initValues: ['doc_name', 'doc_timestamp']
-        }
-    },
-    handleReClick: function(value) {
-        if (value == '') {
-            attributesList.pop(value)
-            this.props.filterAttributes.pop(value)
-        } else {
-            attributesList.push(value)
-            this.props.filterAttributes.push(value)
-        }
-
-        // Передаём обработку клика родительскому компоненту
-        if (typeof this.props.reClick === 'function') {
-            //this.props.handleClick(e.target.value);
-            this.props.reClick();
-        }
-    },
-    render: function() {
-        var rows = []
-        this.props.attributes.forEach(function(attribute) {
-            rows.push(<AttributeCheckbox 
-                key={attribute.id} 
-                display={attribute.display} 
-                value={attribute.name} 
-                reClick={this.handleReClick} 
-                initValues={this.state.initValues}
-            />)
-        }.bind(this))
-        return (
-            <div className="btn-group" data-toggle="buttons">
-            {rows}
-            </div>
-        );
-    }
-});
-
-var AttributeCheckbox = React.createClass({
-    getInitialState: function() {
-        var value = ''
-        var className = "btn btn-primary"
-        if (inArray(this.props.value, this.props.initValues)) {
-            value = this.props.value
-            this.props.reClick(value);
-            className = "btn btn-primary active"
-        }
-        return {
-            value: value,
-            className: className
-        }
-    },
-    componentDidMount: function() {
-        //React.findDOMNode('ForceGraphFilter').graphUpdate()
-        //console.log('value ',this.state.value)
-    },
-    handleClick: function() {
-        var value = (this.state.value == '') ? this.props.value: ''
-        this.setState({value: value});
-
-        // Передаём обработку клика родительскому компоненту
-        if (typeof this.props.reClick === 'function') {
-            this.props.reClick(value);
-        }
-    },
-    render: function() {
-        return (
-            <label className={this.state.className} onClick={this.handleClick}>
-            <input
-                type="checkbox" 
-                value={this.state.value}
-                ref="filterCheckbox"
-            />
-            {this.props.display}
-            </label>
-        );
-    }
-});
-*/
-
 
 React.render(
     <ForceGraphFilter />,
-    document.getElementById('forceFilter')
+    document.getElementById('force-filter')
 );
 
 

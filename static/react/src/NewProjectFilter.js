@@ -51,11 +51,12 @@ var NewProjectFilter = React.createClass({
     render: function() {
         return (
             <form onSubmit={this.handleSubmit} ref="forceGraphFilterForm">
+                <input type="submit" className="btn btn-warning" value="Создать" />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                 <AttributesList 
                     attributes={this.state.attributes} 
                     filterAttributes={this.state.filterAttributes}
                 />
-                <input type="submit" className="btn btn-warning" value="Создать" />
             </form>
         );
     },

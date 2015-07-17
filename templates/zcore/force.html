@@ -3,24 +3,7 @@
 
 
 {% block side_bar %}
-<div id="forceFilter">forceFilter</div>
-
-
-
-
-
-
-
-
-<div class="filter">
-<div class='attributes'></div>
-
-<!--
-<textarea id="t"></textarea>
-<textarea id="nodes-list">0</textarea>
-<h4>Фильтр по атрибутам</h4>
-<input onClick="filterSubmit()" type="button" value="Отфильтровать">
--->
+<div id="force-filter">Force filter</div>
 
 
 <br />
@@ -144,7 +127,8 @@ var force = new ForceLayout('.scene', gid, 'no;first_name;full_name')
 
 
 </script>
-<script src="{% static 'react/build/AttributesAsCheckbox.js' %}"></script>
+<script src="{% static 'react/build/AttributesFilter.js' %}"></script>
+<script src="{% static 'react/build/OptionsFilter.js' %}"></script>
 <script src="{% static 'react/build/ForceFilter.js' %}"></script>
 {% endblock content %}
 
