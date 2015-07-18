@@ -390,6 +390,7 @@ def json_force(request, id, graphFilter):
     # Если передан массив атрибутов filterAttributes, производим фильтрацию аттрибутов
     if len(filterAttributes) > 0:
         pdev('Производим фильтрацию по переданным в filterAttributes атрибутам')
+        print(filterAttributes)
         nodes = G1.nodes(data=True)
         for node in nodes:
             nid = int(node[0])

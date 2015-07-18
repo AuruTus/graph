@@ -17,13 +17,28 @@ function joinAsTrue(obj) {
 var ZRadioGroup = React.createClass({
     getInitialState: function() {
         return {
+            // Ассоциативный массив всех определяющих компонент атрибутов
+            //componentState: {},
         }
     },
-    handleReClick: function(value) {
-        //this.setState({ radioState: value })
+    handleChange: function(value) {
+        /*
+        var state = this.state.componentState
+        state[key] = value
+        this.setState({ componentState: state })
+        console.log('> ',state)
+        */
 
-        // Передаём обработку родительскому компоненту
-        this.props.reClick(this.props.name, value)
+        // Передаём родителю состояние массива componentState
+        if (typeof this.props.onChange === 'function') {
+            this.props.onChange(this.props.name, value)
+        }
+    },
+    handleReClick: function() {
+        // Передаём обработку клика родительскому компоненту
+        if (typeof this.props.onClick === 'function') {
+            this.props.onClick()
+        }
     },
     render: function() {
         var rows = []
@@ -31,10 +46,11 @@ var ZRadioGroup = React.createClass({
             // Формируем массив rows дочерних компонентов
             rows.push(<ZRadioGroupButton 
                 key={key}
-                display={prop.display} 
                 value={prop.value}
+                display={prop.display} 
                 checked={prop.checked}
-                reClick={this.handleReClick} 
+                onChange={this.handleChange}
+                onClick={this.handleReClick} 
             />)
         }.bind(this))
 
@@ -48,16 +64,50 @@ var ZRadioGroup = React.createClass({
 
 
 var ZRadioGroupButton = React.createClass({
+    propTypes: {
+        value:      React.PropTypes.string,
+        display:    React.PropTypes.string,
+        checked:    React.PropTypes.bool,
+        onChange:   React.PropTypes.func,
+        onClick:    React.PropTypes.func,
+    },
+    getDefaultProps: function() {
+        return {
+            value: '',
+            display: '',
+            checked: false,
+        };
+    },
     getInitialState: function() {
         var className = this.props.checked ? "btn btn-primary active" : "btn btn-primary"
 
+        if (this.props.checked) {
+            // Передаём родителю состояние переменных value и checked
+            if (typeof this.props.onChange === 'function') {
+                this.props.onChange(this.props.value)
+            }
+        }
+
         return {
-            className: className
+            checked: this.props.checked,
+            className: className,
         }
     },
     handleClick: function() {
+        this.setState({ checked: true })
+
+        // Передаём родителю состояние переменных value и checked
+        if (typeof this.props.onChange === 'function') {
+            this.props.onChange(this.props.value)
+        }
+
         // Передаём обработку клика родительскому компоненту
-        this.props.reClick(this.props.value)
+        if (typeof this.props.onClick === 'function') {
+            this.props.onClick()
+        }
+
+        // Обновляем статус чекбокса
+        //React.findDOMNode(this.refs.radio).checked = true
     },
     render: function() {
         return (
@@ -67,7 +117,8 @@ var ZRadioGroupButton = React.createClass({
             >
             <input
                 type="radio" 
-                ref="ZeroDegreeRadio"
+                ref="radio"
+                defaultChecked={this.state.checked}
             />
             {this.props.display}
         </label>
@@ -77,12 +128,9 @@ var ZRadioGroupButton = React.createClass({
 
 
 var ZCheckboxGroup = React.createClass({
-    // Обновляем ассоциативный массив всех определяющих компонент атрибутов
-    componentStateUpdate: function(key, value) {
-        var state = this.state.componentState
-        state[key] = value
-        this.setState({ componentState: state })
-        console.log('> ',state)
+    propTypes: {
+        onChange:   React.PropTypes.func,
+        onClick:    React.PropTypes.func,
     },
     getInitialState: function() {
         return {
@@ -90,12 +138,40 @@ var ZCheckboxGroup = React.createClass({
             componentState: {},
         }
     },
-    handleReClick: function(key, value) {
-        // Обновляем состояние массива componentState
-        this.componentStateUpdate(key, value)
+    // Обновляем ассоциативный массив всех определяющих компонент атрибутов
+    handleChange: function(key, value, obj) {
+        var state = this.state.componentState
+        state[key] = value
+        this.setState({ componentState: state })
 
-        // Передаём обработку родительскому компоненту
-        this.props.reClick(this.state.componentState)
+        // Передаём родителю состояние массива componentState
+        if (typeof this.props.onChange === 'function') {
+            this.props.onChange(state)
+        }
+
+        /*
+        joinedState = joinAsTrue(state)
+        //console.log('> ',joinedState)
+        // Проверяем, выбран ли хотя бы один атрибут
+        if (joinedState.length == 0) {
+            console.log('Необходимо выбрать хотя бы один атрибут')
+            obj.setState({ checked: true })
+            obj.setState({ className: "btn btn-primary active" })
+            console.log(obj)
+            React.findDOMNode(obj.refs.checkbox).checked = true
+        } else {
+            // Передаём родителю состояние массива componentState
+            if (typeof this.props.onChange === 'function') {
+                this.props.onChange(state)
+            }
+        }
+        */
+    },
+    handleReClick: function() {
+        // Передаём обработку клика родительскому компоненту
+        if (typeof this.props.onClick === 'function') {
+            this.props.onClick()
+        }
     },
     render: function() {
         var rows = []
@@ -106,8 +182,8 @@ var ZCheckboxGroup = React.createClass({
                 display={prop.display} 
                 value={prop.value}
                 checked={prop.checked}
-                reClick={this.handleReClick} 
-                reUpdate={this.componentStateUpdate}
+                onChange={this.handleChange}
+                onClick={this.handleReClick} 
             />)
         }.bind(this))
 
@@ -121,11 +197,27 @@ var ZCheckboxGroup = React.createClass({
 
 
 var ZCheckboxButton = React.createClass({
+    propTypes: {
+        value:      React.PropTypes.string,
+        display:    React.PropTypes.string,
+        checked:    React.PropTypes.bool,
+        onChange:   React.PropTypes.func,
+        onClick:    React.PropTypes.func,
+    },
+    getDefaultProps: function() {
+        return {
+            value: '',
+            display: '',
+            checked: false,
+        };
+    },
     getInitialState: function() {
         var className = this.props.checked ? "btn btn-primary active" : "btn btn-primary"
 
-        // Обновляем состояние родительского массива componentState
-        this.props.reClick(this.props.value, this.props.checked)
+        // Передаём родителю состояние переменных value и checked
+        if (typeof this.props.onChange === 'function') {
+            this.props.onChange(this.props.value, this.props.checked, this)
+        }
 
         return {
             checked: this.props.checked,
@@ -136,8 +228,15 @@ var ZCheckboxButton = React.createClass({
         var checked = this.state.checked ? false : true
         this.setState({ checked: checked })
 
+        // Передаём родителю состояние переменных value и checked
+        if (typeof this.props.onChange === 'function') {
+            this.props.onChange(this.props.value, checked, this)
+        }
+
         // Передаём обработку клика родительскому компоненту
-        this.props.reClick(this.props.value, checked)
+        if (typeof this.props.onClick === 'function') {
+            this.props.onClick()
+        }
 
         // Обновляем статус чекбокса
         React.findDOMNode(this.refs.checkbox).checked = checked
@@ -151,7 +250,6 @@ var ZCheckboxButton = React.createClass({
             <input
                 type="checkbox" 
                 ref="checkbox"
-                value='checkitup!'
                 defaultChecked={this.state.checked}
             />
             {this.props.display}
