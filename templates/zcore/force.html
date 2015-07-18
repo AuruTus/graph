@@ -37,9 +37,9 @@ function ForceLayout(containerID, id, attributesFilter){
 
 ForceLayout.prototype.update = function(gid, graphFilter) {
     // Преобразовываем массив json-данных graphFilter для передачи через url 
-    console.log('graphFilter attributesState', graphFilter.attributesState)
+    //console.log('graphFilter attributesState', graphFilter.attributesState)
     graphFilter = encodeURIComponent(JSON.stringify(graphFilter))
-    console.log('graphFilter', graphFilter)
+    //console.log('graphFilter', graphFilter)
 
     var url = '/json-force/' + gid + '/' + graphFilter + '/'
     
@@ -127,8 +127,7 @@ var force = new ForceLayout('.scene', gid, 'no;first_name;full_name')
 
 
 </script>
-<script src="{% static 'react/build/AttributesFilter.js' %}"></script>
-<script src="{% static 'react/build/OptionsFilter.js' %}"></script>
+<script src="{% static 'react/build/ZElements.js' %}"></script>
 <script src="{% static 'react/build/ForceFilter.js' %}"></script>
 {% endblock content %}
 

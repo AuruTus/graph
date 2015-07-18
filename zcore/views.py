@@ -347,9 +347,9 @@ def json_force(request, id, graphFilter):
 
     # Обрабатываем массив filterAttributes
     try:
-        attributesState = graphFilter['attributesState']
+        filterAttributes = graphFilter['filterAttributes']
     except:
-        returnErrorMessage('Неправильный json-массив attributesState')
+        returnErrorMessage('Неправильный json-массив filterAttributes')
         raise
 
     # Обрабатываем массив filterNodes
@@ -387,18 +387,16 @@ def json_force(request, id, graphFilter):
     else:
         G1 = G0
 
-    # Если передан массив атрибутов attributesState, производим фильтрацию аттрибутов
-    if len(attributesState) > 0:
-        pdev('Производим фильтрацию по переданным в attributesState атрибутам')
+    # Если передан массив атрибутов filterAttributes, производим фильтрацию аттрибутов
+    if len(filterAttributes) > 0:
+        pdev('Производим фильтрацию по переданным в filterAttributes атрибутам')
         nodes = G1.nodes(data=True)
         for node in nodes:
-            #print(G1.degree(node),'-',G1[node])
-            #print(GG.degree(node))
             nid = int(node[0])
             attributes = node[1]['attributes']
 
             for attribute in attributes:
-                if attribute['val'] not in attributesState:
+                if attribute['val'] not in filterAttributes:
                     try:
                         G1.remove_node(nid)
                     except:
@@ -513,14 +511,24 @@ def json_chord(request, id, removeStandalone, graphFilter):
 # Получаем словарь атрибутов в формате json
 def json_attributes(request):
     cursor = connections['mysql'].cursor()
-    sql = "SELECT id, name, display FROM propertydefs"
+    sql = "SELECT name, display FROM propertydefs"
 
     # Выполняем sql-запрос
     cursor.execute(sql)
 
     # Получаем массив значений результата sql-запроса в виде словаря:
     # "ключ": "значение". Это необходимо для преоразования в json-формат
-    data = dictfetchall(cursor)
+    attributes = dictfetchall(cursor)
+    data = []
+    initValues = ['doc_name', 'doc_timestamp']
+    for attribute in attributes:
+        value = attribute['name']
+        if value in initValues:
+            checked = True
+        else:
+            checked = False
+        display = attribute['display']
+        data.append({'value': value, 'display': display, 'checked': checked})
 
     # Преобразуем данные в json-формат
     content = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
