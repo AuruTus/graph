@@ -1,11 +1,13 @@
 var NewProjectFilter = React.createClass({
-    loadDataFromServer: function() {
+    loadAttributesDataFromServer: function() {
         $.ajax({
-            url: this.props.url,
+            // url по которому на стороне сервера формируется массив атрибутов узлов в формате json
+            url: '/json-attributes/',
+
             dataType: 'json',
             cache: false,
             success: function(data) {
-                this.setState({attributes: data});
+                this.setState({attributesProperties: data});
             }.bind(this),
             error: function(xhr, status, err) {
                 console.error(this.props.url, status, err.toString())
@@ -13,14 +15,15 @@ var NewProjectFilter = React.createClass({
         })
     },
     getInitialState: function() {
+        // Получаем массив атрибутов с сервера в формате json
+        this.loadAttributesDataFromServer()
+
         return {
-            attributes: [],
-            filterAttributes: ['doc_name', 'doc_timestamp', 'full_name'],
+            attributesProperties: [],
+            filterAttributes: {},
+
             filterOptions: {zero: 'yes'},
         }
-    },
-    componentDidMount: function() {
-        this.loadDataFromServer()
     },
     handleSubmit: function(e) {
         e.preventDefault();
@@ -30,6 +33,7 @@ var NewProjectFilter = React.createClass({
             filterAttributes: this.state.filterAttributes ,
             filterOptions: this.state.filterOptions
         } 
+        //console.log(this.constructor.displayName,' graphFilter > ',graphFilter)
 
         // Преобразовываем массив json-данных graphFilter для передачи через url 
         graphFilter = encodeURIComponent(JSON.stringify(graphFilter))
@@ -43,19 +47,28 @@ var NewProjectFilter = React.createClass({
         client.onreadystatechange = function() {
           if(this.readyState == this.HEADERS_RECEIVED) {
             //console.log(this.getAllResponseHeaders());
-            //location.reload()
+            location.reload()
           }
         }
 
+    },
+    handleChange: function(state) {
+        //console.log(this.constructor.displayName,' state > ',state)
+        this.setState({ filterAttributes: state })
+    },
+    handleReClick: function(e) {
+        //this.handleSubmit(e)
     },
     render: function() {
         return (
             <form onSubmit={this.handleSubmit} ref="forceGraphFilterForm">
                 <input type="submit" className="btn btn-warning" value="Создать" />
                 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                <AttributesList 
-                    attributes={this.state.attributes} 
-                    filterAttributes={this.state.filterAttributes}
+                <ZCheckboxGroup
+                    name='attributes'
+                    properties={this.state.attributesProperties}
+                    onChange={this.handleChange}
+                    //onClick={this.handleReClick}
                 />
             </form>
         );
@@ -69,6 +82,7 @@ var NewProjectFilter = React.createClass({
     },
 });
 
+/*
 var AttributesList = React.createClass({
     getInitialState: function() {
         // Задаём начальную инициализацию фильтра для выбранных атрибутов
@@ -154,10 +168,11 @@ var AttributeCheckbox = React.createClass({
         );
     }
 });
+*/
 
 
 React.render(
-    <NewProjectFilter url="/json-attributes/" />, 
+    <NewProjectFilter />, 
     document.getElementById('newProjectFilter')
 )
 

@@ -15,19 +15,20 @@ ForceGraphFilter
 var ForceGraphFilter = React.createClass({
     getInitialState: function() {
         return {
-            attributesState: [],
-            optionsState: [],
+            attributesState: {"doc_name": true, "doc_timestamp": true,},
+            optionsState: {}
         }
     },
     graphUpdate: function() {
+        console.log(this.constructor.displayName,' --------------------------------------------------------- > ','update graph')
         // Формируем массив json-данных graphFilter
         var graphFilter = { 
             filterAttributes: this.state.attributesState ,
             filterNodes: nodesList,
             filterOptions: this.state.optionsState,
         } 
-        //console.log('filterAttributes --> ',graphFilter.filterAttributes)
-        //console.log('filterOptions --> ',graphFilter.filterOptions)
+        //console.log('filterAttributes > ',graphFilter.filterAttributes)
+        //console.log('filterOptions > ',graphFilter.filterOptions)
         //console.log('graphFilter--> ',graphFilter)
 
         // Перерисовываем граф
@@ -35,15 +36,17 @@ var ForceGraphFilter = React.createClass({
     },
 
     handleAttributesFilterChange: function(state) {
-        //console.log('state > ',state)
-        state = joinAsTrue(state)
+        //console.log('filterAttributes > ',state)
+        var filterAttributes = joinAsTrue(state)
+        //console.log('joned filterAttributes > ',filterAttributes)
         //console.log('state[] > ',state)
         this.setState({ attributesState: state })
-        //console.log('state.state > ',this.state.attributesState)
+        //this.setState({ attributesState: filterAttributes })
+        //console.log('filterAttributes > ',this.state.attributesState)
     },
     handleAttributesFilterReClick: function() {
         // Перерисовываем граф
-        this.graphUpdate()        
+        //this.graphUpdate()        
     },
 
     handleOptionsFilterChange: function(state) {
@@ -52,25 +55,32 @@ var ForceGraphFilter = React.createClass({
     },
     handleOptionsFilterReClick: function(state) {
         // Перерисовываем граф
-        this.graphUpdate()        
+        //this.graphUpdate()        
     },
 
     handleReClick: function(state) {
+        //console.log('filterAttributes --> ',this.state.filterAttributes)
+        //console.log('filterOptions --> ',this.state.filterOptions)
         // Перерисовываем граф
         this.graphUpdate()        
+        console.log('---------------------------------------------> ','reclick')       
     },
     handleSubmit: function(e) {
         e.preventDefault()
         
         // Перерисовываем граф
         this.graphUpdate()        
+    },
+    handleResetClick: function(e) {
+        // Сбрасываем выделенные узлы
+        nodesListReset = true
 
-        nodesList = []
+        // Перерисовываем граф
+        this.graphUpdate()        
     },
     render: function() {
         // Обновляем граф при инициализации компонента
         this.graphUpdate()
-        //console.log('> ','gogogo')
 
         return (
             <form onSubmit={this.handleSubmit} ref="forceGraphFilterForm">
@@ -86,6 +96,13 @@ var ForceGraphFilter = React.createClass({
                     onChange={this.handleOptionsFilterChange}
                     onClick={this.handleReClick}
                     //onClick={this.handleOptionsFilterReClick}
+                />
+                <br />
+                <input
+                    type='button'
+                    className='btn'
+                    value='Сбросить выделенные узлы'
+                    onClick={this.handleResetClick}
                 />
             </form>
         )
@@ -175,6 +192,7 @@ var AttributesFilter = React.createClass({
         }
     },
     handleChange: function(state) {
+        //console.log(this.constructor.displayName,' state > ',state)
         this.setState({ checkboxGroupState: state })
 
         // Передаём родителю состояние массива checkboxGroupState
@@ -183,6 +201,7 @@ var AttributesFilter = React.createClass({
         }
     },
     handleReClick: function() {
+        //console.log(this.constructor.displayName,' > ',this.state.checkboxGroupState)
         // Передаём обработку клика родительскому компоненту
         if (typeof this.props.onClick === 'function') {
             this.props.onClick()

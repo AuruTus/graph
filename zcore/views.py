@@ -350,7 +350,7 @@ def json_force(request, id, graphFilter):
         filterAttributes = graphFilter['filterAttributes']
     except:
         returnErrorMessage('Неправильный json-массив filterAttributes')
-        raise
+        #raise
 
     # Обрабатываем массив filterNodes
     try:
@@ -364,7 +364,7 @@ def json_force(request, id, graphFilter):
         filterOptions = graphFilter['filterOptions']
     except:
         returnErrorMessage('Неправильный json-массив filterOptions')
-        raise
+        #raise
 
     graphData = json.loads(graph.body)
     G0 = json_graph.node_link_graph(graphData)
@@ -388,32 +388,54 @@ def json_force(request, id, graphFilter):
         G1 = G0
 
     # Если передан массив атрибутов filterAttributes, производим фильтрацию аттрибутов
-    if len(filterAttributes) > 0:
-        pdev('Производим фильтрацию по переданным в filterAttributes атрибутам')
-        print(filterAttributes)
+    if ('filterAttributes' in locals()) and (len(filterAttributes) > 0):
+        pdev('Производим фильтрацию в соответствии с переданными атрибутами в filterAttributes:\n' + str(filterAttributes))
+
+        # Преобразуем ассоциативный массив в обычный, с учётом знаения true
+        filterAttributesArray = []
+        for attr in filterAttributes:
+            if filterAttributes[attr]:
+                filterAttributesArray.append(attr)
+
         nodes = G1.nodes(data=True)
         for node in nodes:
+            #print(node)
             nid = int(node[0])
             attributes = node[1]['attributes']
 
             for attribute in attributes:
-                if attribute['val'] not in filterAttributes:
+                if attribute['val'] not in filterAttributesArray:
                     try:
                         G1.remove_node(nid)
                     except:
-                        pdev('Узел с id ',nid,' не найден')
+                        #pdev('Узел с id ' + str(nid) + ' не найден')
                         pass
 
-    # Если стоит фильтр на одиночные вершины - убираем их из графа
-    # Если передан массив дополнительных опций filterOptions, производим фильтрацию по выбранным опциям
-    if len(filterOptions) > 0:
-        pdev('Производим фильтрацию в соответствии с переданными опциями в filterOptions')
-        zero = filterOptions['zero']
-        nodes = G1.nodes()
-        for node in nodes:
-            if zero == 'no' and G1.degree(node) < 1:
-                #print('nid ',node,' degree ',G1.degree(node))
-                G1.remove_node(node)
+    # Если передан ассоциативный массив filterOptions, 
+    # то производим дополнительную обработку графа согласно опциям
+    if 'filterOptions' in locals():
+        pdev('Производим фильтрацию в соответствии с переданными опциями в filterOptions:\n' + str(filterOptions))
+
+        # Иницилизация пустого графа в случае опции pass: True
+        try:
+            zpass = filterOptions['pass']
+            #print('passsssss ',filterOptions['pass'])
+            if filterOptions["pass"]:
+                print('passsssss ',filterOptions['pass'])
+                G1 = nx.Graph()
+        except:
+            pass
+
+        try:
+            zero = filterOptions['zero']
+            # Если стоит фильтр на одиночные вершины - убираем их из графа
+            nodes = G1.nodes()
+            for node in nodes:
+                if zero == 'no' and G1.degree(node) < 1:
+                    #print('nid ',node,' degree ',G1.degree(node))
+                    G1.remove_node(node)
+        except:
+            pass
 
     data = json_graph.node_link_data(G1)
 

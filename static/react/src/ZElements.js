@@ -5,10 +5,15 @@ function joinAsTrue(obj) {
     var prop
     var joinAsTrue = []
     for (prop in obj) {
-        if (obj.hasOwnProperty(prop) && obj[prop]) {
+        //console.log('filterAttributes > ',obj[prop])
+
+        if (obj[prop] === true) {
+            //console.log('prop ',prop,' > ',obj[prop])
+            //console.log('filterAttributes > ',obj)
             joinAsTrue.push(prop)
         }
     }
+    //console.log('joinAsTrue > ',joinAsTrue)
     return joinAsTrue
 }
 
@@ -167,10 +172,11 @@ var ZCheckboxGroup = React.createClass({
         }
         */
     },
-    handleReClick: function() {
+    handleReClick: function(e) {
+        //console.log(this.constructor.displayName,' > ',this.state.ComponentState)
         // Передаём обработку клика родительскому компоненту
         if (typeof this.props.onClick === 'function') {
-            this.props.onClick()
+            this.props.onClick(e)
         }
     },
     render: function() {
@@ -224,7 +230,7 @@ var ZCheckboxButton = React.createClass({
             className: className,
         }
     },
-    handleClick: function() {
+    handleClick: function(e) {
         var checked = this.state.checked ? false : true
         this.setState({ checked: checked })
 
@@ -235,7 +241,7 @@ var ZCheckboxButton = React.createClass({
 
         // Передаём обработку клика родительскому компоненту
         if (typeof this.props.onClick === 'function') {
-            this.props.onClick()
+            this.props.onClick(e)
         }
 
         // Обновляем статус чекбокса

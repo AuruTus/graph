@@ -190,12 +190,18 @@ def create_filtered_graph(graphFilter):
     cursor.execute(sql) # Выполняем sql-запрос
     nodes = cursor.fetchall() # Получаем массив значений результата sql-запроса
 
+    # Преобразуем ассоциативный массив в обычный, с учётом знаения true
+    filterAttributesArray = []
+    for attr in filterAttributes:
+        if filterAttributes[attr]:
+            filterAttributesArray.append(attr)
+
     # В цикле проходимся по каждой строке результата запроса
     # и добавляем в граф узлы
     for node in nodes:
 
         # Формируем sql-запрос для выборки ИО, подходящих под параметры фильтра
-        filterAttributesString = "'" + "','".join(filterAttributes) + "'"
+        filterAttributesString = "'" + "','".join(filterAttributesArray) + "'"
         #sql = "SELECT prpdf.name, prpdf.display, prp.str_val FROM properties as prp, propertydefs as prpdf WHERE prp.def_id=prpdf.id AND target_id=%i AND prpdf.name IN (%s)" % (node[0], filterAttributesString)
 
 
