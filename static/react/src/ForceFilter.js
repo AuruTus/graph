@@ -15,12 +15,13 @@ ForceGraphFilter
 var ForceGraphFilter = React.createClass({
     getInitialState: function() {
         return {
-            attributesState: {"doc_name": true, "doc_timestamp": true,},
-            optionsState: {}
+            attributesState: {"doc_name": true, "doc_timestamp": true, "full_name": true},
+            optionsState: {},
+            filterNodes: [1092]
         }
     },
     graphUpdate: function() {
-        console.log(this.constructor.displayName,' --------------------------------------------------------- > ','update graph')
+        //console.log(this.constructor.displayName,' --------------------------------------------------------- > ','update graph')
         // Формируем массив json-данных graphFilter
         var graphFilter = { 
             filterAttributes: this.state.attributesState ,
@@ -63,7 +64,7 @@ var ForceGraphFilter = React.createClass({
         //console.log('filterOptions --> ',this.state.filterOptions)
         // Перерисовываем граф
         this.graphUpdate()        
-        console.log('---------------------------------------------> ','reclick')       
+        //console.log('---------------------------------------------> ','reclick')       
     },
     handleSubmit: function(e) {
         e.preventDefault()
@@ -73,14 +74,21 @@ var ForceGraphFilter = React.createClass({
     },
     handleResetClick: function(e) {
         // Сбрасываем выделенные узлы
+        this.setState({ filterNodes: [] })
         nodesListReset = true
 
         // Перерисовываем граф
         this.graphUpdate()        
     },
+    handleTextChange: function(e) {
+        // Сбрасываем выделенные узлы
+        //this.setState({ filterNodes: [] })
+    },
     render: function() {
         // Обновляем граф при инициализации компонента
         this.graphUpdate()
+                
+        //<br /> <input type="text" className="" value={this.state.filterNodes} onChange={this.handleTextChange} />
 
         return (
             <form onSubmit={this.handleSubmit} ref="forceGraphFilterForm">

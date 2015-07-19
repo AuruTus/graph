@@ -1,8 +1,6 @@
-
 /* Блок для вывода графа ************************************************************/
 
-var nodesList = []
-var nodesListReset = false
+//var nodesList = []
 
 function ForceLayout(containerID, id, attributesFilter){
     scale = 550
@@ -24,7 +22,8 @@ function ForceLayout(containerID, id, attributesFilter){
                 //.attr('transform', 'translate(15,15)')
 }
 
-ForceLayout.prototype.update = function(gid, graphFilter) {
+ForceLayout.prototype.update = function(gid, graphFilter, nodesListReset) {
+    nodesListReset = true
     // Преобразовываем массив json-данных graphFilter для передачи через url 
     //console.log('graphFilter attributesState', graphFilter.attributesState)
     graphFilter = encodeURIComponent(JSON.stringify(graphFilter))
@@ -50,19 +49,22 @@ ForceLayout.prototype.update = function(gid, graphFilter) {
         node.enter().append("circle")
             //.attr("id", function(d) { return d.id })
             .attr("class", "node")
-            .attr("r", 5)
+            //.attr("r", 5)
+            .attr("r", function(d) { return d.degree/3 + 5 })
             //.style("fill", function(d) { return this.color(d.attribute); })
             .call(this.force.drag)
+            /*
             .style("fill", function() {
+                //console.log('nodeslistrest > ',nodesListReset)
                 var color = false
                 if (nodesListReset === true) {
                     color = "steelblue"
-                    nodesList = []
-                    nodesListReset === false
+                    //nodesList = []
                 }
                 console.log(' > ',color)
                 return color
             })
+            */
             .on('click', function(d) {
                 if (inArray(d.id, nodesList)) {
                     nodesList.pop(d.id)
@@ -79,7 +81,7 @@ ForceLayout.prototype.update = function(gid, graphFilter) {
             .text(function(d) { 
                 var attributes = d.attributes
                 //console.log(attributes)
-                return d.data + '_' + d.id + '. Свойства: ' + attributes 
+                return d.data + '_' + d.id + ': ' + d.degree + '. Свойства: ' + attributes 
             }) 
             //.attr("transform", function(d){ return "translate("+d.x+","+d.y+")"; })
 
@@ -93,7 +95,7 @@ ForceLayout.prototype.update = function(gid, graphFilter) {
                 .attr("cy", function(d) { return d.y; })        
         })
     }.bind(this))
-    console.log(' --------------------------------------------------------- ^ ','graph has been updated')
+    //console.log(' --------------------------------------------------------- ^ ','graph has been updated')
 }
 /* /Блок для вывода графа ************************************************************/
 
@@ -106,10 +108,3 @@ var toggleColor = (function(){
     }
 })();
 
-
-/* Блок обработки фильтра ************************************************************/
-var filterAttributesID = '.filter .attributes'
-
-
-//filterSubmit('.filter .attributes')
-/* /Блок обработки фильтра ************************************************************/

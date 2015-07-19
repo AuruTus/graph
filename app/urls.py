@@ -12,11 +12,13 @@ urlpatterns = [
 urlpatterns += [
     url(r'^$', 'zcore.views.index', name='index'),
     url(r'^force/(?P<id>[-\w]+)/$', 'zcore.views.view_force', name='viewForce'),
+    url(r'^force-react/(?P<id>[-\w]+)/$', 'zcore.views.view_force_react', name='viewForceReact'),
     url(r'^chord/(?P<id>[-\w]+)/$', 'zcore.views.view_chord', name='viewChord'),
 
     url(r'^create-project/(?P<graphFilter>.*)/$', 'zcore.views.create_project'),
 
     url(r'^json-force/(?P<id>[-\w]+)/(?P<graphFilter>.*)/$', 'zcore.views.json_force', name='jsonForce'),
+    url(r'^json-force-react/(?P<id>[-\w]+)/(?P<graphFilter>.*)/$', 'zcore.views.json_force', name='jsonForceReact'),
 
     url(r'^json-attributes/$', 'zcore.views.json_attributes', name='jsonAttributes'),
 

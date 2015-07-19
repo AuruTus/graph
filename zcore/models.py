@@ -217,7 +217,8 @@ def create_filtered_graph(graphFilter):
     # Добавлям значеие веса узлов созданного графа в качестве атрибута degree
     for node in G.nodes():
         #print('degree ',G.degree(node))
-        G.add_node(node, degree=G.degree(node))
+        #G.add_node(node, degree=G.degree(node))
+        pass
 
     # Средствами бибилиотеки NetworkX,
     # экспортируем граф в виде подходящeм для json-сериализации

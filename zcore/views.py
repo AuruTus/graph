@@ -287,6 +287,12 @@ def to_chord(body):
     return data
 
 
+def view_force_react(request, id):
+    graph = get_object_or_404(Graph, pk=id)
+    context = {'graph': graph}
+    return render(request, 'zcore/force-react.html', context)
+
+
 def view_force(request, id):
     graph = get_object_or_404(Graph, pk=id)
     context = {'graph': graph}
@@ -437,6 +443,19 @@ def json_force(request, id, graphFilter):
         except:
             pass
 
+    # Добавлям кол-во атрибутов узла отфильтрованного графа в качестве атрибута numberOfAttributes
+    for node in G1.nodes(data=True):
+        #print('attr ',node[1]['attributes'])
+        numberOfAttributes = len(node[1]['attributes'][0])
+        G1.add_node(node[0], numberOfAttributes=numberOfAttributes)
+        pass
+
+    # Добавлям значеие веса узлов отфильтрованного графа в качестве атрибута degree
+    for node in G1.nodes():
+        #print('degree ',G1.degree(node))
+        G1.add_node(node, degree=G1.degree(node))
+        pass
+
     data = json_graph.node_link_data(G1)
 
     numberOfNodes = G1.number_of_nodes()
@@ -543,7 +562,7 @@ def json_attributes(request):
     # "ключ": "значение". Это необходимо для преоразования в json-формат
     attributes = dictfetchall(cursor)
     data = []
-    initValues = ['doc_name', 'doc_timestamp']
+    initValues = ['doc_name', 'doc_timestamp', 'full_name']
     for attribute in attributes:
         value = attribute['name']
         if value in initValues:

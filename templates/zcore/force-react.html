@@ -1,0 +1,26 @@
+{% extends "view.html" %}
+{% load staticfiles %}
+
+
+{% block side_bar %}
+    <div id="example"></div>
+    <div id="force-filter">Force filter</div>
+    <br /></div>
+
+    <script src="{% static 'react/build/ViewForce.js' %}"></script>
+{% endblock side_bar %}
+
+
+{% block content %}
+    <div class='scene'></div>
+
+    <script>
+    var gid = {{ graph.id }}
+    var nodesList = []
+    var force = new ForceLayout('.scene', gid, 'no;first_name;full_name')
+    </script>
+    <script src="{% static 'react/build/ZElements.js' %}"></script>
+    <script src="{% static 'react/build/ForceFilter.js' %}"></script>
+{% endblock content %}
+
+
