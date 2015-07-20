@@ -389,16 +389,16 @@ def json_forced3(request, id, graphFilter, nodesList):
                 G1.remove_node(node)
 
     if 'radius' in props:
-        print('radiusdegree')
-        # Добавлям значеие веса узлов отфильтрованного графа в качестве атрибута degree
-        for node in G1.nodes():
-            G1.add_node(node, radius=G1.degree(node))
-    else:
         print('radiusattributes')
         # Добавлям кол-во атрибутов узла отфильтрованного графа в качестве атрибута numberOfAttributes
         for node in G1.nodes(data=True):
             numberOfAttributes = len(node[1]['attributes'][0])
             G1.add_node(node[0], radius=numberOfAttributes)
+    else:
+        print('radiusdegree')
+        # Добавлям значеие веса узлов отфильтрованного графа в качестве атрибута degree
+        for node in G1.nodes():
+            G1.add_node(node, radius=G1.degree(node))
 
 
     # Добавлям значеие веса узлов отфильтрованного графа в качестве атрибута degree

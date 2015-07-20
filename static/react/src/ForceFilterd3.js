@@ -1,7 +1,7 @@
 var ForceFilterd3 = React.createClass({
     getInitialState: function() {
         return {
-            determine: {zero:false,radius:true},
+            determine: {},
             childSelectValue: undefined,
             nodesList: nodesList,
         }
@@ -34,6 +34,7 @@ var ForceFilterd3 = React.createClass({
     },
     render: function() {
         if (nodesList.length > 0) { nodesList = []}
+        if (filter.length > 0) { filter = []}
         return (
             <form onSubmit={this.handleSubmit} ref="forceGraphFilterForm">
                 <input type='checkbox' className='btn' value='zero' onChange={this.handleChange} />Спрятать вершины без связей
