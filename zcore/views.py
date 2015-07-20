@@ -296,9 +296,9 @@ def view_force_react(request, id, graphFilter):
     return render(request, 'zcore/force-react.html', context)
 
 
-def view_force(request, id, graphFilter):
+def view_force(request, id, graphFilter, nodesList):
     graph = get_object_or_404(Graph, pk=id)
-    context = {'graph': graph, 'filter': graphFilter}
+    context = {'graph': graph, 'filter': graphFilter, 'nodes': nodesList}
     return render(request, 'zcore/force.html', context)
 
 
@@ -343,7 +343,7 @@ def json_spring(request, id):
 
 
 # Визуализация графа по алгоритму force-direct
-def json_forced3(request, id, graphFilter):
+def json_forced3(request, id, graphFilter, nodesList):
     graph = get_object_or_404(Graph, pk=id)
 
     props = graphFilter.split(';')
@@ -352,8 +352,6 @@ def json_forced3(request, id, graphFilter):
     filterOptions = {}
     filterOptions['zero'] = 'yes'
 
-    filterNodes = []
-    #filterNodes = graphFilter['filterNodes']
 
     graphData = json.loads(graph.body)
     G0 = json_graph.node_link_graph(graphData)
@@ -362,21 +360,26 @@ def json_forced3(request, id, graphFilter):
     numberOfEdges = G0.number_of_edges()
     pdev('G.nodes %i, G.edges %i' % (numberOfNodes,numberOfEdges))
 
+    #print(nodesList)
     # Если передан массив узлов графа filterNodes, производим фильтрацию узлов
-    if len(filterNodes) > 0:
+    if len(nodesList) > 0:
+        filterNodes = nodesList.split(',')
         #pdev('Производим фильтрацию по переданным в filterNodes узлам')
         nodesList = []
         for nid in filterNodes:
-            nodesList.append(nid)
-            subs = nx.all_neighbors(G0, nid)
-            for sub in subs:
-                nodesList.append(sub)
+            if nid:
+                nid = int(nid)
+                print('nid>',nid)
+                nodesList.append(nid)
+                subs = nx.all_neighbors(G0, nid)
+                for sub in subs:
+                    nodesList.append(sub)
         G1 = G0.subgraph(nodesList)
     else:
         G1 = G0
 
 
-    if 'zerono' in props:
+    if 'zero' in props:
         print('zerono')
         # Если стоит фильтр на одиночные вершины - убираем их из графа
         nodes = G1.nodes()
@@ -385,18 +388,18 @@ def json_forced3(request, id, graphFilter):
             if G1.degree(node) < 1:
                 G1.remove_node(node)
 
-    if 'radiusattributes' in props:
+    if 'radius' in props:
+        print('radiusdegree')
+        # Добавлям значеие веса узлов отфильтрованного графа в качестве атрибута degree
+        for node in G1.nodes():
+            G1.add_node(node, radius=G1.degree(node))
+    else:
         print('radiusattributes')
         # Добавлям кол-во атрибутов узла отфильтрованного графа в качестве атрибута numberOfAttributes
         for node in G1.nodes(data=True):
             numberOfAttributes = len(node[1]['attributes'][0])
             G1.add_node(node[0], radius=numberOfAttributes)
 
-    if 'radiusdegree' in props:
-        print('radiusdegree')
-        # Добавлям значеие веса узлов отфильтрованного графа в качестве атрибута degree
-        for node in G1.nodes():
-            G1.add_node(node, radius=G1.degree(node))
 
     # Добавлям значеие веса узлов отфильтрованного графа в качестве атрибута degree
     for node in G1.nodes():

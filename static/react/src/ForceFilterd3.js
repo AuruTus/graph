@@ -1,234 +1,103 @@
-/* 
-Иерархия компонента:
-
-ForceGraphFilter
-- OptionsFilter
--- ZRadioGroup
---- ZRadioGroupButton
-- AttributesFilter
--- ZCheckboxGroup
---- ZCheckboxButton
-
-*/
-
-
 var ForceFilterd3 = React.createClass({
     getInitialState: function() {
         return {
-            attributesState: {"doc_name": true, "doc_timestamp": true, "full_name": true},
-            optionsState: {},
-            filterNodes: nodesList,
+            determine: {zero:false,radius:true},
+            childSelectValue: undefined,
+            nodesList: nodesList,
         }
-    },
-    graphUpdate: function() {
-        console.log(this.constructor.displayName,' --------------------------------------------------------- > ','update graph')
-        // Формируем массив json-данных graphFilter
-        var graphFilter = { 
-            filterAttributes: this.state.attributesState ,
-            filterNodes: nodesList,
-            filterOptions: this.state.optionsState,
-        } 
-        //console.log('filterAttributes > ',graphFilter.filterAttributes)
-        //console.log('filterOptions > ',graphFilter.filterOptions)
-        //console.log('graphFilter--> ',graphFilter)
-
-        // Перерисовываем граф
-        force.update(gid, graphFilter)
-    },
-
-    handleAttributesFilterChange: function(state) {
-        //console.log('filterAttributes > ',state)
-        //var filterAttributes = joinAsTrue(state)
-        //console.log('joned filterAttributes > ',filterAttributes)
-        //console.log('state[] > ',state)
-        this.setState({ attributesState: state, })
-        //this.setState({ attributesState: filterAttributes })
-        //console.log('filterAttributes > ',this.state.attributesState)
-    },
-    handleAttributesFilterReClick: function() {
-        // Перерисовываем граф
-        //this.graphUpdate()        
-    },
-
-    handleOptionsFilterChange: function(state) {
-        this.setState({ optionsState: state })
-        //console.log('>>> ',state)
-    },
-    handleOptionsFilterReClick: function(state) {
-        // Перерисовываем граф
-        //this.graphUpdate()        
-    },
-
-    handleReClick: function(state) {
-        //console.log('filterAttributes --> ',this.state.filterAttributes)
-        //console.log('filterOptions --> ',this.state.filterOptions)
-        // Перерисовываем граф
-        //this.graphUpdate()        
-        //console.log('---------------------------------------------> ','reclick')       
     },
     handleSubmit: function(e) {
         e.preventDefault()
-
-        this.setState({ filterNodes: nodesList }) 
-        
-        // Перерисовываем граф
-        //this.graphUpdate()        
+        console.log(this.constructor.displayName,' > ',this.state.determine)
+        var filterArr = joinAsTrue(this.state.determine)
+        filter = filterArr.join(';')
+        console.log(this.constructor.displayName,' > ',filter)
+        window.location.assign('/force/'+gid+'/'+filter+'/'+nodesList+'/')
     },
-    handleResetClick: function(e) {
-        // Сбрасываем выделенные узлы
-        this.setState({ filterNodes: [] })
-        //nodesListReset = true
-        nodesList = []
+    handleChange: function(e) {
+        key = e.target.value
+        console.log(this.constructor.displayName,' > ',key)
+        var value = this.state.determine[key] ? false : true
+        console.log(this.constructor.displayName,' > ',value)
 
-        // Перерисовываем граф
-        //this.graphUpdate()        
+        var state = this.state.determine
+        state[key] = value
+        this.setState({
+            determine: state
+        })
     },
-    handleTextChange: function(e) {
-        // Сбрасываем выделенные узлы
-        //this.setState({ filterNodes: [] })
+    changeSelectHandler: function(e) {
+        console.log(this.constructor.displayName,' > ',e.target.value)
+        this.setState({
+            childSelectValue: e.target.value
+        })
     },
     render: function() {
-        this.graphUpdate() // Обновляем граф при инициализации компонента
-                
-        //<br /> <input type="text" className="" value={this.state.filterNodes} onChange={this.handleTextChange} />
-
+        if (nodesList.length > 0) { nodesList = []}
         return (
             <form onSubmit={this.handleSubmit} ref="forceGraphFilterForm">
-                <input type="submit" className="btn btn-warning" value="Отфильтровать" />
+                <input type='checkbox' className='btn' value='zero' onChange={this.handleChange} />Спрятать вершины без связей
                 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                <AttributesFilter
-                    onChange={this.handleAttributesFilterChange}
-                    //onClick={this.handleReClick}
-                    //onClick={this.handleAttributesFilterReClick}
-                />
-                <br /><br />
-                <OptionsFilter 
-                    onChange={this.handleOptionsFilterChange}
-                    //onClick={this.handleReClick}
-                    //onClick={this.handleOptionsFilterReClick}
-                /><br />
+                <input type='checkbox' className='btn' value='radius' onClick={this.handleChange} />Выделять кол-во связей/атрибутов
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 
                 <div>
-                    <input type='button' className='col-sm-2 btn' value='Сбросить выделенные узлы' onClick={this.handleResetClick} />
-                    <div className="col-sm-10">
-                        <input value={this.state.filterNodes} className="form-control" type="text" placeholder="Nodes list"  id="disabledInput" disabled/>
-                    </div>
-                </div><br />
+                <MySelect 
+                    url="/json-attributes/"
+                    value={this.state.childSelectValue}
+                    onChange={this.changeSelectHandler} 
+                />
+                </div>
 
+                <br /><br />
+                <input type="submit" className="btn btn-warning" value="Отфильтровать" />
             </form>
-        )
-    },
-});
-
-
-var OptionsFilter = React.createClass({
-    getInitialState: function() {
-        return {
-            zeroDegreeProperties: [
-                {value: 'yes', display: 'Отображать узлы без связей', checked: true},
-                {value: 'no', display: 'не отображать', checked: false},
-            ],
-            nodeRadiusProperties: [
-                {value: 'byDegree', display: 'Радиус узла по весу', checked: true},
-                {value: 'byAttributes', display: 'по кол-ву атрибутов', checked: false},
-            ],
-            // Ассоциативный массив всех определяющих компонент атрибутов
-            componentState: {},
-        }
-    },
-    handleChange: function(key, value) {
-        // Обновляем состояние массива optionsState
-        var state = this.state.componentState
-        state[key] = value
-        this.setState({ componentState: state })
-
-        // Передаём обработку родительскому компоненту
-        if (typeof this.props.onChange === 'function') {
-            this.props.onChange(state)
-        }
-    },
-    handleReClick: function() {
-        // Передаём обработку клика родительскому компоненту
-        if (typeof this.props.onClick === 'function') {
-            this.props.onClick()
-        }
-    },
-    render: function() {
-        return (
-            <div>
-            <ZRadioGroup
-                name='zero'
-                properties={this.state.zeroDegreeProperties}
-                onChange={this.handleChange}
-                onClick={this.handleReClick}
-            />
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-            <ZRadioGroup
-                name='radius'
-                properties={this.state.nodeRadiusProperties}
-                onChange={this.handleChange}
-                onClick={this.handleReClick}
-            />
-            </div>
         )
     },
 })
 
 
-var AttributesFilter = React.createClass({
-    // Получаем массив атрибутов с сервера в формате json
-    loadDataFromServer: function() {
+var MySelect = React.createClass({
+    propTypes: {
+        url: React.PropTypes.string.isRequired
+    },
+    getInitialState: function() {
+        return {
+            options: [],
+            properties: [],
+        }
+    },
+    componentDidMount: function() {
+        // get your data
         $.ajax({
             // url по которому на стороне сервера формируется массив атрибутов узлов в формате json
-            url: '/json-attributes/',
+            url: this.props.url,
 
             dataType: 'json',
             cache: false,
             success: function(data) {
-                this.setState({attributesFilterProperties: data})
+                this.setState({properties: data})
             }.bind(this),
             error: function(xhr, status, err) {
                 console.error(this.props.url, status, err.toString())
             }.bind(this)
         })
     },
-    getInitialState: function() {
-        return {
-            // Ассоциативный массив состояний группы чекбоксов
-            checkboxGroupState: {},
-
-            // Входной массив атрубутов
-            attributesFilterProperties: [],
-        }
-    },
-    componentDidMount: function() {
-        // Получаем массив атрибутов с сервера в формате json
-        this.loadDataFromServer()
-    },
-    handleChange: function(state) {
-        //console.log(this.constructor.displayName,' state > ',state)
-        this.setState({ checkboxGroupState: state })
-
-        // Передаём родителю состояние массива checkboxGroupState
-        if (typeof this.props.onChange === 'function') {
-            this.props.onChange(state)
-        }
-    },
-    handleReClick: function() {
-        //console.log(this.constructor.displayName,' > ',this.state.checkboxGroupState)
-        // Передаём обработку клика родительскому компоненту
-        if (typeof this.props.onClick === 'function') {
-            this.props.onClick()
-        }
+    handlerChange: function (e) {
+        this.props.onChange(e)
     },
     render: function() {
+        var optionsArray = []
+        data = this.state.properties
+        for (var i = 0; i < data.length; i++) {
+            var option = data[i];
+            //console.log(this.constructor.displayName,' > ',option)
+            optionsArray.push(
+                <option key={i} value={option.value} onChange={this.handlerChange}>{option.display}</option>
+            );
+        }
         return (
-            <ZCheckboxGroup
-                name='attributes'
-                properties={this.state.attributesFilterProperties}
-                onChange={this.handleChange}
-                onClick={this.handleReClick}
-            />
+            <select onChange={this.handlerChange}>{optionsArray}</select>
         )
     }
 });
