@@ -12,7 +12,7 @@ ForceGraphFilter
 */
 
 
-var ForceGraphFilter = React.createClass({
+var ForceFilterd3 = React.createClass({
     getInitialState: function() {
         return {
             attributesState: {"doc_name": true, "doc_timestamp": true, "full_name": true},
@@ -235,8 +235,8 @@ var AttributesFilter = React.createClass({
 
 
 React.render(
-    <ForceGraphFilter />,
-    document.getElementById('force-filter')
+    <ForceFilterd3 />,
+    document.getElementById('force-filterd3')
 );
 
 
