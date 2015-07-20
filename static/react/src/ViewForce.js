@@ -2,7 +2,7 @@
 
 //var nodesList = []
 
-function ForceLayout(containerID, id, attributesFilter){
+function ForceLayout(containerID, id, graphFilter){
     scale = 550
     width = 600
     height = 600
@@ -20,14 +20,22 @@ function ForceLayout(containerID, id, attributesFilter){
             .attr("height", height)
             .append("g")
                 //.attr('transform', 'translate(15,15)')
+
+    if (graphFilter) {
+        //console.log('graphfileter > ',graphFilter)
+        //this.update(id, graphFilter)
+    }
 }
 
 ForceLayout.prototype.update = function(gid, graphFilter, nodesListReset) {
     nodesListReset = true
+    var filterNodesLength = graphFilter.filterNodes.length
+    nodeRadius = graphFilter.filterOptions.radius
+    console.log(this.constructor.displayName,' > ',nodeRadius)
+
     // Преобразовываем массив json-данных graphFilter для передачи через url 
     //console.log('graphFilter attributesState', graphFilter.attributesState)
     graphFilter = encodeURIComponent(JSON.stringify(graphFilter))
-    //console.log('graphFilter', graphFilter)
 
     var url = '/json-force/' + gid + '/' + graphFilter + '/'
     
@@ -50,7 +58,17 @@ ForceLayout.prototype.update = function(gid, graphFilter, nodesListReset) {
             //.attr("id", function(d) { return d.id })
             .attr("class", "node")
             //.attr("r", 5)
-            .attr("r", function(d) { return d.degree/3 + 5 })
+            .attr("r", function(d) { 
+                var attr = 0
+        console.log('nrnrnr > ',nodeRadius)
+                if (nodeRadius == 'byDegree') {
+                    attr = d.degree
+                } else {
+        console.log('aaaa > ',d.numberOfAttributes)
+                    attr = d.numberOfAttributes
+                }
+                return attr/3 + 5 
+            })
             //.style("fill", function(d) { return this.color(d.attribute); })
             .call(this.force.drag)
             /*
@@ -75,8 +93,6 @@ ForceLayout.prototype.update = function(gid, graphFilter, nodesListReset) {
                 }
             })
 
-        node.exit().remove()
-
         node.append("title")
             .text(function(d) { 
                 var attributes = d.attributes
@@ -94,6 +110,8 @@ ForceLayout.prototype.update = function(gid, graphFilter, nodesListReset) {
             node.attr("cx", function(d) { return d.x; })
                 .attr("cy", function(d) { return d.y; })        
         })
+
+        node.exit().remove()
     }.bind(this))
     //console.log(' --------------------------------------------------------- ^ ','graph has been updated')
 }

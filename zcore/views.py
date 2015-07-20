@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+#import jsonurl
 import networkx as nx
 from networkx.readwrite import json_graph
 from random import randint
@@ -287,15 +288,17 @@ def to_chord(body):
     return data
 
 
-def view_force_react(request, id):
+def view_force_react(request, id, graphFilter):
     graph = get_object_or_404(Graph, pk=id)
-    context = {'graph': graph}
+    #print(graphFilter)
+    #jsonurl.query_string(graphFilter)
+    context = {'filter': graphFilter, 'graph': graph}
     return render(request, 'zcore/force-react.html', context)
 
 
-def view_force(request, id):
+def view_force(request, id, graphFilter):
     graph = get_object_or_404(Graph, pk=id)
-    context = {'graph': graph}
+    context = {'graph': graph, 'filter': graphFilter}
     return render(request, 'zcore/force.html', context)
 
 
@@ -340,6 +343,86 @@ def json_spring(request, id):
 
 
 # Визуализация графа по алгоритму force-direct
+def json_forced3(request, id, graphFilter):
+    graph = get_object_or_404(Graph, pk=id)
+
+    props = graphFilter.split(';')
+    print(props)
+
+    filterOptions = {}
+    filterOptions['zero'] = 'yes'
+
+    filterNodes = []
+    #filterNodes = graphFilter['filterNodes']
+
+    graphData = json.loads(graph.body)
+    G0 = json_graph.node_link_graph(graphData)
+
+    numberOfNodes = G0.number_of_nodes()
+    numberOfEdges = G0.number_of_edges()
+    pdev('G.nodes %i, G.edges %i' % (numberOfNodes,numberOfEdges))
+
+    # Если передан массив узлов графа filterNodes, производим фильтрацию узлов
+    if len(filterNodes) > 0:
+        #pdev('Производим фильтрацию по переданным в filterNodes узлам')
+        nodesList = []
+        for nid in filterNodes:
+            nodesList.append(nid)
+            subs = nx.all_neighbors(G0, nid)
+            for sub in subs:
+                nodesList.append(sub)
+        G1 = G0.subgraph(nodesList)
+    else:
+        G1 = G0
+
+
+    if 'zerono' in props:
+        print('zerono')
+        # Если стоит фильтр на одиночные вершины - убираем их из графа
+        nodes = G1.nodes()
+        for node in nodes:
+            #print('node %i - degree %i' % (node,G1.degree(node)))
+            if G1.degree(node) < 1:
+                G1.remove_node(node)
+
+    if 'radiusattributes' in props:
+        print('radiusattributes')
+        # Добавлям кол-во атрибутов узла отфильтрованного графа в качестве атрибута numberOfAttributes
+        for node in G1.nodes(data=True):
+            numberOfAttributes = len(node[1]['attributes'][0])
+            G1.add_node(node[0], radius=numberOfAttributes)
+
+    if 'radiusdegree' in props:
+        print('radiusdegree')
+        # Добавлям значеие веса узлов отфильтрованного графа в качестве атрибута degree
+        for node in G1.nodes():
+            G1.add_node(node, radius=G1.degree(node))
+
+    # Добавлям значеие веса узлов отфильтрованного графа в качестве атрибута degree
+    for node in G1.nodes():
+        G1.add_node(node, degree=G1.degree(node))
+
+    data = json_graph.node_link_data(G1)
+
+    numberOfNodes = G1.number_of_nodes()
+    data['graph'].append({'numberOfNodes': numberOfNodes})
+
+    numberOfEdges = G1.number_of_edges()
+    data['graph'].append({'numberOfEdges': numberOfEdges})
+
+    #data = G0data
+    result = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
+    #result=graph.body
+
+    content = result
+    response = HttpResponse()
+    response['Content-Type'] = "text/javascript; charset=utf-8"
+    response.write(content)
+
+    return response 
+
+
+# Визуализация графа по алгоритму force-direct
 def json_force(request, id, graphFilter):
     graph = get_object_or_404(Graph, pk=id)
 
@@ -376,13 +459,12 @@ def json_force(request, id, graphFilter):
     G0 = json_graph.node_link_graph(graphData)
 
     numberOfNodes = G0.number_of_nodes()
-    pdev('Gnodes %i' % (numberOfNodes))
     numberOfEdges = G0.number_of_edges()
-    pdev('Gedges %i' %(numberOfEdges))
+    pdev('G.nodes %i, G.edges %i' % (numberOfNodes,numberOfEdges))
 
     # Если передан массив узлов графа filterNodes, производим фильтрацию узлов
     if len(filterNodes) > 0:
-        pdev('Производим фильтрацию по переданным в filterNodes узлам')
+        #pdev('Производим фильтрацию по переданным в filterNodes узлам')
         nodesList = []
         for nid in filterNodes:
             nodesList.append(nid)
@@ -395,7 +477,7 @@ def json_force(request, id, graphFilter):
 
     # Если передан массив атрибутов filterAttributes, производим фильтрацию аттрибутов
     if ('filterAttributes' in locals()) and (len(filterAttributes) > 0):
-        pdev('Производим фильтрацию в соответствии с переданными атрибутами в filterAttributes:\n' + str(filterAttributes))
+        #pdev('Производим фильтрацию в соответствии с переданными атрибутами в filterAttributes:\n' + str(filterAttributes))
 
         # Преобразуем ассоциативный массив в обычный, с учётом знаения true
         filterAttributesArray = []
@@ -420,7 +502,7 @@ def json_force(request, id, graphFilter):
     # Если передан ассоциативный массив filterOptions, 
     # то производим дополнительную обработку графа согласно опциям
     if 'filterOptions' in locals():
-        pdev('Производим фильтрацию в соответствии с переданными опциями в filterOptions:\n' + str(filterOptions))
+        #pdev('Производим фильтрацию в соответствии с переданными опциями в filterOptions:\n' + str(filterOptions))
 
         # Иницилизация пустого графа в случае опции pass: True
         try:

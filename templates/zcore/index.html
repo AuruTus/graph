@@ -14,17 +14,13 @@
 
 
 {% block content %}
-2. радибатон - выделение размером по кол-ву связей или кол-ву атрибутов<br />
-3. радиобатон - выделение цветом атрибута <br />
-- дать время на загрузку данных в процессе инициализации компонентов интерфейса
-- присоздании графа добавить опцию zero
 <h1>Проекты</h1>
 <ul>
 {% for graph in graphs %}
     <li>
         <a href="/admin/zcore/graph/{{ graph.id }}" target=blank>Проект {{ graph.id }}</a>
         -
-        <a href="{% url 'viewForceReact' graph.id %}" target=blank>{{ graph.title }}</a> 
+        <a href="{% url 'viewForceReact' graph.id test %}" target=blank>{{ graph.title }}</a> 
     </li>
 {% endfor %}
 </ul>

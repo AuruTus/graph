@@ -36,7 +36,7 @@ var ZRadioGroup = React.createClass({
 
         // Передаём родителю состояние массива componentState
         if (typeof this.props.onChange === 'function') {
-            this.props.onChange(this.props.name, value)
+            this.props.onChange(this.props.name, value, this.props.name)
         }
     },
     handleReClick: function() {

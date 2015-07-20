@@ -4,7 +4,7 @@
 
 {% block side_bar %}
 <div id="example"></div>
-<div id="force-filter">Force filter</div>
+<div id="force-filterd3"></div>
 
 
 <br />
@@ -40,10 +40,10 @@ function ForceLayout(containerID, id, attributesFilter){
 ForceLayout.prototype.update = function(gid, graphFilter) {
     // Преобразовываем массив json-данных graphFilter для передачи через url 
     //console.log('graphFilter attributesState', graphFilter.attributesState)
-    graphFilter = encodeURIComponent(JSON.stringify(graphFilter))
+    //graphFilter = encodeURIComponent(JSON.stringify(graphFilter))
     //console.log('graphFilter', graphFilter)
 
-    var url = '/json-force/' + gid + '/' + graphFilter + '/'
+    var url = '/json-forced3/' + gid + '/' + graphFilter + '/'
 
     //console.log('nodeslistrest > ',nodesListReset)
     if (nodesListReset === true) {
@@ -132,14 +132,13 @@ var toggleColor = (function(){
 
 /* Блок обработки фильтра ************************************************************/
 var filterAttributesID = '.filter .attributes',
-    gid = {{ graph.id }} 
-
+    gid = {{ graph.id }}, 
+    filter = "{{ filter }}"
 
 //filterSubmit('.filter .attributes')
 /* /Блок обработки фильтра ************************************************************/
 
 </script>
-
 {% endblock side_bar %}
 
 
@@ -148,11 +147,11 @@ var filterAttributesID = '.filter .attributes',
 
 <script>
 var force = new ForceLayout('.scene', gid, 'no;first_name;full_name')
+force.update(gid, filter)
 
 
 </script>
-<script src="{% static 'react/build/ZElements.js' %}"></script>
-<script src="{% static 'react/build/ForceFilter.js' %}"></script>
+<script src="{% static 'react/build/ForceFilterd3.js' %}"></script>
 {% endblock content %}
 
 
