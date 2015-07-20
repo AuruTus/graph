@@ -296,9 +296,9 @@ def view_force_react(request, id, graphFilter):
     return render(request, 'zcore/force-react.html', context)
 
 
-def view_force(request, id, graphFilter, nodesList):
+def view_force(request, id, graphFilter, nodesList, color):
     graph = get_object_or_404(Graph, pk=id)
-    context = {'graph': graph, 'filter': graphFilter, 'nodes': nodesList}
+    context = {'graph': graph, 'filter': graphFilter, 'nodes': nodesList, 'color': color}
     return render(request, 'zcore/force.html', context)
 
 
@@ -343,7 +343,7 @@ def json_spring(request, id):
 
 
 # Визуализация графа по алгоритму force-direct
-def json_forced3(request, id, graphFilter, nodesList):
+def json_forced3(request, id, graphFilter, nodesList, color):
     graph = get_object_or_404(Graph, pk=id)
 
     props = graphFilter.split(';')

@@ -2,7 +2,7 @@ var ForceFilterd3 = React.createClass({
     getInitialState: function() {
         return {
             determine: {},
-            childSelectValue: undefined,
+            childSelectValue: '',
             nodesList: nodesList,
         }
     },
@@ -11,8 +11,9 @@ var ForceFilterd3 = React.createClass({
         console.log(this.constructor.displayName,' > ',this.state.determine)
         var filterArr = joinAsTrue(this.state.determine)
         filter = filterArr.join(';')
+        color = this.state.childSelectValue
         console.log(this.constructor.displayName,' > ',filter)
-        window.location.assign('/force/'+gid+'/'+filter+'/'+nodesList+'/')
+        window.location.assign('/force/'+gid+'/'+filter+'/'+nodesList+'/'+color+'/')
     },
     handleChange: function(e) {
         key = e.target.value
