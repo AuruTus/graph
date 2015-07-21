@@ -22,7 +22,7 @@ var NewProjectFilter = React.createClass({
             attributesProperties: [],
             filterAttributes: {},
 
-            filterOptions: {zero: 'yes'},
+            filterOptions: {zero: 'no'},
         }
     },
     handleSubmit: function(e) {

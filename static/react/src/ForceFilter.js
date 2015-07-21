@@ -18,22 +18,23 @@ var ForceGraphFilter = React.createClass({
             attributesState: {"doc_name": true, "doc_timestamp": true, "full_name": true},
             optionsState: {},
             filterNodes: nodesList,
+            force: new ForceLayout('.scene', gid)
         }
     },
     graphUpdate: function() {
-        console.log(this.constructor.displayName,' --------------------------------------------------------- > ','update graph')
+        //console.log(this.constructor.displayName,' --------------------------------------------------------- > ','update graph')
         // Формируем массив json-данных graphFilter
-        var graphFilter = { 
-            filterAttributes: this.state.attributesState ,
-            filterNodes: nodesList,
-            filterOptions: this.state.optionsState,
+        var gfilter = { 
+            attributes: this.state.attributesState ,
+            nodes: nodesList,
+            options: this.state.optionsState,
         } 
         //console.log('filterAttributes > ',graphFilter.filterAttributes)
         //console.log('filterOptions > ',graphFilter.filterOptions)
         //console.log('graphFilter--> ',graphFilter)
 
         // Перерисовываем граф
-        force.update(gid, graphFilter)
+        this.state.force.update(gid, gfilter)
     },
 
     handleAttributesFilterChange: function(state) {
@@ -125,8 +126,8 @@ var OptionsFilter = React.createClass({
     getInitialState: function() {
         return {
             zeroDegreeProperties: [
-                {value: 'yes', display: 'Отображать узлы без связей', checked: true},
-                {value: 'no', display: 'не отображать', checked: false},
+                {value: 'true', display: 'Убирать узлы без связей', checked: true},
+                {value: 'false', display: 'отображать', checked: false},
             ],
             nodeRadiusProperties: [
                 {value: 'byDegree', display: 'Радиус узла по весу', checked: true},

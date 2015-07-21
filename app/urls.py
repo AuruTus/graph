@@ -17,12 +17,13 @@ urlpatterns += [
 
     url(r'^create-project/(?P<graphFilter>.*)/$', 'zcore.views.create_project'),
 
-    url(r'^json-force/(?P<id>[-\w]+)/(?P<graphFilter>.*)/$', 'zcore.views.json_force', name='jsonForce'),
+    url(r'^json-force/(?P<id>[-\w]+)/(?P<gfilter>.*)/$', 'zcore.views.json_force', name='jsonForce'),
     url(r'^json-forced3/(?P<id>[-\w]+)/(?P<graphFilter>.*)/(?P<nodesList>.*)/(?P<color>.*)/$', 'zcore.views.json_forced3', name='jsonForced3'),
     url(r'^json-force-react/(?P<id>[-\w]+)/(?P<graphFilter>.*)/$', 'zcore.views.json_force', name='jsonForceReact'),
 
     url(r'^json-attributes/$', 'zcore.views.json_attributes', name='jsonAttributes'),
 
+    url(r'^json-chord/(?P<id>[-\w]+)/(?P<gfilter>.*)/$', 'zcore.views.json_chord', name='jsonChord'),
     #url(r'^json-chord/(?P<id>[-\w]+)/rs/(?P<removeStandalone>[-\w]+)/filter/(?P<attributesFilter>[-\w]+)/$', 'zcore.views.json_chord', name='jsonChord'),
 ]
 

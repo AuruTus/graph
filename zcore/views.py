@@ -15,6 +15,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from .models import Graph, Node, create_filtered_graph, print_json, pdev
+from .models import GFilterNodes, GFilterAttributes, GFilterZero
 
 
 def responseJSON(data):
@@ -342,6 +343,7 @@ def json_spring(request, id):
     return response 
 
 
+# Для тестирования
 # Визуализация графа по алгоритму force-direct
 def json_forced3(request, id, graphFilter, nodesList, color):
     graph = get_object_or_404(Graph, pk=id)
@@ -426,142 +428,65 @@ def json_forced3(request, id, graphFilter, nodesList, color):
 
 
 # Визуализация графа по алгоритму force-direct
-def json_force(request, id, graphFilter):
-    graph = get_object_or_404(Graph, pk=id)
-
-    # Преобразуем в объект json-массив параметров, полученных из url 
+def json_force(request, id, gfilter):
     try: 
-        graphFilter = json.loads(graphFilter)
-        print_json(graphFilter)
+        # Преобразуем в объект json-массив параметров, полученных из url 
+        gfilter = json.loads(gfilter)
+        print_json(gfilter)
     except:
         returnErrorMessage('Неправильный json-массив graphFilter')
         raise
 
-    # Обрабатываем массив filterAttributes
-    try:
-        filterAttributes = graphFilter['filterAttributes']
-    except:
-        returnErrorMessage('Неправильный json-массив filterAttributes')
-        #raise
-
-    # Обрабатываем массив filterNodes
-    try:
-        filterNodes = graphFilter['filterNodes']
-    except:
-        returnErrorMessage('Неправильный json-массив filterNodes')
-        raise
-
-    # Обрабатываем массив filterOptions
-    try:
-        filterOptions = graphFilter['filterOptions']
-    except:
-        returnErrorMessage('Неправильный json-массив filterOptions')
-        #raise
-
+    graph = get_object_or_404(Graph, pk=id)
     graphData = json.loads(graph.body)
-    G0 = json_graph.node_link_graph(graphData)
+    G = json_graph.node_link_graph(graphData)
 
-    numberOfNodes = G0.number_of_nodes()
-    numberOfEdges = G0.number_of_edges()
-    pdev('G.nodes %i, G.edges %i' % (numberOfNodes,numberOfEdges))
+    try:
+        # Исключаем из графа узлы с нулевым весом (без связей)
+        G = GFilterZero(G, gfilter['options']['zero'])
+    except: pass
 
-    # Если передан массив узлов графа filterNodes, производим фильтрацию узлов
-    if len(filterNodes) > 0:
-        #pdev('Производим фильтрацию по переданным в filterNodes узлам')
-        nodesList = []
-        for nid in filterNodes:
-            nodesList.append(nid)
-            subs = nx.all_neighbors(G0, nid)
-            for sub in subs:
-                nodesList.append(sub)
-        G1 = G0.subgraph(nodesList)
-    else:
-        G1 = G0
+    try:
+        # Производим фильтрацию графа по переданным в списке nodes узлам
+        G = GFilterNodes(G,gfilter['nodes'])
+    except: pass
 
-    # Если передан массив атрибутов filterAttributes, производим фильтрацию аттрибутов
-    if ('filterAttributes' in locals()) and (len(filterAttributes) > 0):
-        #pdev('Производим фильтрацию в соответствии с переданными атрибутами в filterAttributes:\n' + str(filterAttributes))
-
-        # Преобразуем ассоциативный массив в обычный, с учётом знаения true
-        filterAttributesArray = []
-        for attr in filterAttributes:
-            if filterAttributes[attr]:
-                filterAttributesArray.append(attr)
-
-        nodes = G1.nodes(data=True)
-        for node in nodes:
-            #print(node)
-            nid = int(node[0])
-            attributes = node[1]['attributes']
-
-            for attribute in attributes:
-                if attribute['val'] not in filterAttributesArray:
-                    try:
-                        G1.remove_node(nid)
-                    except:
-                        #pdev('Узел с id ' + str(nid) + ' не найден')
-                        pass
-
-    # Если передан ассоциативный массив filterOptions, 
-    # то производим дополнительную обработку графа согласно опциям
-    if 'filterOptions' in locals():
-        #pdev('Производим фильтрацию в соответствии с переданными опциями в filterOptions:\n' + str(filterOptions))
-
-        # Иницилизация пустого графа в случае опции pass: True
-        try:
-            zpass = filterOptions['pass']
-            #print('passsssss ',filterOptions['pass'])
-            if filterOptions["pass"]:
-                print('passsssss ',filterOptions['pass'])
-                G1 = nx.Graph()
-        except:
-            pass
-
-        try:
-            zero = filterOptions['zero']
-            # Если стоит фильтр на одиночные вершины - убираем их из графа
-            nodes = G1.nodes()
-            for node in nodes:
-                if zero == 'no' and G1.degree(node) < 1:
-                    #print('nid ',node,' degree ',G1.degree(node))
-                    G1.remove_node(node)
-        except:
-            pass
+    try:
+        # Производим фильтрацию узлов графа по переданным в ассоциативном массивe attributes атрибутам узлов
+        G = GFilterAttributes(G,gfilter['attributes'])
+    except: pass
 
     # Добавлям кол-во атрибутов узла отфильтрованного графа в качестве атрибута numberOfAttributes
-    for node in G1.nodes(data=True):
-        #print('attr ',node[1]['attributes'])
+    for node in G.nodes(data=True):
         numberOfAttributes = len(node[1]['attributes'][0])
-        G1.add_node(node[0], numberOfAttributes=numberOfAttributes)
-        pass
+        G.add_node(node[0], numberOfAttributes=numberOfAttributes)
 
     # Добавлям значеие веса узлов отфильтрованного графа в качестве атрибута degree
-    for node in G1.nodes():
-        #print('degree ',G1.degree(node))
-        G1.add_node(node, degree=G1.degree(node))
-        pass
+    for nid in G.nodes():
+        G.add_node(nid, degree=G.degree(nid))
 
-    data = json_graph.node_link_data(G1)
+    data = json_graph.node_link_data(G)
 
-    numberOfNodes = G1.number_of_nodes()
+    # Добавляем значение кол-ва узлов в представление графа
+    numberOfNodes = G.number_of_nodes()
     data['graph'].append({'numberOfNodes': numberOfNodes})
 
-    numberOfEdges = G1.number_of_edges()
+    # Добавляем значение кол-ва дуг в представление графа
+    numberOfEdges = G.number_of_edges()
     data['graph'].append({'numberOfEdges': numberOfEdges})
 
-    #data = G0data
-    result = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
-    #result=graph.body
+    # Вывод отладочной информации
+    pdev('G.nodes %i, G.edges %i' % (numberOfNodes,numberOfEdges))
 
-    content = result
+    content = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
     response = HttpResponse()
     response['Content-Type'] = "text/javascript; charset=utf-8"
     response.write(content)
-
     return response 
 
 
-def json_chord(request, id, removeStandalone, graphFilter):
+#def json_chord(request, id, removeStandalone, graphFilter):
+def json_chord(request, id, gfilter):
     """
     graph = get_object_or_404(Graph, pk=id)
 
@@ -585,53 +510,77 @@ def json_chord(request, id, removeStandalone, graphFilter):
         values = {'id': id, 'data': node['data']}
         data['nodes'].insert(id, values)
 
-    data = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
     """
-
+    try: 
+        # Преобразуем в объект json-массив параметров, полученных из url 
+        gfilter = json.loads(gfilter)
+        print_json(gfilter)
+    except: returnErrorMessage('Неправильный json-массив gfilter')
 
     graph = get_object_or_404(Graph, pk=id)
-    graphFilter = 'last_name'
+    graphData = json.loads(graph.body)
+    G = json_graph.node_link_graph(graphData)
 
-    H = json.loads(graph.body)
-    G = json_graph.node_link_graph(H)
-    N = nx.Graph()
-    F = nx.Graph()
-    filterBunch = []
-    rsBunch = []
-    msize = len(H['nodes'])
+    try:
+        # Исключаем из графа узлы с нулевым весом (без связей)
+        G = GFilterZero(G, gfilter['options']['zero'])
+    except: pass
+
+    try:
+        # Производим фильтрацию графа по переданным в списке nodes узлам
+        G = GFilterNodes(G,gfilter['nodes'])
+    except: pass
+
+    try:
+        # Производим фильтрацию узлов графа по переданным в ассоциативном массивe attributes атрибутам узлов
+        G = GFilterAttributes(G,gfilter['attributes'])
+    except: pass
+
+
+
+        
+    """
+    # Формируем матрицу вывода круговой диаграммы
     M = np.zeros([msize,msize], dtype=int)
+    nodes = G.nodes()
+    for nid in nodes:
+        neighbors = nx.all_neighbors(G, nid)
+        for neighbor in neighbors:
+            value = randint(1,10)
+            M[nid][neighbor] = value
+    """
 
+    # Экспортируем данные графа NetworkX в простое текстовое представление в формате json
+    gdata = json_graph.node_link_data(G)
 
-    nodes = G.nodes(data=True)
-    for node in nodes:
-        #print('\n',node[1]['data'],'\n')
-        attributes = node[1]['attributes']
-        for attribute in attributes:
-            print(attribute['val'],'\n')
-            if attribute['val'] in graphFilter:
-                filterBunch.append(node[0])
-                print(node[0])
-                #print(attribute['val'],'\n')
-                if G.degree(node[0]):
-                    rsBunch.append(node[0])
+    # Формируем матрицу вывода круговой диаграммы
+    msize = G.number_of_nodes()
+    M = np.zeros([msize,msize], dtype=int)
+    for link in gdata['links']:
+        r = link['source']
+        c = link['target']
+        v = randint(1,10)
+        M[r][c] = v
+        gdata['links'].append({'source': r, 'target': c, 'value': v})
 
-    F = G.subgraph(filterBunch)
-    N = G.subgraph(rsBunch)
-
-    if removeStandalone == 'yes':
-        data = json_graph.node_link_data(N)
-    else:
-        data = json_graph.node_link_data(F)
-
+    # Добавляем матрицу в представление графа
     m = M.tolist()
-    data.update({"matrix": m})
+    gdata.update({"matrix": m})
 
-    result = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
-    
-    content = result
+    # Добавляем значение кол-ва узлов и дуг в представление графа
+    numberOfNodes = G.number_of_nodes()
+    numberOfEdges = G.number_of_edges()
+    gdata['graph'].append({'numberOfNodes': numberOfNodes, 'numberOfEdges': numberOfEdges})
+
+    # Вывод отладочной информации
+    pdev('G.nodes %i, G.edges %i' % (numberOfNodes,numberOfEdges))
+
+    #J = json_graph.node_link_data(G)
+    content = json.dumps(gdata, sort_keys=True, indent=4, separators=(',', ': '))
+    #content = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
     response = HttpResponse()
     response['Content-Type'] = "text/javascript; charset=utf-8"
-    response.write(data)
+    response.write(content)
     return response 
 
 

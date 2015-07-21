@@ -47,7 +47,6 @@ ForceLayout.prototype.update = function(gid, graphFilter) {
     //console.log('graphFilter', graphFilter)
 
     var url = '/json-forced3/' + gid + '/' + graphFilter + '/' + nodesList + '/' + color + '/'
-
     d3.json(url, function(error, graph) {
         this.force
             .nodes(graph.nodes)
@@ -71,16 +70,18 @@ ForceLayout.prototype.update = function(gid, graphFilter) {
             .attr("r", function(d) { return d.radius/3 + 5 })
             //.attr("r", function(d) { return Math.pow(d.degree+1, 1.1) })
             .style("fill", function(d) { 
-                var value = false
+                var value = 'steelblue'
                 var attributes = d.attributes
-                console.log('----------------------------- >')
-                attributes.forEach(function(attr, key) {
-                    console.log('attribute ',attr.val)
-                    if (attr.val == color) {
-                        value = 'green'
-                    }
-                })
-                console.log('----------------------------- ^')
+                if (attributes) {
+                    //console.log('----------------------------- >')
+                    attributes.forEach(function(attr, key) {
+                        //console.log('attribute ',attr.val)
+                        if (attr.val == color) {
+                            value = 'green'
+                        }
+                    })
+                }
+                //console.log('----------------------------- ^')
                 return value
             })
             //.style("fill", 'steelblue')

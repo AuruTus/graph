@@ -11,6 +11,61 @@ from django.db import connections
 from django.http import HttpResponse, HttpResponseRedirect
 
 
+# Производим фильтрацию графа по переданным в списке nodes узлам:
+# возвращаем соседние узлы (если есть), включая переданный;
+# где формат nodes [nid1, nid2, ...]
+def GFilterNodes(G, nodes=[]):
+    # Если список nodes содержит данные, производим фильтрацию узлов
+    if len(nodes) > 0:
+        nodesList = []
+        for nid in nodes:
+            nodesList.append(nid)
+            neighbors = nx.all_neighbors(G, nid)
+            for neighbor in neighbors:
+                nodesList.append(neighbor)
+        G = G.subgraph(nodesList)
+
+    return G
+
+
+# Исключаем из графа узлы с нулевым весом (без связей)
+def GFilterZero(G, check):
+    # Если check=true, производим фильтрацию узлов
+    if len(check) > 0 and check == 'true':
+        for nid in G.nodes():
+            if G.degree(nid) < 1:
+                G.remove_node(nid)
+
+    return G
+    
+
+# Производим фильтрацию узлов графа по переданным в ассоциативном массивe attributes атрибутам узлов;
+# где формат атрибутов {'attribute1': True, 'attribute2': False, ...}
+def GFilterAttributes(G, attributes):
+    # Если список attributes содержит данные, производим фильтрацию узлов
+    if len(attributes) > 0:
+        # Преобразуем ассоциативный массив в обычный, с учётом значения True
+        attributesFlatten = []
+        for attr in attributes:
+            if attributes[attr]:
+                attributesFlatten.append(attr)
+
+        nodes = G.nodes(data=True)
+        for node in nodes:
+            nid = int(node[0])
+            nodeAttributes = node[1]['attributes']
+
+            # проходимся по списку атрибутов каждого узла
+            for attr in nodeAttributes:
+                # В случае отсутствия соответствия, удаляем узел из графа
+                if attr['val'] not in attributesFlatten:
+                    try:
+                        G.remove_node(nid)
+                    except:
+                        #pdev('Узел с id ' + str(nid) + ' не найден')
+                        pass
+    return G
+
 def pdev(str):
     print('\n',str,'\n')
     return True

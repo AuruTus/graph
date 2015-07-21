@@ -27,23 +27,22 @@ function ForceLayout(containerID, id, graphFilter){
     }
 }
 
-ForceLayout.prototype.update = function(gid, graphFilter, nodesListReset) {
-    nodesListReset = true
-    var filterNodesLength = graphFilter.filterNodes.length
-    nodeRadius = graphFilter.filterOptions.radius
-    console.log(this.constructor.displayName,' > ',nodeRadius)
+ForceLayout.prototype.update = function(gid, graphFilter) {
+    nodeRadius = graphFilter.options.radius
+    //console.log(this.constructor.displayName,' > ',nodeRadius)
 
     // Преобразовываем массив json-данных graphFilter для передачи через url 
     //console.log('graphFilter attributesState', graphFilter.attributesState)
     graphFilter = encodeURIComponent(JSON.stringify(graphFilter))
 
     var url = '/json-force/' + gid + '/' + graphFilter + '/'
-    
+
     d3.json(url, function(error, graph) {
         this.force
             .nodes(graph.nodes)
             .links(graph.links)
             .start()
+
 
         var link = this.svg.selectAll("line").data(graph.links)
         link.enter().append("line")
@@ -60,11 +59,11 @@ ForceLayout.prototype.update = function(gid, graphFilter, nodesListReset) {
             //.attr("r", 5)
             .attr("r", function(d) { 
                 var attr = 0
-        console.log('nrnrnr > ',nodeRadius)
+                //console.log('nrnrnr > ',nodeRadius)
                 if (nodeRadius == 'byDegree') {
                     attr = d.degree
                 } else {
-        console.log('aaaa > ',d.numberOfAttributes)
+                    //console.log('aaaa > ',d.numberOfAttributes)
                     attr = d.numberOfAttributes
                 }
                 return attr/3 + 5 
