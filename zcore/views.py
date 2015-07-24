@@ -519,6 +519,10 @@ def json_chord(request, id, gfilter):
 
     graph = get_object_or_404(Graph, pk=id)
     graphData = json.loads(graph.body)
+
+    #
+    #
+    # Блок работы с данными в графовом представлении
     G = json_graph.node_link_graph(graphData)
 
     try:
@@ -535,7 +539,9 @@ def json_chord(request, id, gfilter):
         # Производим фильтрацию узлов графа по переданным в ассоциативном массивe attributes атрибутам узлов
         G = GFilterAttributes(G,gfilter['attributes'])
     except: pass
-
+    # /Блок работы с данными в графовом представлении
+    #
+    #
 
 
         
@@ -552,20 +558,24 @@ def json_chord(request, id, gfilter):
 
     # Экспортируем данные графа NetworkX в простое текстовое представление в формате json
     gdata = json_graph.node_link_data(G)
+    #gdata = graphData
 
     # Формируем матрицу вывода круговой диаграммы
     msize = G.number_of_nodes()
     M = np.zeros([msize,msize], dtype=int)
+    """
     for link in gdata['links']:
         r = link['source']
         c = link['target']
         v = randint(1,10)
         M[r][c] = v
         gdata['links'].append({'source': r, 'target': c, 'value': v})
+    """
 
     # Добавляем матрицу в представление графа
     m = M.tolist()
-    gdata.update({"matrix": m})
+    #gdata.update({"matrix": m})
+    gdata['graph'].append({'matrix': m})
 
     # Добавляем значение кол-ва узлов и дуг в представление графа
     numberOfNodes = G.number_of_nodes()
