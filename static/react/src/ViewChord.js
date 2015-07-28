@@ -1,3 +1,34 @@
+var ChordFilter = React.createClass({
+    getInitialState: function() {
+        return {
+        }
+    },
+    handleSubmit: function(e) {
+        //e.preventDefault()
+
+        //this.setState({ filterNodes: nodesList }) 
+        
+        // Перерисовываем граф
+        //this.graphUpdate()        
+    },
+    render: function() {
+        return (
+            <form onSubmit={this.handleSubmit} ref="ChordFilterForm">
+                <input type="submit" className="btn btn-warning" value="Отфильтровать" />
+            </form>
+        )
+    },
+})
+
+
+
+
+React.render(
+    <ChordFilter />,
+    document.getElementById('chord-filter')
+);
+
+
 /* 
 * 
 * Блок для вывода круговой диаграмы ************************************************************/
@@ -18,7 +49,7 @@ function ChordLayout(containerID, id){
 
     var width = 1100,
         height = 1100,
-        innerRadius = Math.min(width, height) * .31,
+        innerRadius = Math.min(width, height) * .1,
         outerRadius = innerRadius * 1.1;
 
     // Определяем массив цветов для закрашивания
@@ -31,7 +62,8 @@ function ChordLayout(containerID, id){
         .attr("width", width)
         .attr("height", height)
       .append("g")
-        .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+        .attr("transform", "translate(" + width / 2 + "," + height / 4 + ")");
+        //.attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
 
     d3.json(url, function(error, graph) {
         this.graph = graph
