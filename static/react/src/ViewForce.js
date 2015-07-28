@@ -35,7 +35,7 @@ ForceLayout.prototype.update = function(gid, graphFilter) {
     //console.log('graphFilter attributesState', graphFilter.attributesState)
     graphFilter = encodeURIComponent(JSON.stringify(graphFilter))
 
-    var url = '/json-force/' + gid + '/' + graphFilter + '/'
+    var url = '/json-force-react/' + gid + '/' + graphFilter + '/'
 
     d3.json(url, function(error, graph) {
         this.force

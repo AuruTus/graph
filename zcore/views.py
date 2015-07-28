@@ -297,10 +297,10 @@ def view_force_react(request, id, graphFilter):
     return render(request, 'zcore/force-react.html', context)
 
 
-def view_force(request, id, graphFilter, nodesList, color):
+def view_force_d3(request, id, graphFilter, nodesList, color):
     graph = get_object_or_404(Graph, pk=id)
     context = {'graph': graph, 'filter': graphFilter, 'nodes': nodesList, 'color': color}
-    return render(request, 'zcore/force.html', context)
+    return render(request, 'zcore/force-d3.html', context)
 
 
 def view_chord(request, id):
@@ -345,7 +345,7 @@ def json_spring(request, id):
 
 # Для тестирования
 # Визуализация графа по алгоритму force-direct
-def json_forced3(request, id, graphFilter, nodesList, color):
+def json_force_d3(request, id, graphFilter, nodesList, color):
     graph = get_object_or_404(Graph, pk=id)
 
     props = graphFilter.split(';')
@@ -428,7 +428,7 @@ def json_forced3(request, id, graphFilter, nodesList, color):
 
 
 # Визуализация графа по алгоритму force-direct
-def json_force(request, id, gfilter):
+def json_force_react(request, id, gfilter):
     try: 
         # Преобразуем в объект json-массив параметров, полученных из url 
         gfilter = json.loads(gfilter)
@@ -485,32 +485,7 @@ def json_force(request, id, gfilter):
     return response 
 
 
-#def json_chord(request, id, removeStandalone, graphFilter):
 def json_chord(request, id, gfilter):
-    """
-    graph = get_object_or_404(Graph, pk=id)
-
-    H = json.loads(graph.body)
-    msize = len(H['nodes'])
-    M = np.zeros([msize,msize], dtype=int)
-
-    data = {'nodes':[], 'links':[], 'matrix':''}
-
-    for link in H['links']:
-        r = link['source']
-        c = link['target']
-        v = randint(1,10)
-        M[r][c] = v
-        data['links'].append({'source': r, 'target': c, 'value': v})
-    m = M.tolist()
-    data['matrix'] = m
-
-    for node in H['nodes']:
-        id = node['id']
-        values = {'id': id, 'data': node['data']}
-        data['nodes'].insert(id, values)
-
-    """
     try: 
         # Преобразуем в объект json-массив параметров, полученных из url 
         gfilter = json.loads(gfilter)
@@ -527,7 +502,7 @@ def json_chord(request, id, gfilter):
 
     try:
         # Исключаем из графа узлы с нулевым весом (без связей)
-        G = GFilterZero(G, gfilter['options']['zero'])
+        G = GFilterZero(G, gfilter['options']['rmzero'])
     except: pass
 
     try:
@@ -542,40 +517,27 @@ def json_chord(request, id, gfilter):
     # /Блок работы с данными в графовом представлении
     #
     #
-
-
         
-    """
-    # Формируем матрицу вывода круговой диаграммы
-    M = np.zeros([msize,msize], dtype=int)
-    nodes = G.nodes()
-    for nid in nodes:
-        neighbors = nx.all_neighbors(G, nid)
-        for neighbor in neighbors:
-            value = randint(1,10)
-            M[nid][neighbor] = value
-    """
-
     # Экспортируем данные графа NetworkX в простое текстовое представление в формате json
     gdata = json_graph.node_link_data(G)
     #gdata = graphData
 
-    # Формируем матрицу вывода круговой диаграммы
+    # Формируем квадратичную матрицу для вывода методом круговой диаграммы
     msize = G.number_of_nodes()
     M = np.zeros([msize,msize], dtype=int)
-    """
     for link in gdata['links']:
         r = link['source']
         c = link['target']
-        v = randint(1,10)
-        M[r][c] = v
-        gdata['links'].append({'source': r, 'target': c, 'value': v})
-    """
 
-    # Добавляем матрицу в представление графа
+        # Добавляем случайное значение в качестве числового значения дуги 
+        # так как в предоставленной "семантической куче" такие данные пока отсутствуют
+        v = randint(1,10)
+
+        M[r][c] = v
+
+    # Добавляем полученноую матрицу в json-представление графа
     m = M.tolist()
-    #gdata.update({"matrix": m})
-    gdata['graph'].append({'matrix': m})
+    gdata.update({"matrix": m})
 
     # Добавляем значение кол-ва узлов и дуг в представление графа
     numberOfNodes = G.number_of_nodes()

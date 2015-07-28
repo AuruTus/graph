@@ -64,7 +64,7 @@ var NewProjectFilter = React.createClass({
             <form onSubmit={this.handleSubmit} ref="forceGraphFilterForm">
                 <input type="submit" className="btn btn-warning" value="Создать" />
                 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                <ZCheckboxGroup
+                <CMCheckboxGroup
                     name='attributes'
                     properties={this.state.attributesProperties}
                     onChange={this.handleChange}
