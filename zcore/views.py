@@ -598,11 +598,11 @@ class HeapInfo(APIView):
 
     def get(self, request):
         cursor = connections['mysql'].cursor() # Устанавливаем соединения с базой данных 'mysql'
-        sql = "SELECT count(id) as nodes FROM db_fcp_vis.elements WHERE ent_or_rel=0"
+        sql = "SELECT count(id) as nodes FROM elements WHERE ent_or_rel=0"
         cursor.execute(sql) # Выполняем sql-запрос
         nodes = cursor.fetchall()[0][0]
 
-        sql = "SELECT count(id) as edges FROM db_fcp_vis.elements WHERE ent_or_rel=1"
+        sql = "SELECT count(id) as edges FROM elements WHERE ent_or_rel=1"
         cursor.execute(sql) # Выполняем sql-запрос
         edges = cursor.fetchall()[0][0]
 
