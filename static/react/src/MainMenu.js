@@ -1,0 +1,2 @@
+var NewProjectFilter = React.createClass({
+})
