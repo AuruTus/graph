@@ -303,10 +303,18 @@ def view_force_d3(request, id, graphFilter, nodesList, color):
     return render(request, 'zcore/force-d3.html', context)
 
 
+# Шаблон отображения графа в виде круговой диаграммы
 def view_chord(request, id):
     graph = get_object_or_404(Graph, pk=id)
     context = {'graph': graph}
     return render(request, 'zcore/chord.html', context)
+
+
+# Шаблон отображения графа в виде временной гистограммы
+def view_timeline(request, id):
+    graph = get_object_or_404(Graph, pk=id)
+    context = {'graph': graph}
+    return render(request, 'zcore/timeline.html', context)
 
 
 # Преобразование графа для вывода по алгоритму circular

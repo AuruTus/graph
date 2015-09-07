@@ -14,6 +14,7 @@ urlpatterns += [
     url(r'^force-d3/(?P<id>[-\w]+)/(?P<graphFilter>.*)/(?P<nodesList>.*)/(?P<color>.*)/$', 'zcore.views.view_force_d3', name='viewForceD3'),
     url(r'^force-react/(?P<id>[-\w]+)/(?P<graphFilter>.*)/$', 'zcore.views.view_force_react', name='viewForceReact'),
     url(r'^chord/(?P<id>[-\w]+)/$', 'zcore.views.view_chord', name='viewChord'),
+    url(r'^timeline/(?P<id>[-\w]+)/$', 'zcore.views.view_timeline', name='viewTimeline'),
 
     url(r'^create-project/(?P<graphFilter>.*)/$', 'zcore.views.create_project'),
 

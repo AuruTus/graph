@@ -1,4 +1,5 @@
 var links = [
+    {'link': '/timeline/' + gid, 'title': 'Временная гистограмма'},
     {'link': '/force-react/' + gid + '//', 'title': 'Граф-react'},
     {'link': '/force-d3/' + gid + '////', 'title': 'Граф-d3'},
     {'link': '/chord/' + gid, 'title': 'Круговая диаграмма'},
