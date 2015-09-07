@@ -1,12 +1,3 @@
-var links = [
-    {'link': '/force-react/' + gid + '//', 'title': 'Граф-react'},
-    {'link': '/force-d3/' + gid + '////', 'title': 'Граф-d3'},
-    {'link': '/chord/' + gid, 'title': 'Круговая диаграмма'},
-    {'link': '', 'title': 'Гистограмма'},
-    {'link': '', 'title': 'Список'},
-    {'link': '', 'title': 'Кластеризация'},
-]
-
 var MainMenu = React.createClass({
     render: function() {
         var rowsLinks = []
