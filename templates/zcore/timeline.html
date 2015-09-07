@@ -1,0 +1,22 @@
+{% extends "view.html" %}
+{% load staticfiles %}
+
+{% block side_bar %}
+    <div id="chord-filter">Chord filter</div>
+    <br /></div>
+
+    <script src="{% static 'react/build/Cement.js' %}"></script>
+    <script src="{% static 'react/build/ViewChord.js' %}"></script>
+{% endblock side_bar %}
+
+
+{% block content %}
+    <div class='scene'></div>
+
+    <script>
+    var gid = {{ graph.id }}
+    ChordLayout('.scene', gid)
+    </script>
+{% endblock content %}
+
+
