@@ -5,6 +5,7 @@ var links = [
     {'link': '/chord/' + gid, 'title': 'Круговая диаграмма'},
 ]
 
+
 var MainMenu = React.createClass({
     render: function() {
         var rowsLinks = []
