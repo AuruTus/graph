@@ -7,7 +7,6 @@
 <script src="{% static 'react/build/HeapInfo.js' %}"></script>
 
 <div id="newProjectFilter">NewProjectFilter</div>
-<script src="{% static 'react/build/Cement.js' %}"></script>
 <script src="{% static 'react/build/NewProjectFilter.js' %}"></script>
 
 {% endblock side_bar %}
@@ -18,9 +17,9 @@
 <ul>
 {% for graph in graphs %}
     <li>
-        <a href="/admin/zcore/graph/{{ graph.id }}" target=blank>Проект {{ graph.id }}</a>
+        <a href="/admin/zcore/graph/{{ graph.id }}" target=blank>id {{ graph.id }}</a>
         -
-        <a href="{% url 'viewForceD3' graph.id '' '' '' %}" target=blank>{{ graph.title }}</a> 
+        <a href="{% url 'viewForceD3' graph.id '' '' '' %}" target=blank>{{ graph.title }}: </a> 
     </li>
 {% endfor %}
 </ul>

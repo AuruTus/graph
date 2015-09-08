@@ -75,7 +75,8 @@ def dictfetchall(cursor):
 # Подготока данных и вызов рендеринга шаблона вывода index.html
 def index(request):
     graphs = Graph.objects.order_by('-pk')    
-    context = {'graphs': graphs}
+    graph = Graph()
+    context = {'graph': graph, 'graphs': graphs}
     return render(request, 'zcore/index.html', context)
 
 
@@ -546,6 +547,99 @@ def json_chord(request, id, gfilter):
     # Добавляем полученноую матрицу в json-представление графа
     m = M.tolist()
     gdata.update({"matrix": m})
+
+    # Добавляем значение кол-ва узлов и дуг в представление графа
+    numberOfNodes = G.number_of_nodes()
+    numberOfEdges = G.number_of_edges()
+    gdata['graph'].append({'numberOfNodes': numberOfNodes, 'numberOfEdges': numberOfEdges})
+
+    # Вывод отладочной информации
+    pdev('G.nodes %i, G.edges %i' % (numberOfNodes,numberOfEdges))
+
+    #J = json_graph.node_link_data(G)
+    content = json.dumps(gdata, sort_keys=True, indent=4, separators=(',', ': '))
+    #content = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
+    response = HttpResponse()
+    response['Content-Type'] = "text/javascript; charset=utf-8"
+    response.write(content)
+    return response 
+
+
+def GFilterTransfers(G):
+    # Если check=true, производим фильтрацию узлов
+    nodes = G.nodes(data=True)
+    for node in nodes:
+        nid = int(node[0])
+
+        doit = 0
+        attributes = G.node[nid]['attributes']
+        for attribute in attributes:
+            if attribute['val'] == 'last_name':
+                doit = 1
+
+        if doit == 1:
+            G.node[nid]['class_id'] = 1
+            G.node[nid]['transfers'] = []
+            months = "123456789"
+            transfersInYear = 0
+            for month in months:
+                transfersInMonth = randint(1,4)
+                G.node[nid]['transfers'].append({'month': month, 'number': transfersInMonth})
+                transfersInYear = transfersInYear + transfersInMonth
+            doit = 0
+            G.node[nid]['transfersNumber'] = transfersInYear
+        else:
+            G.node[nid]['class_id'] = 0
+
+        #print("======================================================")
+        #print("G",nid,": ",G.node[1]['transfers'])
+
+    return G
+
+
+def json_timeline(request, id, gfilter):
+    try: 
+        # Преобразуем в объект json-массив параметров, полученных из url 
+        gfilter = json.loads(gfilter)
+        print_json(gfilter)
+    except: returnErrorMessage('Неправильный json-массив gfilter')
+
+    graph = get_object_or_404(Graph, pk=id)
+    graphData = json.loads(graph.body)
+
+    #
+    #
+    # Блок работы с данными в графовом представлении
+    G = json_graph.node_link_graph(graphData)
+
+    try:
+        # Исключаем из графа узлы с нулевым весом (без связей)
+        G = GFilterZero(G, gfilter['options']['rmzero'])
+    except: pass
+
+    try:
+        # Производим фильтрацию графа по переданным в списке nodes узлам
+        G = GFilterNodes(G,gfilter['nodes'])
+    except: pass
+
+    try:
+        # Производим фильтрацию узлов графа по переданным в ассоциативном массивe attributes атрибутам узлов
+        G = GFilterAttributes(G,gfilter['attributes'])
+    except: pass
+
+    # Добавляем сгенированную информацию о перемещениях объекта
+    # это необходимо пока отсутствуют реальные данные
+    try:
+        # Производим фильтрацию узлов графа по переданным в ассоциативном массивe attributes атрибутам узлов
+        G = GFilterTransfers(G)
+    except: pass
+    # /Блок работы с данными в графовом представлении
+    #
+    #
+        
+    # Экспортируем данные графа NetworkX в простое текстовое представление в формате json
+    gdata = json_graph.node_link_data(G)
+    #gdata = graphData
 
     # Добавляем значение кол-ва узлов и дуг в представление графа
     numberOfNodes = G.number_of_nodes()

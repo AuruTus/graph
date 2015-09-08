@@ -171,11 +171,9 @@ var AttributeCheckbox = React.createClass({
 */
 
 
-/*
 React.render(
     <NewProjectFilter />, 
     document.getElementById('newProjectFilter')
 )
-*/
 
 

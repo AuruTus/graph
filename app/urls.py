@@ -29,7 +29,8 @@ urlpatterns += [
     url(r'^json-attributes/$', 'zcore.views.json_attributes', name='jsonAttributes'),
 
     url(r'^json-chord/(?P<id>[-\w]+)/(?P<gfilter>.*)/$', 'zcore.views.json_chord', name='jsonChord'),
-    #url(r'^json-chord/(?P<id>[-\w]+)/rs/(?P<removeStandalone>[-\w]+)/filter/(?P<attributesFilter>[-\w]+)/$', 'zcore.views.json_chord', name='jsonChord'),
+
+    url(r'^json-timeline/(?P<id>[-\w]+)/(?P<gfilter>.*)/$', 'zcore.views.json_timeline', name='jsonTimeline'),
 
     # /json-данные
     #

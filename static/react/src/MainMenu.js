@@ -9,13 +9,15 @@ var links = [
 var MainMenu = React.createClass({
     render: function() {
         var rowsLinks = []
-        this.props.links.forEach(function(prop, key) {
-            rowsLinks.push(<MenuLink 
-                key={key}
-                link={prop.link}
-                title={prop.title}
-            />)
-        }.bind(this))
+        if (gid) {
+            this.props.links.forEach(function(prop, key) {
+                rowsLinks.push(<MenuLink 
+                    key={key}
+                    link={prop.link}
+                    title={prop.title}
+                />)
+            }.bind(this))
+        }
 
         return (
             <nav className="navbar navbar-inverse navbar-fixed-top">
@@ -51,3 +53,5 @@ React.render(
     <MainMenu links={links} />, 
     document.getElementById('main-menu')
 )
+
+
