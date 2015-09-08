@@ -1,30 +1,8 @@
-var MainMenu = React.createClass({
+var Timeline = React.createClass({
     render: function() {
-        var rowsLinks = []
-        this.props.links.forEach(function(prop, key) {
-            rowsLinks.push(<MenuLink 
-                key={key}
-                link={prop.link}
-                title={prop.title}
-            />)
-        }.bind(this))
 
         return (
-            <nav className="navbar navbar-inverse navbar-fixed-top">
-                <div className="container">
-                    <div className="navbar-header">
-                        <a className="navbar-brand" href="#">Проект id {gid}</a>
-                    </div>
-                    <div id="navbar" className="navbar-collapse collapse">
-                        <ul className="nav navbar-nav">
-                            {rowsLinks}
-                        </ul>
-                        <ul className="nav navbar-nav navbar-right">
-                            <li><a href="/">Проекты</a></li>
-                        </ul>
-                    </div>
-                </div>
-            </nav>
+            <div>Timeline</div>
         )
     },
 })
@@ -40,6 +18,6 @@ var MenuLink = React.createClass({
 })
 
 React.render(
-    <MainMenu links={links} />, 
-    document.getElementById('main-menu')
+    <Timeline />, 
+    document.getElementById('timeline')
 )
