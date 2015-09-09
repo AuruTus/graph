@@ -63,11 +63,13 @@ var Timeline = React.createClass({
         var rows = []
         this.state.nodes.forEach(function(prop, key) {
             // Формируем массив rows дочерних компонентов
-            rows.push(<NodeBar 
-                key={key}
-                transfers={prop.transfers} 
-                transfersNumber={prop.transfersNumber}
-            />)
+            if (prop.transfers) {
+                rows.push(<NodeBar 
+                    key={key}
+                    transfers={prop.transfers} 
+                    transfersNumber={prop.transfersNumber}
+                />)
+            }
         }.bind(this))
 
         return (
@@ -81,7 +83,6 @@ var Timeline = React.createClass({
 
 var NodeBar = React.createClass({
     render: function() {
-        console.log(this.props.transfers)
         var rows = []
         this.props.transfers.forEach(function(prop, key) {
             // Формируем массив rows дочерних компонентов
