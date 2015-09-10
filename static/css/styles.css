@@ -63,3 +63,27 @@ svg .node {
 .btn-primary {
     float: left;
 }
+
+.timeline {
+        border: solid 1px gray;
+    }
+    .node-bar {
+        border: solid 4px green;
+    }
+        .transfers-number {
+            border: solid 1px lightblue;
+        }
+        .month-bar {
+            border: solid 1px yellow;
+        }
+    .month-nav {
+        border: solid 4px green;
+        fill: gray;
+        background: gray;
+    }
+        .month-nav rect {
+            fill: green;
+        }
+
+
+
