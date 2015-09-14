@@ -26,6 +26,7 @@ var Timeline = React.createClass({
         }
     },
     componentDidMount: function() {
+        //console.log(this.getDOMNode())
         // Получаем массив атрибутов с сервера в формате json
         this.loadDataFromServer()
         //console.log(Array.isArray(this.props.children)); // => true
@@ -35,16 +36,16 @@ var Timeline = React.createClass({
         //console.log('timeline')
     },
     updateNodeBar: function() {
-        number = React.Children.count(this.props.children)
-        console.log(number)
         //console.log(React.findDOMNode(this.refs.theNodeBar))
-        //React.findDOMNode(this.refs.theNodeBar).handleUpdate()
+        React.findDOMNode(this.refs.theNodeBar1).handleUpdate()
         //number React.Children.count(object NodeBar)
+/*
         var children = React.Children.map(this.props.children, function(child, i) {
             console.log('Setting width: ')
             //child.props.style = {width: (i*this.state.width)+'px'}
             return child
         }, this)
+*/
     },
     render: function() {
         var rows = []
@@ -53,7 +54,7 @@ var Timeline = React.createClass({
             if (prop.transfers) {
                 rows.push(<NodeBar 
                     key={key}
-                    ref="theNodeBar"
+                    ref={"theNodeBar"+key}
                     reactKey={key}
                     transfers={prop.transfers} 
                     transfersNumber={prop.transfersNumber}
@@ -61,12 +62,16 @@ var Timeline = React.createClass({
             }
         }.bind(this))
 
+        //rows = "<rect width='200' height='200' fill='gray'>"
+        console.log(rows)
+
         return (
             <svg 
                 width="1050"
                 height="380"
                 className="timeline"
             >
+                {rows}
                 <MonthNav 
                     x="20"
                     y="340"
@@ -93,7 +98,7 @@ var NodeBar = React.createClass({
         }
     },
     componentDidMount:function(){
-        //console.log(this.getDOMNode())
+        console.log(this.getDOMNode())
     },
     handleUpdate: function() {
         console.log('nodebar',this.props.reactKey)
@@ -149,9 +154,7 @@ var MonthNav = React.createClass({
         //console.log(this.props.children.length)
     },
     handleClick: function() {
-        console.log(this.props.children)
-        console.log('handleclick')
-        console.log(this.props.children.length)
+        console.log('month nav handleclick')
     },
     render: function() {
         rows = []
@@ -165,7 +168,7 @@ var MonthNav = React.createClass({
 
         return (
             <g 
-                onClick={this.handleClick}
+                //onClick={this.handleClick}
                 transform={"translate(" + this.props.x + "," + this.props.y + ")"}
                 className="month-nav"
             >
@@ -191,7 +194,7 @@ var MonthNavUnit = React.createClass({
         }
     },
     handleClick: function() {
-        console.log('monthnavunit',this.props.reactKey)
+        //console.log('monthnavunit',this.props.reactKey)
 
         // Передаём обработку клика родительскому компоненту
         if (typeof this.props.reClick === 'function') {
@@ -204,14 +207,14 @@ var MonthNavUnit = React.createClass({
                 width={this.props.width}
                 height={this.props.height}
                 x={this.state.x}
-                //onClick={this.handleClick}
+                onClick={this.handleClick}
             />
         )
     },
 })
 
 
-//React.render( <Timeline />, mountNode)
+React.render( <Timeline />, mountNode)
 
 
 var GraphFilter = React.createClass({
@@ -238,12 +241,10 @@ var GraphFilter = React.createClass({
 })
 
 
-React.render(
-    <GraphFilter />,
-    document.getElementById('graph-filter')
-);
+React.render( <GraphFilter />, document.getElementById('graph-filter'))
 
 
+/*
 var GenericWrapper = React.createClass({
   componentDidMount: function() {
     console.log(Array.isArray(this.props.children)); // => true
@@ -304,3 +305,4 @@ var MyComponent = React.createClass({
 });
 
 React.render( <MyComponent/>, mountNode)
+*/
