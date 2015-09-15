@@ -1,4 +1,23 @@
+var multiplier = 30
+
+
 var Timeline = React.createClass({
+    getDefaultProps: function() {
+        var ww = $(window).width() - scrollbarWidth()
+
+/*
+        var mm = $('#main-menu').height()
+        var sh = $('#side-bar').height()
+        var wh = $(window).height() - mm - sh
+        console.log(wh)
+        console.log(mm)
+        console.log(sh)
+*/
+
+        return {
+            sceneWidth: ww,
+        }
+    },
     loadDataFromServer: function() {
         var gfilter = {"options":{"rmzero":"true","radius":"byDegree"}}
         gfilter = encodeURIComponent(JSON.stringify(gfilter))
@@ -26,55 +45,52 @@ var Timeline = React.createClass({
         }
     },
     componentDidMount: function() {
-        //console.log(this.getDOMNode())
-        // Получаем массив атрибутов с сервера в формате json
         this.loadDataFromServer()
-        //console.log(Array.isArray(this.props.children)); // => true
-        //console.log(this.props.children.length)
     },
-    handleUpdate: function() {
-        //console.log('timeline')
-    },
-    updateNodeBar: function() {
-        //console.log(React.findDOMNode(this.refs.theNodeBar))
-        React.findDOMNode(this.refs.theNodeBar1).handleUpdate()
-        //number React.Children.count(object NodeBar)
-/*
-        var children = React.Children.map(this.props.children, function(child, i) {
-            console.log('Setting width: ')
-            //child.props.style = {width: (i*this.state.width)+'px'}
-            return child
-        }, this)
-*/
+    updateNodeBar: function(month) {
+        this.state.nodes.forEach(function(prop, key) {
+            if (prop.transfers) {
+                node = eval('this.refs.theNodeBar' + key)
+                //console.log(React.findDOMNode(node))
+                node.updateMonthBar(month)
+            }
+        }.bind(this))
     },
     render: function() {
         var rows = []
+        var nodeBarHeight = 30
+        var navBarHeight = 120
+        var sceneHeight = navBarHeight
+
         this.state.nodes.forEach(function(prop, key) {
             // Формируем массив rows дочерних компонентов
             if (prop.transfers) {
+                sceneHeight += nodeBarHeight
+        console.log(sceneHeight)
+
                 rows.push(<NodeBar 
                     key={key}
                     ref={"theNodeBar"+key}
                     reactKey={key}
+                    height={nodeBarHeight}
                     transfers={prop.transfers} 
                     transfersNumber={prop.transfersNumber}
                 />)
             }
         }.bind(this))
 
-        //rows = "<rect width='200' height='200' fill='gray'>"
-        console.log(rows)
-
         return (
             <svg 
-                width="1050"
-                height="380"
+                width={this.props.sceneWidth}
+                height={sceneHeight}
+                x="10"
+                y="10"
                 className="timeline"
             >
                 {rows}
-                <MonthNav 
+                <NavBar 
                     x="20"
-                    y="340"
+                    y={sceneHeight-navBarHeight/2}
                     reClick={this.updateNodeBar}
                 />
             </svg>
@@ -86,40 +102,66 @@ var Timeline = React.createClass({
 var NodeBar = React.createClass({
     getDefaultProps: function() {
         return {
-            height: 20,
+            //height: 30,
         }
     },
     getInitialState: function() {
         var key = this.props.reactKey
         return {
-            offset: key*this.props.height + key,
+            yoffset: key*this.props.height + key,
             //color: randcolor(),
             color: "lightblue",
         }
     },
     componentDidMount:function(){
-        console.log(this.getDOMNode())
+        //console.log(this.getDOMNode())
     },
-    handleUpdate: function() {
-        console.log('nodebar',this.props.reactKey)
+    updateMonthBar: function(month) {
+        //console.log('month ', month)
+        this.props.transfers.forEach(function(prop, key) {
+            node = eval('this.refs.theMonthBar' + key)
+            node.hide()
+        }.bind(this))
+        this.props.transfers.forEach(function(prop, key) {
+            if(prop.month <= month) {
+                node = eval('this.refs.theMonthBar' + key)
+                console.log(key)
+                node.show()
+            }
+        }.bind(this))
+        console.log('======================================================')
     },
     render: function() {
         var rows = []
+        var prexoffset = 0
+        var xoffset = 0
         this.props.transfers.forEach(function(prop, key) {
+            //console.log(xoffset)
+            //console.log(xoffset,'+',key,'*',prop.number)
+            prexoffset = xoffset
+            xoffset = prexoffset + prop.number*multiplier
+            //console.log('-----------------------------------------------')
+
             // Формируем массив rows дочерних компонентов
             rows.push(<MonthBar
                 key={key}
+                ref={"theMonthBar"+key}
+                reactKey={key}
                 month={prop.month} 
                 number={prop.number}
+                xoffset={prexoffset}
+                yoffset={this.state.yoffset+5}
+                fill={monthColor(prop.month)}
             />)
         }.bind(this))
+        //console.log('===========================================')
 
         return (
             <g className="node-bar">
                 <rect 
-                    width={this.props.transfersNumber*20}
+                    width={this.props.transfersNumber*multiplier}
                     height={this.props.height}
-                    y={this.state.offset}
+                    y={this.state.yoffset}
                     fill={this.state.color}
                     className="transfers-number"
                     onClick={this.handleUpdate}
@@ -132,19 +174,51 @@ var NodeBar = React.createClass({
 
 
 var MonthBar = React.createClass({
+    getDefaultProps: function() {
+        return {
+            height: 20,
+        }
+    },
+    unmount: function() {
+        var node = this.getDOMNode()
+        React.unmountComponentAtNode(node)
+        $(node).remove()
+    },
+    handleClick: function() {
+        console.log(this.props.month)
+      this.unmount()
+    },
+    hide: function() {
+        var node = this.getDOMNode()
+        React.unmountComponentAtNode(node)
+        $(node).hide()
+    },
+    show: function() {
+        var node = this.getDOMNode()
+        React.unmountComponentAtNode(node)
+        $(node).show( "slow", function() { })
+    },
+    getInitialState: function() {
+        return {
+        }
+    },
     render: function() {
         return (
-            <div className="month-bar">
-                {this.props.month}
-                -
-                {this.props.number}
-            </div>
+            <rect
+                width={this.props.number*multiplier}
+                height={this.props.height}
+                x={this.props.xoffset}
+                y={this.props.yoffset}
+                fill={this.props.fill}
+                onClick={this.handleClick}
+                className="month-bar"
+            />
         )
     },
 })
 
 
-var MonthNav = React.createClass({
+var NavBar = React.createClass({
     getInitialState: function() {
         return {
             months: '123456789'.split(''),
@@ -153,22 +227,19 @@ var MonthNav = React.createClass({
     componentDidMount: function() {
         //console.log(this.props.children.length)
     },
-    handleClick: function() {
-        console.log('month nav handleclick')
-    },
     render: function() {
         rows = []
         this.state.months.forEach(function(month, key) {
-            rows.push(<MonthNavUnit
+            rows.push(<NavBarUnit
                 key={key}
                 reactKey={key}
+                month={month}
                 reClick={this.props.reClick}
             />)
         }.bind(this))
 
         return (
             <g 
-                //onClick={this.handleClick}
                 transform={"translate(" + this.props.x + "," + this.props.y + ")"}
                 className="month-nav"
             >
@@ -180,7 +251,7 @@ var MonthNav = React.createClass({
 })
 
 
-var MonthNavUnit = React.createClass({
+var NavBarUnit = React.createClass({
     getDefaultProps: function() {
         return {
             width: 40,
@@ -194,11 +265,10 @@ var MonthNavUnit = React.createClass({
         }
     },
     handleClick: function() {
-        //console.log('monthnavunit',this.props.reactKey)
 
         // Передаём обработку клика родительскому компоненту
         if (typeof this.props.reClick === 'function') {
-            this.props.reClick()
+            this.props.reClick(this.props.month)
         }
     },
     render: function() {
@@ -207,6 +277,7 @@ var MonthNavUnit = React.createClass({
                 width={this.props.width}
                 height={this.props.height}
                 x={this.state.x}
+                fill={monthColor(this.props.month)}
                 onClick={this.handleClick}
             />
         )
