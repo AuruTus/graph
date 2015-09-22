@@ -1,5 +1,8 @@
 var multiplier = 30
 
+// Создаём шкалу
+var xScale = d3.scale.linear()
+
 
 var Timeline = React.createClass({
     getDefaultProps: function() {
@@ -37,9 +40,6 @@ var Timeline = React.createClass({
     },
     getInitialState: function() {
         return {
-            // Ассоциативный массив состояний группы чекбоксов
-            checkboxGroupState: {},
-
             // Входной массив атрубутов
             nodes: [],
         }
@@ -62,29 +62,44 @@ var Timeline = React.createClass({
         var navBarHeight = 120
         var sceneHeight = navBarHeight
 
+        // Определяем масштабирование ширины гистограммы:
+        // Определяем максимальное значение в массиве значений
+        var maxX = d3.max(this.state.nodes, function(d) {
+            if (d.transfersNumber) {
+                return d.transfersNumber
+            }
+        })
+        // Определяем входящий минимум и максимум значений
+        xScale.domain([1, maxX])
+        // Определяем значения в пределах которых будут выводится данные,
+        // в данном случае - это координаты расположения svg-контейнера по оси х
+        // внутри окна броузера
+        xScale.range([0, this.props.sceneWidth])
+
+//console.log(maxX,'-',xScale(maxX))
         this.state.nodes.forEach(function(prop, key) {
             // Формируем массив rows дочерних компонентов
             if (prop.transfers) {
+                // Динамически определяем высотy сцены (svg-элемента)
                 sceneHeight += nodeBarHeight
-        console.log(sceneHeight)
-
+//console.log(prop.transfersNumber)
                 rows.push(<NodeBar 
                     key={key}
                     ref={"theNodeBar"+key}
                     reactKey={key}
+                    width={xScale(prop.transfersNumber)}
                     height={nodeBarHeight}
                     transfers={prop.transfers} 
                     transfersNumber={prop.transfersNumber}
                 />)
             }
         }.bind(this))
+//console.log('==================================')
 
         return (
             <svg 
                 width={this.props.sceneWidth}
                 height={sceneHeight}
-                x="10"
-                y="10"
                 className="timeline"
             >
                 {rows}
@@ -129,18 +144,29 @@ var NodeBar = React.createClass({
                 node.show()
             }
         }.bind(this))
-        console.log('======================================================')
+//console.log('======================================================')
     },
     render: function() {
         var rows = []
         var prexoffset = 0
         var xoffset = 0
+        var width = 0
+        var zcount = 0
+console.log("------------------------------------")
+console.log(this.props.transfersNumber,'>',xScale(this.props.transfersNumber))
         this.props.transfers.forEach(function(prop, key) {
-            //console.log(xoffset)
-            //console.log(xoffset,'+',key,'*',prop.number)
+
+            // Вычисляем ширину прямоугольника с учётом масштаба
+            width = xScale(prop.number)
+
             prexoffset = xoffset
-            xoffset = prexoffset + prop.number*multiplier
-            //console.log('-----------------------------------------------')
+            //xoffset = prexoffset + prop.number*multiplier
+            xoffset = prexoffset + width
+//console.log(prexoffset,'-',width)
+//console.log(xScale(prop.number))
+console.log(prop.month,'-',prop.number,'>',xScale(prop.number))
+zcount+=xScale(prop.number)
+
 
             // Формируем массив rows дочерних компонентов
             rows.push(<MonthBar
@@ -149,17 +175,17 @@ var NodeBar = React.createClass({
                 reactKey={key}
                 month={prop.month} 
                 number={prop.number}
+                width={width}
                 xoffset={prexoffset}
                 yoffset={this.state.yoffset+5}
                 fill={monthColor(prop.month)}
             />)
         }.bind(this))
-        //console.log('===========================================')
-
+console.log(zcount,"------------------------------------")
         return (
             <g className="node-bar">
                 <rect 
-                    width={this.props.transfersNumber*multiplier}
+                    width={this.props.width}
                     height={this.props.height}
                     y={this.state.yoffset}
                     fill={this.state.color}
@@ -205,7 +231,8 @@ var MonthBar = React.createClass({
     render: function() {
         return (
             <rect
-                width={this.props.number*multiplier}
+                //width={this.props.number*multiplier}
+                width={this.props.width}
                 height={this.props.height}
                 x={this.props.xoffset}
                 y={this.props.yoffset}
