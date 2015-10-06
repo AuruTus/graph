@@ -134,7 +134,10 @@ var CMRadioGroupButton = React.createClass({
 
 var CMCheckboxGroup = React.createClass({
     propTypes: {
-        onChange:   React.PropTypes.func,
+        // вызывает родительскую функцию onChange и параметры к ней
+        onChange:   React.PropTypes.func, 
+
+        // вызывает родительскую функцию onClick и параметры к ней
         onClick:    React.PropTypes.func,
     },
     getInitialState: function() {

@@ -17,11 +17,14 @@ from rest_framework.response import Response
 from .models import Graph, Node, create_filtered_graph, print_json, pdev
 from .models import GFilterNodes, GFilterAttributes, GFilterZero
 
+HTMLPREFIX = '<!DOCTYPE html><meta charset="utf-8"><body>'
+HTMLSUFFIX = '</body>'
+
 
 def responseJSON(data):
     try:
         # Преобразуем переданные данные в формат json
-        jsonContent = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
+        jsonContent = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
 
         # Создаём объект response для динамического создания html-страницы
         response = HttpResponse() 
@@ -94,7 +97,7 @@ def make_petersen(request):
         node.update({'title': title, 'attribute': attribute})
     #data['nodes'] = nodes
 
-    graph.body = json.dumps(data)
+    graph.body = json.dumps(data, ensure_ascii=False)
     graph.save()
 
     #return HttpResponseRedirect('/admin/zcore/graph/' + str(graph.id))
@@ -109,7 +112,7 @@ def make_balanced_tree(request):
 
     graph = Graph()
     graph.title = "Balanced tree %s-%s" % (n, m)
-    graph.body = json.dumps(data)
+    graph.body = json.dumps(data, ensure_ascii=False)
     graph.save()
 
     return HttpResponseRedirect('/zcore/')
@@ -139,7 +142,7 @@ def make_random(request):
 
     graph = Graph()
     graph.title = methods[i]
-    graph.body = json.dumps(data)
+    graph.body = json.dumps(data, ensure_ascii=False)
     graph.save()
 
     return HttpResponseRedirect('/')
@@ -174,7 +177,7 @@ def to_circular(body):
     data.update({'numberOfNodes':nx.number_of_nodes(G)})
     data.update({'numberOfEdges':nx.number_of_edges(G)})
 
-    data = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
+    data = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
 
     return data
 
@@ -193,7 +196,7 @@ def to_spring(body):
         y = str(point[1])
         data['coords'].append({'x':x,'y':y})
 
-    data = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
+    data = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
 
     return data
 
@@ -249,7 +252,7 @@ def to_force(body, graphFilter, removeStandalone=True):
     else:
         data = json_graph.node_link_data(F)
 
-    result = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
+    result = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
 
     return result
 
@@ -286,7 +289,7 @@ def to_chord(body):
         if counter > len(trash)-1:
             rr = []
 
-    data = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
+    data = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
     return data
 
 
@@ -431,7 +434,7 @@ def json_force_d3(request, id, graphFilter, nodesList, color):
     data['graph'].append({'numberOfEdges': numberOfEdges})
 
     #data = G0data
-    result = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
+    result = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
     #result=graph.body
 
     content = result
@@ -493,7 +496,7 @@ def json_force_react(request, id, gfilter):
     # Вывод отладочной информации
     pdev('G.nodes %i, G.edges %i' % (numberOfNodes,numberOfEdges))
 
-    content = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
+    content = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
     response = HttpResponse()
     response['Content-Type'] = "text/javascript; charset=utf-8"
     response.write(content)
@@ -563,7 +566,7 @@ def json_chord(request, id, gfilter):
     pdev('G.nodes %i, G.edges %i' % (numberOfNodes,numberOfEdges))
 
     #J = json_graph.node_link_data(G)
-    content = json.dumps(gdata, sort_keys=True, indent=4, separators=(',', ': '))
+    content = json.dumps(gdata, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
     #content = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
     response = HttpResponse()
     response['Content-Type'] = "text/javascript; charset=utf-8"
@@ -656,7 +659,7 @@ def json_timeline(request, id, gfilter):
     pdev('G.nodes %i, G.edges %i' % (numberOfNodes,numberOfEdges))
 
     #J = json_graph.node_link_data(G)
-    content = json.dumps(gdata, sort_keys=True, indent=4, separators=(',', ': '))
+    content = json.dumps(gdata, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
     #content = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
     response = HttpResponse()
     response['Content-Type'] = "text/javascript; charset=utf-8"
@@ -687,7 +690,7 @@ def json_attributes(request):
         data.append({'value': value, 'display': display, 'checked': checked})
 
     # Преобразуем данные в json-формат
-    content = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
+    content = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
 
     # Создаём объект response для динамического создания html-страницы
     response = HttpResponse() 
@@ -700,6 +703,50 @@ def json_attributes(request):
 
     # возвращаем все необходимые фреймворку Django данные для окончательной генерации html-страницы
     return response 
+
+
+# Получаем словарь типов информационных объектов в древовидной форме с учётом вложенности в формате json
+# для вывода элементов интерфейса с использование библиотеки Cement обязательно наличие ключей:
+# value, display, checked
+def json_taxonomy(request):
+    cursor = connections['mysql'].cursor()
+    sql = "SELECT id, parent_id, name FROM taxonomy"
+
+    # Выполняем sql-запрос
+    cursor.execute(sql)
+
+    # Получаем массив значений результата sql-запроса в виде словаря:
+    # "ключ": "значение". Это необходимо для преоразования в json-формат
+    attributes = dictfetchall(cursor)
+    data = []
+    initValues = [1]
+    for attribute in attributes:
+        id = str(attribute['id'])
+        name = attribute['name']
+        parent_id = attribute['parent_id']
+
+        if id in initValues:
+            checked = True
+        else:
+            checked = False
+        data.append({'value': id, 'parent_id': parent_id, 'display': name, 'checked': checked})
+
+    # Преобразуем данные в json-формат
+    content = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
+
+    # Создаём объект response для динамического создания html-страницы
+    response = HttpResponse() 
+
+    # Объявляем основные мета-данные html-страницы
+    response['Content-Type'] = "text/javascript; charset=utf-8" 
+
+    # Записываем в объкт response полученную структуру графа в json-формате
+    #response.write(HTMLPREFIX+content+HTMLSUFFIX) 
+    response.write(content)
+
+    # возвращаем все необходимые фреймворку Django данные для окончательной генерации html-страницы
+    return response 
+    #return HttpResponse("Here's the text of the Web page.")
 
 
 class HeapInfo(APIView):
