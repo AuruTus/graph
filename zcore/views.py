@@ -311,6 +311,12 @@ def view_chord(request, id):
     return render(request, 'zcore/chord.html', context)
 
 
+# Шаблон отображения создания нового проекта
+def view_new_project(request):
+    context = ''
+    return render(request, 'zcore/new-project.html', context)
+
+
 # Шаблон отображения графа в виде временной гистограммы
 def view_timeline(request, id):
     graph = get_object_or_404(Graph, pk=id)

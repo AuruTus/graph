@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block side_bar %}
+    <div id="graph-filter">Graph filter</div>
+{% endblock side_bar %}
+
+
+{% block content %}
+
+    <div id='mountNode'></div>
+    <script src="{% static 'react/build/ViewNewProject.js' %}"></script>
+
+{% endblock content %}
+
+

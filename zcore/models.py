@@ -235,6 +235,14 @@ def create_filtered_graph(graphFilter):
         render_content('Неправильный json-массив filterOptions')
         raise
 
+    # Обрабатываем массив filterClasses
+    try:
+        filterClasses = graphFilter['filterClasses']
+        print_json(filterClasses)
+    except:
+        render_content('Неправильный json-массив filterClasses')
+        raise
+
     # Устанавливаем соединение с БД, в которой хранятся семантически связанные данные
     cursor = connections['mysql'].cursor()
 

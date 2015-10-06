@@ -23,14 +23,14 @@ var MainMenu = React.createClass({
             <nav className="navbar navbar-inverse navbar-fixed-top">
                 <div className="container">
                     <div className="navbar-header">
-                        <a className="navbar-brand" href="#">Проект id {gid}</a>
+                        <a className="navbar-brand" href="/">Проекты</a>
                     </div>
                     <div id="navbar" className="navbar-collapse collapse">
                         <ul className="nav navbar-nav">
                             {rowsLinks}
                         </ul>
                         <ul className="nav navbar-nav navbar-right">
-                            <li><a href="/">Проекты</a></li>
+                            <li><a href="/new-project">Создать проект</a></li>
                         </ul>
                     </div>
                 </div>
