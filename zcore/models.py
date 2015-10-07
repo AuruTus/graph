@@ -116,46 +116,8 @@ def render_content(content):
     return response 
 
 
-# Получение атрибутов информационного объекта вида узел
-def get_node_attributes(element_id)
-    nodeAttributes = False
-
-    cursor = connections['mysql'].cursor()
-    sql = "SELECT prpdf.name, prpdf.display, prp.str_val FROM properties as prp, propertydefs as prpdf WHERE prp.def_id=prpdf.id AND target_id=%i" % (element_id)
-    cursor.execute(sql)
-    attributes = cursor.fetchall()
-    data = []
-    for attribute in attributes:
-        data.append({'val':attribute[0],'name':attribute[1],'display':attribute[2]})
-    nodeAttributes = data
-
-    return nodeAttributes
-
-
-# Получение атрибутов информационного объекта вида дуга
-def get_edge_attributes_from_db(element_id):
-    return ''
-
-
-def add_neighbour_nodes_from_db(nid, G):
-    cursor = connections['mysql'].cursor()
-    sql = "SELECT rel.id, rel.arg1, rel.arg2, el.data \
-        FROM relations as rel, elements as el \
-        WHERE rel.id = el.id AND (rel.arg1=%i OR rel.arg2=%i)" \
-        % (nid, nid)
-    cursor.execute(sql) # Выполняем sql-запрос
-    edges = dictfetchall(cursor) # Получаем массив значений результата sql-запроса в виде словаря
-
-    # Проходимся в цикле по всем строкам результата sql-запроса и добавляем в граф дуги
-    for edge in edges:
-        # Для каждой дуги с помощью отдельной функции получаем словарь атрибутов.
-        edgeAttributes = get_edge_attributes_from_db(edge['id'])
-
-        G.add_edge(edge['arg1'], edge['arg2'], id=edge['id'], data=edge['data'], attributes=edgeAttributes)
-
-    return True
-
 # Добавляем узел в граф при создании многомерной проекции "семантической кучи"
+# устаревная функция, оставлена для примера кода
 def add_node_from_db(nid, G, filterAttributesString=False, nodeData=False):
     nodeAdded = False
 
@@ -184,7 +146,7 @@ def add_node_from_db(nid, G, filterAttributesString=False, nodeData=False):
 
 
 # Создание графа - многомерной проекции "семантической кучи" - с заданными атрибутами узлов
-# требует оптимизации 
+# устаревная функция, оставлена для примера кода
 def create_filtered_graph(graphFilter):
     # Cоздаём пустой NetworkX-граф
     G = nx.Graph()
@@ -252,7 +214,7 @@ def create_filtered_graph(graphFilter):
         nodeAdded = add_node_from_db(node[0], G, filterAttributesString, node[1])
         # Если узел был добавлен, добавляем всех его соседей с учётом фильтра
         if nodeAdded:
-            add_neighbour_nodes_from_db(node[0], G, filterAttributesString)
+            add_neighbour_nodes(node[0], G)
 
     # Добавлям значеие веса узлов созданного графа в качестве атрибута degree
     for node in G.nodes():
@@ -287,10 +249,50 @@ def create_filtered_graph(graphFilter):
 
 #
 #
-# Создаем граф с максимально возможным кол-вом узлов и связей исходя из данных семантической кучи
+# Создаем граф с максимально возможным кол-вом узлов и связей исходя из исходный данных - семантической кучи
 
-# Главная функция создания графа с максимально возможным кол-вом узлов и связей исходя из данных семантической кучи
-def create_max_graph():
+# Получение атрибутов информационного объекта вида узел
+def get_node_attributes(nid):
+    cursor = connections['mysql'].cursor()
+    sql = "SELECT prpdf.name, prpdf.display, prp.str_val FROM properties as prp, propertydefs as prpdf WHERE prp.def_id=prpdf.id AND target_id=%i" % (nid)
+    cursor.execute(sql)
+    attributes = cursor.fetchall()
+    data = []
+    for attribute in attributes:
+        data.append({'val':attribute[0],'name':attribute[1],'display':attribute[2]})
+    nodeAttributes = data
+
+    return nodeAttributes
+
+
+# Получение атрибутов информационного объекта вида дуга
+def get_edge_attributes(element_id):
+    return ''
+
+
+# Добавляем дуги к указанному узлу
+def add_node_edges(nid, G):
+    cursor = connections['mysql'].cursor()
+    sql = "SELECT rel.id, rel.arg1, rel.arg2, el.data \
+        FROM relations as rel, elements as el \
+        WHERE rel.id = el.id AND (rel.arg1=%i OR rel.arg2=%i)" \
+        % (nid, nid)
+    cursor.execute(sql) # Выполняем sql-запрос
+    edges = dictfetchall(cursor) # Получаем массив значений результата sql-запроса в виде словаря
+
+    # Проходимся в цикле по всем строкам результата sql-запроса и добавляем в граф дуги
+    for edge in edges:
+        # Для каждой дуги с помощью отдельной функции получаем словарь атрибутов.
+        edgeAttributes = get_edge_attributes(edge['id'])
+
+        # Добавляем дугу в граф для указанного узла и её атрибуты
+        G.add_edge(edge['arg1'], edge['arg2'], id=edge['id'], data=edge['data'], attributes=edgeAttributes)
+
+    return True
+
+# Главная функция создания максимально большого графа 
+def create_max_semantic_graph():
+    pdev("creating max graph...")
     # Cоздаём пустой NetworkX-граф
     G = nx.Graph()
 
@@ -298,8 +300,8 @@ def create_max_graph():
     cursor = connections['mysql'].cursor()
 
     # Формируем sql-запрос к таблице elements, содержащей информационные объекты (далее ИО).
-    # объекты со значением ent_or_rel=0 -  являются вершинами нашего графа
-    sql = "SELECT el.id, el.data  FROM elements as el WHERE el.ent_or_rel=0"
+    # объекты со значением ent_or_rel=1 -  являются вершинами нашего графа
+    sql = "SELECT el.id, el.data  FROM elements as el WHERE el.ent_or_rel=1"
 
     cursor.execute(sql) # Выполняем sql-запрос
     nodes = cursor.fetchall() # Получаем массив значений результата sql-запроса
@@ -317,11 +319,42 @@ def create_max_graph():
             # Добавляем узел в объект типа граф, предоставленного библиотекой NetworkX
             G.add_node(nid, data=node[1], attributes=nodeAttributes)
 
-            # Добавляем все дуги узла и соответствующие им узлы
-            add_neighbour_nodes_from_db(node[0], G)
+            # Добавляем дуги к указанному узлу
+            add_node_edges(nid, G)
 
     return G
 
 
+# /Создаем граф с максимально возможным кол-вом узлов и связей исходя из данных семантической кучи
+#
+#
+
+
 def create_filtered_graph2(graphFilter):
-    pass
+    # Создаем максимально возможный граф из исходных данных - семантической кучи
+    G = create_max_semantic_graph()
+
+    # Средствами бибилиотеки NetworkX,
+    # экспортируем граф в виде подходящeм для json-сериализации
+    data = json_graph.node_link_data(G)
+
+    # Создаём экземпляр класса Graph, для хранения структуры графа в базе данных
+    graph = Graph() 
+
+    # Определяем заголовок графа
+    graph.title = "Многомерная проекция 'семантической кучи' по заданному фильтру" 
+
+    # Преобразуем данные в json-формат
+    graph.body = json.dumps(data) 
+
+    numberOfNodes = G.number_of_nodes()
+    pdev('Gnodes %i' % (numberOfNodes)) # отладка: выводим кол-во узлов
+
+    numberOfEdges = G.number_of_edges()
+    pdev('Gedges %i' % (numberOfEdges)) # отладка: выводим кол-во дуг
+
+    # Сохраняем граф в собственную базу данных
+    graph.save() 
+
+    return graph.body
+

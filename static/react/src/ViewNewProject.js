@@ -21,7 +21,6 @@ var NewProjectFilter = React.createClass({
         graphFilter = encodeURIComponent(JSON.stringify(graphFilter))
 
         // Формируем и отправляен get-запрос на сервер
-        /*
         var client = new XMLHttpRequest()
         var url = '/create-project/' + graphFilter
         client.open('GET', url)
@@ -33,7 +32,6 @@ var NewProjectFilter = React.createClass({
             location.reload()
           }
         }
-        */
 
     },
     handleReClick: function(e) {

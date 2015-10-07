@@ -14,7 +14,7 @@ from django.db import connections
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from .models import Graph, Node, create_filtered_graph, print_json, pdev
+from .models import Graph, Node, create_filtered_graph2, create_filtered_graph, print_json, pdev
 from .models import GFilterNodes, GFilterAttributes, GFilterZero
 
 HTMLPREFIX = '<!DOCTYPE html><meta charset="utf-8"><body>'
@@ -151,7 +151,7 @@ def make_random(request):
 # Создание нового проекта
 def create_project(request, graphFilter):
     # Создание графа - многомерной проекции "семантической кучи" - с заданными атрибутами узлов
-    data = create_filtered_graph(graphFilter)
+    data = create_filtered_graph2(graphFilter)
 
     content = {'content': data}
     #return render(request, 'content.html', content)
@@ -753,11 +753,11 @@ class HeapInfo(APIView):
 
     def get(self, request):
         cursor = connections['mysql'].cursor() # Устанавливаем соединения с базой данных 'mysql'
-        sql = "SELECT count(id) as nodes FROM elements WHERE ent_or_rel=0"
+        sql = "SELECT count(id) as nodes FROM elements WHERE ent_or_rel=1"
         cursor.execute(sql) # Выполняем sql-запрос
         nodes = cursor.fetchall()[0][0]
 
-        sql = "SELECT count(id) as edges FROM elements WHERE ent_or_rel=1"
+        sql = "SELECT count(id) as edges FROM elements WHERE ent_or_rel=0"
         cursor.execute(sql) # Выполняем sql-запрос
         edges = cursor.fetchall()[0][0]
 
