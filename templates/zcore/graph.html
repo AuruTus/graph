@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+
+{% block side_bar %}
+
+<div id="heap-info"></div>
+<script src="{% static 'react/build/HeapInfo.js' %}"></script>
+
+{% endblock side_bar %}
+
+
+{% block content %}
+
+    <div id='mountNode'></div>
+    <script src="{% static 'react/build/ViewGraph.js' %}"></script>
+
+{% endblock content %}
+
+

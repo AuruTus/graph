@@ -308,19 +308,26 @@ def create_max_semantic_graph():
 
     # В цикле проходимся по каждой строке результата запроса и добавляем в граф узлы
     # node[0] - id узла, node[1] - поле data
+    counter = 0
     for node in nodes:
-        nid = int(node[0])
+        if counter < 1000:
+            counter = counter + 1
+            #print(counter)
+            nid = int(node[0])
 
-        # Если ID узла является цифровым значением и не равно нулю:
-        if nid:
-            # Для каждого узла с помощью отдельной функции получаем словарь атрибутов
-            nodeAttributes = get_node_attributes(nid)
+            # Если ID узла является цифровым значением и не равно нулю:
+            if nid:
+                # Для каждого узла с помощью отдельной функции получаем словарь атрибутов
+                nodeAttributes = get_node_attributes(nid)
 
-            # Добавляем узел в объект типа граф, предоставленного библиотекой NetworkX
-            G.add_node(nid, data=node[1], attributes=nodeAttributes)
+                # Добавляем узел в объект типа граф, предоставленного библиотекой NetworkX
+                G.add_node(nid, data=node[1], attributes=nodeAttributes)
 
-            # Добавляем дуги к указанному узлу
-            add_node_edges(nid, G)
+                # Добавляем дуги к указанному узлу
+                add_node_edges(nid, G)
+
+    # Производим фильтрацию полученного графа в зависимости от полученных параметров
+    G = GFilterZero(G, 'true')
 
     return G
 

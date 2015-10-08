@@ -184,17 +184,31 @@ def to_circular(body):
 def to_spring(body):
     H = json.loads(body)
     G = json_graph.node_link_graph(H)
-    spring = nx.spring_layout(G)
+    #layout = nx.spring_layout(G)
+    layout = nx.random_layout(G)
 
-    data = {'coords':[], 'links':[]}
+    #nodes = G.nodes(data=True)
+    nodes = G.nodes()
+    counter = 0
+    for n in nodes:
+        if counter < 100:
+            counter = counter + 1
+
+
+    #data = {'nodes':[], 'links':[]}
+    data = {'nodes':[]}
     e = nx.edges(G)
-    links = {'links': e}
-    data.update(links)
-    for k in spring:
-        point = spring.get(k)
+    #e = G.edges()
+    #links = {'links': e}
+    #data.update(links)
+    for nid in layout:
+        #print(k,'\n')
+        point = layout.get(nid)
         x = str(point[0])
         y = str(point[1])
-        data['coords'].append({'x':x,'y':y})
+        objType = randint(1,2)
+        neighbors = G.neighbors(nid)
+        data['nodes'].append({'id': nid, 'x':x,'y':y, 'type': objType, 'neighbors': neighbors})
 
     data = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
 
@@ -318,6 +332,13 @@ def view_chord(request, id):
 def view_new_project(request):
     context = ''
     return render(request, 'zcore/new-project.html', context)
+
+
+# Шаблон отображения данных в виде графа - основной вид
+def view_graph(request, id):
+    graph = get_object_or_404(Graph, pk=id)
+    context = {'graph': graph}
+    return render(request, 'zcore/graph.html', context)
 
 
 # Шаблон отображения графа в виде временной гистограммы

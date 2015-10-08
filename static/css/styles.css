@@ -86,5 +86,24 @@ svg .node {
         background: gray;
     }
 
+.comment {
+    display: none;
+}
+
+.graph {
+    //border: solid gray 2px;
+}
+    .graph circle {
+        stroke: #C2D6E6;
+        fill: #4682B4;
+    }
+    .graph rect {
+        stroke: #C2D6E6;
+        fill: #4682B4;
+    }
+    .graph polygon {
+        stroke: #C2D6E6;
+        fill: #4682B4;
+    }
 
 

@@ -86,7 +86,6 @@ var AttributesFilter = React.createClass({
             properties: [],
 
             filterAttributesState: {},
-            filterAttributesState: {},
         }
     },
     handleChange: function(checkboxGroupState) {

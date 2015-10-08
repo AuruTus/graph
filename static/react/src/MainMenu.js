@@ -1,5 +1,6 @@
 if (gid  != "None" && gid != "") {
     var links = [
+        {'link': '/graph/' + gid, 'title': 'Граф'},
         {'link': '/timeline/' + gid, 'title': 'Гистограмма'},
         {'link': '/force-react/' + gid + '//', 'title': 'Граф-react'},
         {'link': '/force-d3/' + gid + '////', 'title': 'Граф-d3'},
