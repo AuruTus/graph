@@ -96,60 +96,60 @@ var Graph = React.createClass({
             data: [],
         }
     },
+    getGraphNodeState: function(nid) {
+        node = eval('this.refs.theGraphNode' + nid)
+        console.log(node.getState())
+    },
+    handleChange: function() {
+        console.log("val")
+    },
     render: function() {
         var sceneHeight = 600
         var rows = []
+
+        var nodes = this.state.data.nodes
         var scale = 550
         var xoffset = 20
         var yoffset = 20
         var r = 7
         var width = 16
         var height = 12
-
-        var nodes = this.state.data.nodes
         if (typeof nodes !== "undefined") {
+            Object.keys(nodes).forEach(function(key) {
+                node = nodes[key]
+                rows.push(<GraphNode
+                    key={key}
+                    ref={"theGraphNode"+key}
+                    nid={key}
+                    cx={node.x*scale+xoffset}
+                    cy={node.y*scale+yoffset}
+                    neighbors={node.neighbors}
+                    type={node.type}
+                    r={r}
+                    width={width}
+                    height={height}
+                    getGraphNodeState={this.getGraphNodeState}
+                    onChange={this.handleChange}
+                />)
+            })
+/*
             nodes.forEach(function(prop, key) {
-                if (prop.type == "1") {
-                    rows.push(<GraphNodeCircle
-                        key={key}
-                        nid={prop.nid}
-                        cx={prop.x*scale+xoffset}
-                        cy={prop.y*scale+yoffset}
-                        neighbors={prop.neighbors}
-
-                        r={r}
-                    />)
-                } else if (prop.type == "2") {
-                    rows.push(<GraphNodeRect
-                        key={key}
-                        nid={prop.nid}
-                        cx={prop.x*scale+xoffset}
-                        cy={prop.y*scale+yoffset}
-                        neighbors={prop.neighbors}
-
-                        width={width}
-                        height={height}
-                    />)
-                } else if (prop.type == "3") {
-                    rows.push(<GraphNodePoly
-                        key={key}
-                        nid={prop.nid}
-                        cx={prop.x*scale+xoffset}
-                        cy={prop.y*scale+yoffset}
-                        neighbors={prop.neighbors}
-
-                        r={r}
-                    />)
-                }
+                rows.push(<GraphNode
+                    key={key}
+                    ref={"theGraphNode"+prop.nid}
+                    nid={prop.id}
+                    cx={prop.x*scale+xoffset}
+                    cy={prop.y*scale+yoffset}
+                    neighbors={prop.neighbors}
+                    type={prop.type}
+                    r={r}
+                    width={width}
+                    height={height}
+                    getGraphNodeState={this.getGraphNodeState}
+                    onChange={this.handleChange}
+                />)
             })
-        }
-
-        var edges = []
-        var links = this.state.data.links
-        if (typeof links !== "undefined") {
-            links.forEach(function(prop, key) {
-                //console.log(prop)
-            })
+*/
         }
 
         return (
@@ -165,7 +165,7 @@ var Graph = React.createClass({
 })
 
 
-                //points={"50,75 58,137.5 58,262.5 50,325 42,262.6 42,137.5"}
+//points={"50,75 58,137.5 58,262.5 50,325 42,262.6 42,137.5"}
 var GraphNodePoly = React.createClass({
     render: function() {
 var op = this.props.r
@@ -173,7 +173,7 @@ var tf = Math.tan(Math.PI/4)
 var mp = tf*op 
 var r = Math.sqrt(op*op + mp*mp)
 
-console.log(r)
+//console.log(r)
 
         return (
             <polygon
@@ -183,7 +183,88 @@ console.log(r)
 })
 
 
+var GraphNode = React.createClass({
+    getInitialState: function() {
+        return {
+            cx: this.props.cx,
+            cy: this.props.cy,
+        }
+    },
+    getState: function () {
+        var state = []
+        state["cx"] = this.state.cx
+        state["cy"] = this.state.cy
+
+        return state
+    },
+    handle: function() {
+        console.log(this.props.nid)
+        if (typeof this.props.onChange === 'function') {
+            this.props.onChange()
+        }
+    },
+    render: function() {
+        var edges = []
+        this.props.neighbors.forEach(function(prop, key) {
+            if (typeof this.props.getGraphNodeState === 'function') {
+            console.log(this.props.nid)
+                this.props.getGraphNodeState(this.props.nid)
+            }
+
+            edges.push(<GraphEdge
+                key={key}
+                x1={this.props.cx}
+                y1={this.props.cy}
+            />)
+        }.bind(this))
+
+        switch(this.props.type) {
+            case 1:
+                NodeType = GraphNodeCircle
+                break
+            case 2:
+                NodeType = GraphNodeRect
+                break
+        }
+
+        return (
+            <g>
+                <NodeType
+                    {...this.props}
+                    handle={this.handle}
+                />
+                {edges}
+            </g>
+        )
+    }
+})
+
+
+var GraphNodeCircle = React.createClass({
+    handleClick: function() {
+        if (typeof this.props.reClick === 'function') {
+            this.props.reClick()
+        }
+    },
+    render: function() {
+        return (
+            <circle 
+                cx={this.props.cx}
+                cy={this.props.cy}
+                r={this.props.r}
+                onClick={this.handleClick}
+            />
+        )
+    }
+})
+
+
 var GraphNodeRect = React.createClass({
+    handleClick: function() {
+        if (typeof this.props.reClick === 'function') {
+            this.props.reClick()
+        }
+    },
     render: function() {
         return (
             <rect 
@@ -191,21 +272,28 @@ var GraphNodeRect = React.createClass({
                 y={this.props.cy-this.props.height/2}
                 width={this.props.width}
                 height={this.props.height}
+                onClick={this.handleClick}
             />
-        );
+        )
     }
 })
 
 
-var GraphNodeCircle = React.createClass({
+var GraphEdge = React.createClass({
+    handleClick: function() {
+        if (typeof this.props.reClick === 'function') {
+            this.props.reClick()
+        }
+    },
     render: function() {
         return (
             <circle 
                 cx={this.props.cx}
                 cy={this.props.cy}
                 r={this.props.r}
+                onClick={this.handleClick}
             />
-        );
+        )
     }
 })
 

@@ -11,6 +11,15 @@
 
 
 {% block content %}
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+</script>
+<script type="text/javascript"
+src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+$f(a)=12πi∮γf(z)z−adz$
+
 <h1>Проекты</h1>
 <ul>
 {% for graph in graphs %}

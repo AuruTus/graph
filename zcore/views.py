@@ -189,14 +189,9 @@ def to_spring(body):
 
     #nodes = G.nodes(data=True)
     nodes = G.nodes()
-    counter = 0
-    for n in nodes:
-        if counter < 100:
-            counter = counter + 1
-
 
     #data = {'nodes':[], 'links':[]}
-    data = {'nodes':[]}
+    data = {'nodes':{}}
     e = nx.edges(G)
     #e = G.edges()
     #links = {'links': e}
@@ -208,7 +203,9 @@ def to_spring(body):
         y = str(point[1])
         objType = randint(1,2)
         neighbors = G.neighbors(nid)
-        data['nodes'].append({'id': nid, 'x':x,'y':y, 'type': objType, 'neighbors': neighbors})
+        #data['nodes'].append({'id': nid, 'x':x,'y':y, 'type': objType, 'neighbors': neighbors})
+        #data['nodes'].append(nid)
+        data['nodes'][nid] = {'id': nid, 'x':x,'y':y, 'type': objType, 'neighbors': neighbors}
 
     data = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
 
