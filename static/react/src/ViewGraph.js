@@ -94,62 +94,120 @@ var Graph = React.createClass({
         return {
             // ассоциативный массив данных, полученный с сервера в формате json
             data: [],
+            //x: this.props.x,
+            //y: this.props.y,
+            dragging: false,
+            nodeToMove: 0,
         }
     },
-    getGraphNodeState: function(nid) {
-        node = eval('this.refs.theGraphNode' + nid)
-        console.log(node.getState())
+    componentDidUpdate: function (props, state) {
+        if (this.state.dragging && !state.dragging) {
+            document.addEventListener('mousemove', this.onMouseMove)
+            document.addEventListener('mouseup', this.onMouseUp)
+        } else if (!this.state.dragging && state.dragging) {
+            document.removeEventListener('mousemove', this.onMouseMove)
+            document.removeEventListener('mouseup', this.onMouseUp)
+        }
     },
-    handleChange: function() {
-        console.log("val")
+    onMouseDown: function (e, nid) {
+//console.log(nid)
+        if (e.button !== 0) return
+        // Устанавливаем флаг перетаскивания объекта в значение истина
+        this.setState({dragging: true, nodeToMove: nid,})
+        // Прекращает дальнейшую передачу текущего события
+        e.stopPropagation()
+        // Отменяет действия браузера по умолчанию
+        e.preventDefault()
+    },
+    onMouseUp: function (e) {
+        // Устанавливаем флаг перетаскивания объекта в значение ложь
+        this.setState({dragging: false})
+        e.stopPropagation()
+        e.preventDefault()
+    },
+    onMouseMove: function (e) {
+        // Если флаг перетаскивания не истина, отменяем дальнейшую обработку
+        if (!this.state.dragging) return
+        var x = e.pageX + 1
+        var y = e.pageY - 122
+        this.setState({
+            x: x,
+            y: y,
+        })
+        e.stopPropagation()
+        e.preventDefault()
+        this.updateGraphNodePos(this.state.nodeToMove, x, y)
+        this.updateGraphEdgePos(this.state.edgesToMove, x, y)
+    },
+    updateGraphNodePos: function (nid, x, y) {
+//console.log(nid,'>',x,'-',y)
+        node = eval('this.refs.theGraphNode' + nid)
+//console.log(node)
+        node.setState({x: x, y: y,})
+    },
+    updateGraphEdgePos: function (eids, x, y) {
+        eids.forEach(function(eid) {
+            edge = eval('this.refs.theGraphEdge' + eid)
+            edge.setState({x: x, y: y,})
+        })
     },
     render: function() {
         var sceneHeight = 600
-        var rows = []
-
-        var nodes = this.state.data.nodes
         var scale = 550
-        var xoffset = 20
-        var yoffset = 20
+        var xOffset = 20
+        var yOffset = 20
         var r = 7
         var width = 16
         var height = 12
+        var nodes = this.state.data.nodes
+        var nodeRows = []
+        var edgeRows = []
+
+        // В случае, если массив данных nodes уже проинициализирован, то:
         if (typeof nodes !== "undefined") {
+            // Создаём массив объектов типа GraphNode
             Object.keys(nodes).forEach(function(key) {
-                node = nodes[key]
-                rows.push(<GraphNode
+//console.log('nodes:',key)
+                var node = nodes[key]
+                var x = node.x*scale+xOffset 
+                var y = node.y*scale+yOffset 
+                nodeRows.push(<GraphNode
                     key={key}
                     ref={"theGraphNode"+key}
                     nid={key}
-                    cx={node.x*scale+xoffset}
-                    cy={node.y*scale+yoffset}
-                    neighbors={node.neighbors}
+                    x={x}
+                    y={y}
+                    //neighbors={node.neighbors}
                     type={node.type}
                     r={r}
                     width={width}
                     height={height}
-                    getGraphNodeState={this.getGraphNodeState}
-                    onChange={this.handleChange}
+                    onMouseDown={this.onMouseDown}
                 />)
+            }.bind(this))
+
+            // Создаём массив объектов типа GraphEdge
+            Object.keys(nodes).forEach(function(key) {
+                var node = nodes[key]
+                var x1 = node.x*scale+xOffset
+                var y1 = node.y*scale+yOffset
+
+                node.neighbors.forEach(function(nid) {
+//console.log('edges:',key,'>',nid)
+                    var x2 = nodes[nid].x*scale+xOffset
+                    var y2 = nodes[nid].y*scale+yOffset
+                    var eid = key+nid
+                    edgeRows.push(<GraphEdge
+                        key={eid}
+                        ref={"theGraphEdge"+eid}
+                        eid={eid}
+                        startx={x1}
+                        starty={y1}
+                        x2={x2}
+                        y2={y2}
+                    />)
+                })
             })
-/*
-            nodes.forEach(function(prop, key) {
-                rows.push(<GraphNode
-                    key={key}
-                    ref={"theGraphNode"+prop.nid}
-                    nid={prop.id}
-                    cx={prop.x*scale+xoffset}
-                    cy={prop.y*scale+yoffset}
-                    neighbors={prop.neighbors}
-                    type={prop.type}
-                    r={r}
-                    width={width}
-                    height={height}
-                    getGraphNodeState={this.getGraphNodeState}
-                    onChange={this.handleChange}
-                />)
-            })
-*/
         }
 
         return (
@@ -158,10 +216,178 @@ var Graph = React.createClass({
                 height={sceneHeight}
                 className="graph"
             >
-                {rows}
+                <g>
+                    {edgeRows}
+                    {nodeRows}
+                </g>
             </svg>
         );
     },
+})
+
+
+var GraphNode = React.createClass({
+    getInitialState: function() {
+        return {
+            x: this.props.x,
+            y: this.props.y,
+            dragging: false,
+        }
+    },
+    componentDidUpdate: function (props, state) {
+        if (this.state.dragging && !state.dragging) {
+//console.log(state)
+            document.addEventListener('mousemove', this.onMouseMove)
+            document.addEventListener('mouseup', this.onMouseUp)
+        } else if (!this.state.dragging && state.dragging) {
+            document.removeEventListener('mousemove', this.onMouseMove)
+            document.removeEventListener('mouseup', this.onMouseUp)
+        }
+    },
+    onMouseDown: function(e, nid) {
+        if (typeof this.props.onMouseDown === 'function') {
+//console.log(nid)
+            this.props.onMouseDown(e, nid)
+        }
+    },
+    /*
+    rnMouseDown: function (e) {
+        if (e.button !== 0) return
+        //var pos = $(this.getDOMNode()).offset()
+//console.log(e.pageX,e.pageY)
+        this.setState({
+          // Устанавливаем флаг перетаскивания объекта в значение истина
+          dragging: true,
+          //rel: { x: e.pageX - pos.left, y: e.pageY - pos.top + 110, },
+        })
+        // Прекращает дальнейшую передачу текущего события
+        e.stopPropagation()
+        // Отменяет действия браузера по умолчанию
+        e.preventDefault()
+
+console.log(this.props.onMouseDown)
+        if (typeof this.props.onMouseDown === 'function') {
+console.log(e)
+            this.props.onMouseDown(e)
+        }
+    },
+    onMouseUp: function (e) {
+        // Устанавливаем флаг перетаскивания объекта в значение ложь
+        this.setState({dragging: false})
+        // Прекращает дальнейшую передачу текущего события
+        e.stopPropagation()
+        // Отменяет действия браузера по умолчанию
+        e.preventDefault()
+    },
+    onMouseMove: function (e) {
+        // Если флаг перетаскивания не истина, отменяем дальнейшую обработку
+        if (!this.state.dragging) return
+//console.log(e.pageX-this.state.rel.x)
+        this.setState({
+            x: e.pageX + 1,
+            y: e.pageY - 122,
+        })
+        // Прекращает дальнейшую передачу текущего события
+        e.stopPropagation()
+        // Отменяет действия браузера по умолчанию
+        e.preventDefault()
+    },
+    */
+    render: function() {
+        switch(this.props.type) {
+            case 1:
+                NodeType = GraphNodePerson
+                break
+            case 2:
+                NodeType = GraphNodeCircle
+                //NodeType = GraphNodeRect
+                break
+        }
+
+        return (
+            <g>
+                <NodeType
+                    {...this.props}
+                    cx={this.state.x}
+                    cy={this.state.y}
+                    onMouseDown={this.onMouseDown}
+                />
+            </g>
+        )
+    }
+})
+
+
+var GraphNodePerson = React.createClass({
+    handleClick: function(e) {
+        if (typeof this.props.handleClick === 'function') {
+            this.props.handleClick()
+        }
+    },
+    render: function() {
+        return (
+                <use 
+                    xlink={"Person"}
+                    x={this.props.cx}
+                    y={this.props.cy}
+                    onClick={this.handleClick}
+                />
+        )
+    }
+})
+
+var GraphNodeCircle = React.createClass({
+    onMouseDown: function(e) {
+        if (typeof this.props.onMouseDown === 'function') {
+            this.props.onMouseDown(e, this.props.nid)
+        }
+    },
+    render: function() {
+        return (
+                <g>
+                <circle 
+                    cx={this.props.cx}
+                    cy={this.props.cy}
+                    r={this.props.r}
+                    //onMouseDown={this.onMouseDown}
+                />
+                </g>
+        )
+    }
+})
+
+
+var GraphNodeRect = React.createClass({
+    onMouseDown: function(e) {
+        if (typeof this.props.onMouseDown === 'function') {
+            this.props.onMouseDown(e, this.props.nid)
+        }
+    },
+    render: function() {
+        return (
+            <rect 
+                x={this.props.cx-this.props.width/2}
+                y={this.props.cy-this.props.height/2}
+                width={this.props.width}
+                height={this.props.height}
+                //onMouseDown={this.onMouseDown}
+            />
+        )
+    }
+})
+
+
+var GraphEdge = React.createClass({
+    render: function() {
+        return (
+            <line 
+                x1={this.props.startx}
+                y1={this.props.starty}
+                x2={this.props.x2}
+                y2={this.props.y2}
+            />
+        )
+    }
 })
 
 
@@ -179,118 +405,6 @@ var r = Math.sqrt(op*op + mp*mp)
             <polygon
             />
         );
-    }
-})
-
-
-var GraphNode = React.createClass({
-    getInitialState: function() {
-        return {
-            cx: this.props.cx,
-            cy: this.props.cy,
-        }
-    },
-    getState: function () {
-        var state = []
-        state["cx"] = this.state.cx
-        state["cy"] = this.state.cy
-
-        return state
-    },
-    handle: function() {
-        console.log(this.props.nid)
-        if (typeof this.props.onChange === 'function') {
-            this.props.onChange()
-        }
-    },
-    render: function() {
-        var edges = []
-        this.props.neighbors.forEach(function(prop, key) {
-            console.log(this.props.nid)
-            if (typeof this.props.getGraphNodeState === 'function') {
-                this.props.getGraphNodeState(this.props.nid)
-            }
-
-            edges.push(<GraphEdge
-                key={key}
-                x1={this.props.cx}
-                y1={this.props.cy}
-                x2={0}
-                y2={0}
-            />)
-        }.bind(this))
-
-        switch(this.props.type) {
-            case 1:
-                NodeType = GraphNodeCircle
-                break
-            case 2:
-                NodeType = GraphNodeRect
-                break
-        }
-
-        return (
-            <g>
-                {edges}
-                <NodeType
-                    {...this.props}
-                    handle={this.handle}
-                />
-            </g>
-        )
-    }
-})
-
-
-var GraphNodeCircle = React.createClass({
-    handleClick: function() {
-        if (typeof this.props.reClick === 'function') {
-            this.props.reClick()
-        }
-    },
-    render: function() {
-        return (
-            <circle 
-                cx={this.props.cx}
-                cy={this.props.cy}
-                r={this.props.r}
-                onClick={this.handleClick}
-            />
-        )
-    }
-})
-
-
-var GraphNodeRect = React.createClass({
-    handleClick: function() {
-        if (typeof this.props.reClick === 'function') {
-            this.props.reClick()
-        }
-    },
-    render: function() {
-        return (
-            <rect 
-                x={this.props.cx-this.props.width/2}
-                y={this.props.cy-this.props.height/2}
-                width={this.props.width}
-                height={this.props.height}
-                onClick={this.handleClick}
-            />
-        )
-    }
-})
-
-
-var GraphEdge = React.createClass({
-    render: function() {
-        return (
-            <line 
-                x1={this.props.x1}
-                y1={this.props.y1}
-                x2={this.props.x2}
-                y2={this.props.y2}
-            />
-        )
     }
 })
 
@@ -392,5 +506,4 @@ var TaxonomyFilter = React.createClass({
 
 
 React.render( <Scene/>, mountNode)
-
 

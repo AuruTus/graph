@@ -202,10 +202,31 @@ def to_spring(body):
         x = str(point[0])
         y = str(point[1])
         objType = randint(1,2)
+        #neighbors = G.neighbors(nid)
+        #data['nodes'].append({'id': nid, 'x':x,'y':y, 'type': objType, 'neighbors': neighbors})
+        #data['nodes'].append(nid)
+        data['nodes'][nid] = {
+            'id': nid, 
+            'x':x,'y':y, 
+            'type': objType, 
+            #'neighbors': neighbors,
+        }
+
+    for nid in layout:
+        #print(k,'\n')
+        point = layout.get(nid)
+        x = str(point[0])
+        y = str(point[1])
+        objType = randint(1,2)
         neighbors = G.neighbors(nid)
         #data['nodes'].append({'id': nid, 'x':x,'y':y, 'type': objType, 'neighbors': neighbors})
         #data['nodes'].append(nid)
-        data['nodes'][nid] = {'id': nid, 'x':x,'y':y, 'type': objType, 'neighbors': neighbors}
+        data['nodes'][nid] = {
+            'id': nid, 
+            'x':x,'y':y, 
+            'type': objType, 
+            'neighbors': neighbors,
+        }
 
     data = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
 
