@@ -206,8 +206,8 @@ var GraphNode = React.createClass({
     render: function() {
         var edges = []
         this.props.neighbors.forEach(function(prop, key) {
-            if (typeof this.props.getGraphNodeState === 'function') {
             console.log(this.props.nid)
+            if (typeof this.props.getGraphNodeState === 'function') {
                 this.props.getGraphNodeState(this.props.nid)
             }
 
@@ -215,6 +215,8 @@ var GraphNode = React.createClass({
                 key={key}
                 x1={this.props.cx}
                 y1={this.props.cy}
+                x2={0}
+                y2={0}
             />)
         }.bind(this))
 
@@ -229,11 +231,11 @@ var GraphNode = React.createClass({
 
         return (
             <g>
+                {edges}
                 <NodeType
                     {...this.props}
                     handle={this.handle}
                 />
-                {edges}
             </g>
         )
     }
@@ -280,18 +282,13 @@ var GraphNodeRect = React.createClass({
 
 
 var GraphEdge = React.createClass({
-    handleClick: function() {
-        if (typeof this.props.reClick === 'function') {
-            this.props.reClick()
-        }
-    },
     render: function() {
         return (
-            <circle 
-                cx={this.props.cx}
-                cy={this.props.cy}
-                r={this.props.r}
-                onClick={this.handleClick}
+            <line 
+                x1={this.props.x1}
+                y1={this.props.y1}
+                x2={this.props.x2}
+                y2={this.props.y2}
             />
         )
     }
