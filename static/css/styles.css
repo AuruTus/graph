@@ -94,25 +94,26 @@ svg .node {
     //border: solid gray 2px;
 }
     .graph circle {
-        z-index: 999;
         stroke: #C2D6E6;
         fill: #4682B4;
     }
     .graph rect {
-        z-index: 999;
         stroke: #C2D6E6;
         fill: #4682B4;
     }
     .graph polygon {
-        z-index: 999;
         stroke: #C2D6E6;
         fill: #4682B4;
     }
     line,
     .graph line {
-        z-index: 99;
         stroke: #bbb;
         stroke-width: 1px;
     }
+    .graph .person {
+        fill: #264294;
+    }
+
+
 
 

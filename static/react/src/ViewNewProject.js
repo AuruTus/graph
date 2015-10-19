@@ -29,13 +29,10 @@ var NewProjectFilter = React.createClass({
         client.onreadystatechange = function() {
           if(this.readyState == this.HEADERS_RECEIVED) {
             //console.log(this.getAllResponseHeaders());
-            location.reload()
+            //location.reload()
           }
         }
 
-    },
-    handleReClick: function(e) {
-        //this.handleSubmit(e)
     },
     updateAttributesFilter(filterAttributesState) {
         this.setState({ filterAttributes: filterAttributesState })
@@ -45,17 +42,19 @@ var NewProjectFilter = React.createClass({
     },
     render: function() {
         return (
-            <form onSubmit={this.handleSubmit} ref="forceGraphFilterForm">
-                <AttributesFilter
-                    updateAttributesFilter={this.updateAttributesFilter}
-                />
-                <hr/>
-                <TaxonomyFilter
-                    updateTaxonomy={this.updateTaxonomy}
-                />
-                <hr/>
-                <input type="submit" className="btn btn-warning" value="Создать" />
-            </form>
+            <div>
+                <form onSubmit={this.handleSubmit} ref="forceGraphFilterForm">
+                    <AttributesFilter
+                        updateAttributesFilter={this.updateAttributesFilter}
+                    />
+                    <hr/>
+                    <TaxonomyFilter
+                        updateTaxonomy={this.updateTaxonomy}
+                    />
+                    <hr/>
+                    <input type="submit" className="btn btn-warning" value="Создать" />
+                </form>
+            </div>
         );
     },
 });
@@ -152,6 +151,42 @@ var TaxonomyFilter = React.createClass({
                 properties={this.state.properties}
                 onChange={this.handleChange}
             />
+        );
+    },
+})
+
+
+var NewGraph = React.createClass({
+    loadDataFromServer: function() {
+        $.ajax({
+            // url по которому на стороне сервера формируется ассоциативный массив атрибутов узлов в формате json
+            url: '/json-main-graph/377/',
+
+            dataType: 'json',
+            cache: false,
+            success: function(data) {
+                this.setState({data: data});
+            }.bind(this),
+            error: function(xhr, status, err) {
+                console.error(this.props.url, status, err.toString())
+            }.bind(this)
+        })
+    },
+    getInitialState: function() {
+        // Получаем  данные с сервера в формате json
+        this.loadDataFromServer()
+
+        return {
+            // ассоциативный массив данных, полученный с сервера в формате json
+            data: [],
+        }
+    },
+    render: function() {
+        console.log(this.state.data)
+        return (
+            <div>
+                {this.state.data}
+            </div>
         );
     },
 })

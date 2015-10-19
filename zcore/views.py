@@ -14,7 +14,7 @@ from django.db import connections
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from .models import Graph, Node, create_filtered_graph2, create_filtered_graph, print_json, pdev
+from .models import Graph, Node, create_filtered_graph2, old_create_filtered_graph, print_json, pdev
 from .models import GFilterNodes, GFilterAttributes, GFilterZero
 
 HTMLPREFIX = '<!DOCTYPE html><meta charset="utf-8"><body>'
@@ -153,9 +153,10 @@ def create_project(request, graphFilter):
     # Создание графа - многомерной проекции "семантической кучи" - с заданными атрибутами узлов
     data = create_filtered_graph2(graphFilter)
 
-    content = {'content': data}
+    #content = {'content': data}
     #return render(request, 'content.html', content)
     return HttpResponseRedirect('/') # Переадресуем на главную страницу
+    #return True
 
 
 def to_circular(body):
@@ -181,7 +182,14 @@ def to_circular(body):
 
     return data
 
-def to_spring(body):
+
+def to_plane_graph(body):
+    H = json.loads(body)
+    data = json.dumps(H, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
+    return data
+
+
+def to_main_graph(body):
     H = json.loads(body)
     G = json_graph.node_link_graph(H)
     #layout = nx.spring_layout(G)
@@ -196,6 +204,7 @@ def to_spring(body):
     #e = G.edges()
     #links = {'links': e}
     #data.update(links)
+    """
     for nid in layout:
         #print(k,'\n')
         point = layout.get(nid)
@@ -211,16 +220,14 @@ def to_spring(body):
             'type': objType, 
             #'neighbors': neighbors,
         }
+    """
 
     for nid in layout:
-        #print(k,'\n')
         point = layout.get(nid)
         x = str(point[0])
         y = str(point[1])
         objType = randint(1,2)
         neighbors = G.neighbors(nid)
-        #data['nodes'].append({'id': nid, 'x':x,'y':y, 'type': objType, 'neighbors': neighbors})
-        #data['nodes'].append(nid)
         data['nodes'][nid] = {
             'id': nid, 
             'x':x,'y':y, 
@@ -381,15 +388,16 @@ def json_circular(request, id):
     return response 
 
 # Преобразование графа для вывода по алгоритму spring
-def json_spring(request, id):
+def json_main_graph(request, id):
     graph = get_object_or_404(Graph, pk=id)
 
     response = HttpResponse()
     response['Content-Type'] = "text/javascript; charset=utf-8"
 
-    spring = to_spring(graph.body)
+    #data = to_main_graph(graph.body)
+    data = to_plane_graph(graph.body)
 
-    response.write(spring)
+    response.write(data)
 
     """
     H = json.loads(graph.body)
