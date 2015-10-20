@@ -1,9 +1,9 @@
 var NewProjectFilter = React.createClass({
     getInitialState: function() {
         return {
-            filterAttributes: {},
+            attributes: {},
             taxonomy: {},
-            filterOptions: {zero: 'no'},
+            options: {},
         }
     },
     handleSubmit: function(e) {
@@ -11,8 +11,8 @@ var NewProjectFilter = React.createClass({
         
         // Формируем массив json-данных graphFilter
         var graphFilter = { 
-            filterAttributes: this.state.filterAttributes ,
-            filterOptions: this.state.filterOptions,
+            filterAttributes: this.state.attributes ,
+            filterOptions: this.state.options,
             filterTaxonomy: this.state.taxonomy,
         } 
         console.log(this.constructor.displayName,' graphFilter > ',graphFilter)
@@ -23,6 +23,7 @@ var NewProjectFilter = React.createClass({
         // Формируем и отправляен get-запрос на сервер
         var client = new XMLHttpRequest()
         var url = '/create-project/' + graphFilter
+        console.log(graphFilter)
         client.open('GET', url)
         client.send()
 
@@ -34,24 +35,26 @@ var NewProjectFilter = React.createClass({
         }
 
     },
-    updateAttributesFilter(filterAttributesState) {
-        this.setState({ filterAttributes: filterAttributesState })
+    updateAttributesFilter(state) {
+        this.setState({ attributes: state })
     },
-    updateTaxonomy(taxonomyState) {
-        this.setState({ taxonomy: taxonomyState })
+    updateTaxonomy(state) {
+        this.setState({ taxonomy: state })
+    },
+    updateOptions(state) {
+        this.setState({ options: state })
     },
     render: function() {
+
+                    /*
+                    <AttributesFilter updateAttributesFilter={this.updateAttributesFilter} />
+                    <hr/>
+                    */
         return (
             <div>
                 <form onSubmit={this.handleSubmit} ref="forceGraphFilterForm">
-                    <AttributesFilter
-                        updateAttributesFilter={this.updateAttributesFilter}
-                    />
-                    <hr/>
-                    <TaxonomyFilter
-                        updateTaxonomy={this.updateTaxonomy}
-                    />
-                    <hr/>
+                    <TaxonomyFilter updateTaxonomy={this.updateTaxonomy} />
+                    <OptionsFilter updateTaxonomy={this.updateOptions} />
                     <input type="submit" className="btn btn-warning" value="Создать" />
                 </form>
             </div>
@@ -148,6 +151,35 @@ var TaxonomyFilter = React.createClass({
         return (
             <CMCheckboxGroup
                 name='taxonomy'
+                properties={this.state.properties}
+                onChange={this.handleChange}
+            />
+        );
+    },
+})
+
+
+var OptionsFilter = React.createClass({
+    getInitialState: function() {
+        return {
+            // ассоциативный массив данных, полученный с сервера в формате json
+            properties: [
+                { "checked": true, "display": "Убирать узлы без связей", "value": true },
+            ],
+            optionsState: {},
+        }
+    },
+    handleChange: function(checkboxGroupState) {
+        this.setState({ optionsState: checkboxGroupState })
+        // Передаём обновлённый словарь состояний родительскому компоненту
+        if (typeof this.props.updateOptions === 'function') {
+            this.props.updateOptions(checkboxGroupState)
+        }
+    },
+    render: function() {
+        return (
+            <CMCheckboxGroup
+                name='options'
                 properties={this.state.properties}
                 onChange={this.handleChange}
             />

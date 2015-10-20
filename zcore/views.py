@@ -766,9 +766,9 @@ def json_taxonomy(request):
     # "ключ": "значение". Это необходимо для преоразования в json-формат
     attributes = dictfetchall(cursor)
     data = []
-    initValues = [1]
+    initValues = [1,6]
     for attribute in attributes:
-        id = str(attribute['id'])
+        id = int(attribute['id'])
         name = attribute['name']
         parent_id = attribute['parent_id']
 

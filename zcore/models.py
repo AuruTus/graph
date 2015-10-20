@@ -44,7 +44,7 @@ def GFilterZero(G, check):
 def GFilterAttributes(G, attributes):
     # Если список attributes содержит данные, производим фильтрацию узлов
     if len(attributes) > 0:
-        # Преобразуем ассоциативный массив в обычный
+        # Преобразуем ассоциативный массив в обычный с учётом значения true
         attributesFlatten = []
         for attr in attributes:
             if attributes[attr]:
@@ -53,18 +53,47 @@ def GFilterAttributes(G, attributes):
         nodes = G.nodes(data=True)
         for node in nodes:
             nid = int(node[0])
+            #print(nid,'>',G.node[nid])
             # проходимся по списку атрибутов каждого узла
             for attr in node[1]['attributes']:
-                print(nid,'>',attr['val'],'>',attributesFlatten)
+                #print(nid,'>',attr['val'],'>',attributesFlatten)
                 # В случае отсутствия соответствия, удаляем узел из графа
                 if attr['val'] not in attributesFlatten:
                     try:
+                        pass
                         G.remove_node(nid)
                     except:
                         pdev('Узел с id ' + str(nid) + ' не найден')
                         pass
 
     return G
+
+
+# Производим фильтрацию узлов графа по переданному массиву типов ИО
+def GFilterTaxonomy(G, ttypes):
+    # Если массив types содержит данные, производим фильтрацию узлов
+    if len(ttypes) > 0:
+        # Преобразуем ассоциативный массив в обычный с учётом значения true
+        ttypesFlatten = []
+        for ttype in ttypes:
+            if ttypes[ttype]:
+                ttypesFlatten.append(int(ttype))
+
+        print(ttypesFlatten)
+        nodes = G.nodes(data=True)
+        for node in nodes:
+            nid = int(node[0])
+            # проходимся по списку атрибутов каждого узла
+            # В случае отсутствия типа узла в переданном массиве типов фильтра
+            if node[1]['taxonomy']['tid'] not in ttypesFlatten:
+                try:
+                    G.remove_node(nid)
+                except:
+                    pdev('Узел с id ' + str(nid) + ' не найден')
+                    pass
+
+    return G
+
 
 def pdev(str):
     print('\n',str,'\n')
@@ -286,7 +315,8 @@ def semheap_get_edge_attributes(element_id):
 
 # Добавляем узел в граф при создании многомерной проекции "семантической кучи"
 def semheap_add_node(nid, G):
-    # Для уверенности, производим преобразование типов
+    # Для предотвращения случайного дублирования одного и того же узла с одинаковым id, но 
+    # с разным типом данных - int и str, производим преобразование типов
     nid = int(nid)
     # Получаем значение поля data
     cursor = connections['mysql'].cursor()
@@ -294,10 +324,6 @@ def semheap_add_node(nid, G):
     cursor.execute(sql)
     row = cursor.fetchone()
     nodeData = row[0]
-    #print(row)
-    #print("".join(nodeData))
-    # Удаляем лишние пробелы
-    #" ".join(nodeData.split())
 
     # Для каждого узла с помощью отдельной функции получаем словарь атрибутов
     nodeAttributes = semheap_get_node_attributes(nid)
@@ -305,10 +331,7 @@ def semheap_add_node(nid, G):
     nodeTaxonomy = semheap_get_node_taxonomy(nid)
     # Добавляем узел в граф вместе с полученнымы словарями атрибутов, таксономии
     # В качестве атрибута data указываем значение поля data у заданного nid'ом информационного объекта 
-    print(G.number_of_nodes())
     G.add_node(nid, data=nodeData, attributes=nodeAttributes, taxonomy=nodeTaxonomy)
-    print(G.number_of_nodes(),'>',G.node[nid]['data'],'---')
-    #print(nid,'>',nodeData,'>',nodeAttributes,'>',nodeTaxonomy)
 
     return nid
 
@@ -331,7 +354,7 @@ def semheap_add_node_with_edges(nid, G):
         # Добавляем дугу в граф для указанного узла и её атрибуты
         G.add_edge(nid, enid, id=edge['id'], data=edge['data'], attributes=edgeAttributes)
         # Добавляем в граф отсутствующий узел
-        #semheap_add_node(enid)
+        semheap_add_node(enid, G)
 
     return True
 
@@ -358,7 +381,7 @@ def semheap_create_max_graph():
     for node in nodes:
         nid = int(node[0])
         # Если ID узла является цифровым значением и не равно нулю:
-        if nid and counter < 500:
+        if nid and counter < 50:
             counter = counter + 1
             # Добавляем узел в объект типа граф, предоставленного библиотекой NetworkX
             semheap_add_node(nid, G)
@@ -384,36 +407,41 @@ def create_filtered_graph2(graphFilter):
         render_content('Ошибка при обработке json-массива graphFilter')
         raise
 
-    # Обрабатываем массив filterAttributes
-    try:
-        filterAttributes = graphFilter['filterAttributes']
-        print_json(filterAttributes)
-    except:
-        render_content('Ошибка при обработке json-массива filterAttributes')
-        raise
-    #G = GFilterAttributes(G, filterAttributes)
-
     # Обрабатываем массив filterOptions
     try:
         filterOptions = graphFilter['filterOptions']
-        zero = filterOptions['zero']
+        print_json(filterOptions)
+        #zero = filterOptions['zero']
         # Производим фильтрацию полученного графа в зависимости от полученных параметров
         #G = GFilterZero(G, 'true')
     except:
         render_content('Ошибка при обработке json-массива filterOptions')
         raise
 
-    # Обрабатываем массив filterClasses
+    # Обрабатываем массив filterAttributes
+    try:
+        filterAttributes = graphFilter['filterAttributes']
+        #G = GFilterAttributes(G, filterAttributes)
+        #print_json(filterAttributes)
+    except:
+        render_content('Ошибка при обработке json-массива filterAttributes')
+        raise
+
+    # Обрабатываем массив filterTaxonomy
     try:
         filterTaxonomy = graphFilter['filterTaxonomy']
-        print_json(filterTaxonomy)
+        #print_json(filterTaxonomy)
+        #  Производим фильтрацию по выбранным типам ИО
+        G = GFilterTaxonomy(G, filterTaxonomy)
     except:
-        render_content('Ошибка при обработке json-массива filterClasses')
+        render_content('Ошибка при обработке json-массива filterTaxonomy')
         raise
 
     # Средствами бибилиотеки NetworkX,
     # экспортируем граф в виде подходящeм для json-сериализации
     data = json_graph.node_link_data(G)
+    jsonContent = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
+    #print(jsonContent)
 
     # Создаём экземпляр класса Graph, для хранения структуры графа в базе данных
     graph = Graph() 

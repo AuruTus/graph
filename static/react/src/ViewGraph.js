@@ -75,7 +75,7 @@ var Graph = React.createClass({
     loadDataFromServer: function() {
         $.ajax({
             // url по которому на стороне сервера формируется ассоциативный массив данных графа в формате json
-            url: '/json-spring/' + gid + '/',
+            url: '/json-main-graph/' + gid + '/',
 
             dataType: 'json',
             cache: false,
