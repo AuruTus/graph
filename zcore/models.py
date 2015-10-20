@@ -30,8 +30,14 @@ def GFilterNodes(G, nodes=[]):
 
 # Исключаем из графа узлы с нулевым весом (без связей)
 def GFilterZero(G, check):
-    # Если check=true, производим фильтрацию узлов
-    if len(check) > 0 and check == 'true':
+    removeZero = False
+    # Если check имеет тип bool и значение True, производим фильтрацию узлов
+    if isinstance(check, (bool)) and check == True:
+        removeZero = True
+    # Если check имеет строковый тип и значение 'true', производим фильтрацию узлов
+    elif len(str(check)) > 0 and str(check) == 'true':
+        removeZero = True
+    if removeZero:    
         for nid in G.nodes():
             if G.degree(nid) < 1:
                 G.remove_node(nid)
@@ -79,7 +85,6 @@ def GFilterTaxonomy(G, ttypes):
             if ttypes[ttype]:
                 ttypesFlatten.append(int(ttype))
 
-        print(ttypesFlatten)
         nodes = G.nodes(data=True)
         for node in nodes:
             nid = int(node[0])
@@ -115,12 +120,6 @@ class Node(models.Model):
     class Meta:
         abstract = True
 
-"""
-class Method(models.Model):
-    graph = models.ForeignKey(Graph)
-    model_title = models.CharField(max_length=200, default='')
-"""
-
 
 def dictfetchall(cursor):
     "Returns all rows from a cursor as a dict"
@@ -145,139 +144,6 @@ def render_content(content):
     return response 
 
 
-# Добавляем узел в граф при создании многомерной проекции "семантической кучи"
-# устаревная функция, оставлена для примера кода
-def add_node_from_db(nid, G, filterAttributesString=False, nodeData=False):
-    nodeAdded = False
-    """
-
-    # Проверяем, передаётся ли в функцию значение поля data:
-    # eсли значение не передаётся, мы совершаем дополнительный запрос к базе данных.
-    # Это необходимо когда id узла полученно каким-то другим способом.
-    # Например, в результате запроса к таблице связей relations.
-    if not nodeData:
-        cursor = connections['mysql'].cursor()
-        sql = "SELECT el.data  FROM elements as el WHERE el.id=%i" % (nid)
-        cursor.execute(sql)
-        row = cursor.fetchone()
-        nodeData = row[0]
-
-    # Для каждого узла с помощью отдельной функции получаем словарь атрибутов
-    #nodeAttributes = get_node_attributes(nid)
-
-    # Добавляем узел в граф вместе с полученным словарём атрибутов.
-    # В качестве атрибута data указываем значение поля data, 
-    # в последствии, это значение будет использованно в поиске по-умолчанию
-    if nodeAttributes:
-        G.add_node(nid, data=nodeData, attributes=nodeAttributes)
-        nodeAdded = nid
-
-    """
-    return nodeAdded
-
-
-# Создание графа - многомерной проекции "семантической кучи" - с заданными атрибутами узлов
-# устаревная функция, оставлена для примера кода
-def old_create_filtered_graph(graphFilter):
-    # Cоздаём пустой NetworkX-граф
-    G = nx.Graph()
-
-    # Преобразуем в объект json-массив параметров, полученных из url 
-    try: 
-        graphFilter = json.loads(graphFilter)
-    except:
-        render_content('Неправильный json-массив graphFilter')
-        raise
-
-    # Обрабатываем массив filterAttributes
-    try:
-        filterAttributes = graphFilter['filterAttributes']
-        print_json(filterAttributes)
-    except:
-        render_content('Неправильный json-массив filterAttributes')
-        raise
-
-    # Обрабатываем массив filterOptions
-    try:
-        filterOptions = graphFilter['filterOptions']
-        zero = filterOptions['zero']
-    except:
-        render_content('Неправильный json-массив filterOptions')
-        raise
-
-    # Обрабатываем массив filterClasses
-    try:
-        filterTaxonomy = graphFilter['filterTaxonomy']
-        print_json(filterTaxonomy)
-    except:
-        render_content('Неправильный json-массив filterClasses')
-        raise
-
-    # Устанавливаем соединение с БД, в которой хранятся семантически связанные данные
-    cursor = connections['mysql'].cursor()
-
-    # Формируем sql-запрос к таблице elements, содержащей информационные объекты (далее ИО).
-    # Данные объекты, не имеющих связей - ent_or_rel=0 -  являются вершинами нашего графа
-    sql = "SELECT el.id, el.data  FROM elements as el WHERE el.ent_or_rel=0"
-
-    cursor.execute(sql) # Выполняем sql-запрос
-    nodes = cursor.fetchall() # Получаем массив значений результата sql-запроса
-
-    # Преобразуем ассоциативный массив в обычный, с учётом знаения true
-    filterAttributesArray = []
-    for attr in filterAttributes:
-        if filterAttributes[attr]:
-            filterAttributesArray.append(attr)
-
-    # В цикле проходимся по каждой строке результата запроса
-    # и добавляем в граф узлы
-    for node in nodes:
-
-        # Формируем sql-запрос для выборки ИО, подходящих под параметры фильтра
-        filterAttributesString = "'" + "','".join(filterAttributesArray) + "'"
-        #sql = "SELECT prpdf.name, prpdf.display, prp.str_val FROM properties as prp, propertydefs as prpdf WHERE prp.def_id=prpdf.id AND target_id=%i AND prpdf.name IN (%s)" % (node[0], filterAttributesString)
-
-
-        # Вызываем функцию, добавляющую узел в граф, где:
-        # node[0] - id узла;
-        # G - граф;
-        # node[1] - не обязательное поле data, которое мы используем в качестве одного из атрибутов узла;
-        nodeAdded = add_node_from_db(node[0], G, filterAttributesString, node[1])
-        # Если узел был добавлен, добавляем всех его соседей с учётом фильтра
-        if nodeAdded:
-            add_neighbour_nodes(node[0], G)
-
-    # Добавлям значеие веса узлов созданного графа в качестве атрибута degree
-    for node in G.nodes():
-        #print('degree ',G.degree(node))
-        #G.add_node(node, degree=G.degree(node))
-        pass
-
-    # Средствами бибилиотеки NetworkX,
-    # экспортируем граф в виде подходящeм для json-сериализации
-    data = json_graph.node_link_data(G)
-
-    # Создаём экземпляр класса Graph, для хранения структуры графа в базе данных
-    graph = Graph() 
-
-    # Определяем заголовок графа
-    graph.title = "Многомерная проекция 'семантической кучи' по заданному фильтру" 
-
-    # Преобразуем данные в json-формат
-    graph.body = json.dumps(data, ensure_ascii=False)
-
-    numberOfNodes = G.number_of_nodes()
-    pdev('Gnodes %i' % (numberOfNodes))
-
-    numberOfEdges = G.number_of_edges()
-    pdev('Gedges %i' % (numberOfEdges))
-
-    # Сохраняем граф в собственную базу данных
-    graph.save() 
-
-    return graph.body
-
-
 #
 #
 # Создаем граф с максимально возможным кол-вом узлов и связей исходя из исходный данных - семантической кучи
@@ -285,7 +151,6 @@ def old_create_filtered_graph(graphFilter):
 # Получение атрибутов информационного объекта вида узел
 def semheap_get_node_taxonomy(nid):
     cursor = connections['mysql'].cursor()
-    #sql = "SELECT prpdf.name, prpdf.display, prp.str_val FROM properties as prp, propertydefs as prpdf WHERE prp.def_id=prpdf.id AND target_id=%i" % (nid)
     sql = "SELECT tax.* FROM elementclasses as elc, taxonomy as tax WHERE elc.element_id=%i AND elc.class_id=tax.id" % (nid)
     cursor.execute(sql)
     term = cursor.fetchone()
@@ -381,7 +246,7 @@ def semheap_create_max_graph():
     for node in nodes:
         nid = int(node[0])
         # Если ID узла является цифровым значением и не равно нулю:
-        if nid and counter < 50:
+        if nid and counter < 900:
             counter = counter + 1
             # Добавляем узел в объект типа граф, предоставленного библиотекой NetworkX
             semheap_add_node(nid, G)
@@ -396,7 +261,7 @@ def semheap_create_max_graph():
 #
 
 
-def create_filtered_graph2(graphFilter):
+def create_filtered_graph(graphFilter):
     # Создаем максимально возможный граф из исходных данных - семантической кучи
     G = semheap_create_max_graph()
 
@@ -410,10 +275,8 @@ def create_filtered_graph2(graphFilter):
     # Обрабатываем массив filterOptions
     try:
         filterOptions = graphFilter['filterOptions']
-        print_json(filterOptions)
-        #zero = filterOptions['zero']
-        # Производим фильтрацию полученного графа в зависимости от полученных параметров
-        #G = GFilterZero(G, 'true')
+        # Производим фильтрацию полученного графа по выбранным в фильтре опциям
+        G = GFilterZero(G, filterOptions['removeZero'])
     except:
         render_content('Ошибка при обработке json-массива filterOptions')
         raise
@@ -421,8 +284,8 @@ def create_filtered_graph2(graphFilter):
     # Обрабатываем массив filterAttributes
     try:
         filterAttributes = graphFilter['filterAttributes']
-        #G = GFilterAttributes(G, filterAttributes)
         #print_json(filterAttributes)
+        #G = GFilterAttributes(G, filterAttributes)
     except:
         render_content('Ошибка при обработке json-массива filterAttributes')
         raise
@@ -440,24 +303,26 @@ def create_filtered_graph2(graphFilter):
     # Средствами бибилиотеки NetworkX,
     # экспортируем граф в виде подходящeм для json-сериализации
     data = json_graph.node_link_data(G)
-    jsonContent = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
+
+    # отладочная информация
+    #jsonContent = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
     #print(jsonContent)
 
     # Создаём экземпляр класса Graph, для хранения структуры графа в базе данных
     graph = Graph() 
-
+    # Получаем кол-во узлов графа
     numberOfNodes = G.number_of_nodes()
+    # Получаем кол-во дуг графа
     numberOfEdges = G.number_of_edges()
+
     pdev('yзлов %i, дуг %i' % (numberOfNodes, numberOfEdges)) # отладка: выводим кол-во узлов и дуг
 
     # Определяем заголовок графа
     graph.title = "Многомерная проекция 'семантической кучи' по заданному фильтру: узлов " + str(numberOfNodes) + "; дуг " + str(numberOfEdges)
-
     # Преобразуем данные в json-формат
     graph.body = json.dumps(data, ensure_ascii=False)
-
     # Сохраняем граф в собственную базу данных
-    #graph.save() 
+    graph.save() 
 
     return graph.body
 

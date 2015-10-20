@@ -8,29 +8,23 @@ var NewProjectFilter = React.createClass({
     },
     handleSubmit: function(e) {
         e.preventDefault();
-        
         // Формируем массив json-данных graphFilter
         var graphFilter = { 
             filterAttributes: this.state.attributes ,
             filterOptions: this.state.options,
             filterTaxonomy: this.state.taxonomy,
         } 
-        console.log(this.constructor.displayName,' graphFilter > ',graphFilter)
-
         // Преобразовываем массив json-данных graphFilter для передачи через url 
         graphFilter = encodeURIComponent(JSON.stringify(graphFilter))
-
         // Формируем и отправляен get-запрос на сервер
         var client = new XMLHttpRequest()
         var url = '/create-project/' + graphFilter
-        console.log(graphFilter)
         client.open('GET', url)
         client.send()
-
         client.onreadystatechange = function() {
           if(this.readyState == this.HEADERS_RECEIVED) {
             //console.log(this.getAllResponseHeaders());
-            //location.reload()
+            location.reload()
           }
         }
 
@@ -54,7 +48,7 @@ var NewProjectFilter = React.createClass({
             <div>
                 <form onSubmit={this.handleSubmit} ref="forceGraphFilterForm">
                     <TaxonomyFilter updateTaxonomy={this.updateTaxonomy} />
-                    <OptionsFilter updateTaxonomy={this.updateOptions} />
+                    <OptionsFilter updateOptions={this.updateOptions} />
                     <input type="submit" className="btn btn-warning" value="Создать" />
                 </form>
             </div>
@@ -164,7 +158,7 @@ var OptionsFilter = React.createClass({
         return {
             // ассоциативный массив данных, полученный с сервера в формате json
             properties: [
-                { "checked": true, "display": "Убирать узлы без связей", "value": true },
+                { "checked": true, "display": "Убирать узлы без связей", "value": 'removeZero' },
             ],
             optionsState: {},
         }
@@ -214,7 +208,7 @@ var NewGraph = React.createClass({
         }
     },
     render: function() {
-        console.log(this.state.data)
+        //console.log(this.state.data)
         return (
             <div>
                 {this.state.data}

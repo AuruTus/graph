@@ -111,7 +111,8 @@ svg .node {
         stroke-width: 1px;
     }
     .graph .person {
-        fill: #264294;
+        //fill: #264294;
+        fill: green;
     }
 
 

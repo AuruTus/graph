@@ -14,7 +14,7 @@ from django.db import connections
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from .models import Graph, Node, create_filtered_graph2, old_create_filtered_graph, print_json, pdev
+from .models import Graph, Node, create_filtered_graph, print_json, pdev
 from .models import GFilterNodes, GFilterAttributes, GFilterZero
 
 HTMLPREFIX = '<!DOCTYPE html><meta charset="utf-8"><body>'
@@ -151,7 +151,7 @@ def make_random(request):
 # Создание нового проекта
 def create_project(request, graphFilter):
     # Создание графа - многомерной проекции "семантической кучи" - с заданными атрибутами узлов
-    data = create_filtered_graph2(graphFilter)
+    data = create_filtered_graph(graphFilter)
 
     #content = {'content': data}
     #return render(request, 'content.html', content)
@@ -192,51 +192,30 @@ def to_plane_graph(body):
 def to_main_graph(body):
     H = json.loads(body)
     G = json_graph.node_link_graph(H)
-    #layout = nx.spring_layout(G)
-    layout = nx.random_layout(G)
-
+    layout = nx.spring_layout(G)
+    #layout = nx.random_layout(G)
     #nodes = G.nodes(data=True)
     nodes = G.nodes()
-
     #data = {'nodes':[], 'links':[]}
     data = {'nodes':{}}
     e = nx.edges(G)
     #e = G.edges()
     #links = {'links': e}
     #data.update(links)
-    """
-    for nid in layout:
-        #print(k,'\n')
-        point = layout.get(nid)
-        x = str(point[0])
-        y = str(point[1])
-        objType = randint(1,2)
-        #neighbors = G.neighbors(nid)
-        #data['nodes'].append({'id': nid, 'x':x,'y':y, 'type': objType, 'neighbors': neighbors})
-        #data['nodes'].append(nid)
-        data['nodes'][nid] = {
-            'id': nid, 
-            'x':x,'y':y, 
-            'type': objType, 
-            #'neighbors': neighbors,
-        }
-    """
-
     for nid in layout:
         point = layout.get(nid)
         x = str(point[0])
         y = str(point[1])
-        objType = randint(1,2)
-        neighbors = G.neighbors(nid)
         data['nodes'][nid] = {
             'id': nid, 
-            'x':x,'y':y, 
-            'type': objType, 
-            'neighbors': neighbors,
+            'data': G.node[nid]['data'], 
+            'degree': G.degree(nid),
+            'x':x,
+            'y':y, 
+            'taxonomy': G.node[nid]['taxonomy'],
+            'neighbors': G.neighbors(nid),
         }
-
     data = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
-
     return data
 
 
@@ -394,8 +373,8 @@ def json_main_graph(request, id):
     response = HttpResponse()
     response['Content-Type'] = "text/javascript; charset=utf-8"
 
-    #data = to_main_graph(graph.body)
-    data = to_plane_graph(graph.body)
+    data = to_main_graph(graph.body)
+    #data = to_plane_graph(graph.body)
 
     response.write(data)
 
@@ -766,7 +745,7 @@ def json_taxonomy(request):
     # "ключ": "значение". Это необходимо для преоразования в json-формат
     attributes = dictfetchall(cursor)
     data = []
-    initValues = [1,6]
+    initValues = [1,2,6]
     for attribute in attributes:
         id = int(attribute['id'])
         name = attribute['name']

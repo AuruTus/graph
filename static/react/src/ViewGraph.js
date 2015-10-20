@@ -153,7 +153,7 @@ var Graph = React.createClass({
     },
     render: function() {
         var sceneHeight = 600
-        var scale = 50
+        var scale = 500
         var xOffset = 20
         var yOffset = 20
         var r = 7
@@ -175,10 +175,11 @@ var Graph = React.createClass({
                     key={key}
                     ref={"theGraphNode"+key}
                     nid={key}
+                    data={node.data}
                     x={x}
                     y={y}
                     //neighbors={node.neighbors}
-                    type={node.type}
+                    taxonomy={node.taxonomy}
                     r={r}
                     width={width}
                     height={height}
@@ -236,7 +237,7 @@ var GraphNode = React.createClass({
     },
     componentDidUpdate: function (props, state) {
         if (this.state.dragging && !state.dragging) {
-//console.log(state)
+            //console.log(state)
             document.addEventListener('mousemove', this.onMouseMove)
             document.addEventListener('mouseup', this.onMouseUp)
         } else if (!this.state.dragging && state.dragging) {
@@ -246,7 +247,7 @@ var GraphNode = React.createClass({
     },
     onMouseDown: function(e, nid) {
         if (typeof this.props.onMouseDown === 'function') {
-//console.log(nid)
+            //console.log(nid)
             this.props.onMouseDown(e, nid)
         }
     },
@@ -254,7 +255,7 @@ var GraphNode = React.createClass({
     rnMouseDown: function (e) {
         if (e.button !== 0) return
         //var pos = $(this.getDOMNode()).offset()
-//console.log(e.pageX,e.pageY)
+        //console.log(e.pageX,e.pageY)
         this.setState({
           // Устанавливаем флаг перетаскивания объекта в значение истина
           dragging: true,
@@ -265,9 +266,9 @@ var GraphNode = React.createClass({
         // Отменяет действия браузера по умолчанию
         e.preventDefault()
 
-console.log(this.props.onMouseDown)
+        console.log(this.props.onMouseDown)
         if (typeof this.props.onMouseDown === 'function') {
-console.log(e)
+            console.log(e)
             this.props.onMouseDown(e)
         }
     },
@@ -282,7 +283,7 @@ console.log(e)
     onMouseMove: function (e) {
         // Если флаг перетаскивания не истина, отменяем дальнейшую обработку
         if (!this.state.dragging) return
-//console.log(e.pageX-this.state.rel.x)
+        //console.log(e.pageX-this.state.rel.x)
         this.setState({
             x: e.pageX + 1,
             y: e.pageY - 122,
@@ -293,12 +294,15 @@ console.log(e)
         e.preventDefault()
     },
     */
+    onClick: function () {
+        console.log(this.props.data)
+    },
     render: function() {
-        switch(this.props.type) {
+        switch(this.props.taxonomy.tid) {
             case 1:
                 NodeType = GraphNodePerson
                 break
-            case 2:
+            default:
                 NodeType = GraphNodeCircle
                 //NodeType = GraphNodeRect
                 break
@@ -311,6 +315,7 @@ console.log(e)
                     cx={this.state.x}
                     cy={this.state.y}
                     onMouseDown={this.onMouseDown}
+                    onClick={this.onClick}
                 />
             </g>
         )
@@ -329,7 +334,11 @@ var GraphNodePerson = React.createClass({
         var transform = "translate("+(this.props.cx-15)+","+(this.props.cy-15)+")"
         var scale = "scale(.7,.7)"
         return (
-            <g className="person" transform={transform}>
+            <g 
+                className="person" 
+                transform={transform}
+                onClick={this.props.onClick}
+                >
                 <path transform={scale} 
                 d="M32.102,19.679c1.211-0.259,2.328-1.26,2.51-3.48c0.15-1.817-0.316-2.753-1.004-3.23c1.91-7.785-3.358-9.309-3.358-9.309
                 s-3.937-6.679-11.618-1.992c-0.977,0.596-2.496,1.738-3.401,2.917c-1.453,1.546-2.442,4.059-2.597,8.129
@@ -358,14 +367,15 @@ var GraphNodeCircle = React.createClass({
     },
     render: function() {
         return (
-                <g>
-                <circle 
-                    cx={this.props.cx}
-                    cy={this.props.cy}
-                    r={this.props.r}
-                    //onMouseDown={this.onMouseDown}
-                />
-                </g>
+            <g>
+            <circle 
+                cx={this.props.cx}
+                cy={this.props.cy}
+                r={this.props.r}
+                //onMouseDown={this.onMouseDown}
+                onClick={this.props.onClick}
+            />
+            </g>
         )
     }
 })
@@ -405,6 +415,7 @@ var GraphEdge = React.createClass({
 })
 
 
+/*
 var GraphNodePoly = React.createClass({
     render: function() {
         //points={"50,75 58,137.5 58,262.5 50,325 42,262.6 42,137.5"}
@@ -421,6 +432,7 @@ var GraphNodePoly = React.createClass({
         )
     }
 })
+*/
 
 
 var AttributesFilter = React.createClass({

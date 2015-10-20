@@ -189,7 +189,7 @@ var CMCheckboxGroup = React.createClass({
             rows.push(<CMCheckboxButton 
                 key={key}
                 display={prop.display} 
-                value={prop.value}
+                value={prop.value.toString()}
                 checked={prop.checked}
                 onChange={this.handleChange}
                 onClick={this.handleReClick} 
