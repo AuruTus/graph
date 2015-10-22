@@ -14,7 +14,7 @@ from django.db import connections
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from .models import Graph, Node, create_filtered_graph, print_json, pdev
+from .models import Graph, Node, Taxonomy, create_filtered_graph, print_json, pdev
 from .models import GFilterNodes, GFilterAttributes, GFilterZero
 
 HTMLPREFIX = '<!DOCTYPE html><meta charset="utf-8"><body>'
@@ -755,9 +755,11 @@ def json_taxonomy(request):
             checked = True
         else:
             checked = False
-        data.append({'value': id, 'parent_id': parent_id, 'display': name, 'checked': checked})
+        data.append({'value': id, 'parent_tid': parent_id, 'display': name, 'checked': checked})
 
     # Преобразуем данные в json-формат
+    t = Taxonomy()
+    data = t.get_taxonomy()
     content = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
 
     # Создаём объект response для динамического создания html-страницы

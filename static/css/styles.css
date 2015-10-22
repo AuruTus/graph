@@ -86,10 +86,6 @@ svg .node {
         background: gray;
     }
 
-.comment {
-    display: none;
-}
-
 .graph {
     //border: solid gray 2px;
 }
@@ -113,6 +109,10 @@ svg .node {
     .graph .person {
         //fill: #264294;
         fill: green;
+    }
+
+.otstup {
+    margin-left: 20px;
     }
 
 

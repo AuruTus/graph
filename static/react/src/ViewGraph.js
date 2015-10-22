@@ -47,18 +47,7 @@ var Scene = React.createClass({
     },
     render: function() {
         return (
-            <div>
-                <form className="comment" onSubmit={this.handleSubmit} ref="forceGraphFilterForm">
-                    <AttributesFilter
-                        updateAttributesFilter={this.updateAttributesFilter}
-                    />
-                    <TaxonomyFilter
-                        updateTaxonomy={this.updateTaxonomy}
-                    />
-                    <input type="submit" className="btn btn-warning" value="Отфильтровать" />
-                </form>
-                <Graph />
-            </div>
+            <Graph />
         );
     },
 })
@@ -180,6 +169,7 @@ var Graph = React.createClass({
                     y={y}
                     //neighbors={node.neighbors}
                     taxonomy={node.taxonomy}
+                    degree={node.degree}
                     r={r}
                     width={width}
                     height={height}
@@ -211,6 +201,10 @@ var Graph = React.createClass({
             })
         }
 
+                    /*
+                    {edgeRows}
+                    {nodeRows}
+                    */
         return (
             <svg 
                 width={this.props.sceneWidth}
@@ -218,8 +212,6 @@ var Graph = React.createClass({
                 className="graph"
             >
                 <g>
-                    {edgeRows}
-                    {nodeRows}
                 </g>
             </svg>
         );
@@ -251,49 +243,49 @@ var GraphNode = React.createClass({
             this.props.onMouseDown(e, nid)
         }
     },
-    /*
-    rnMouseDown: function (e) {
-        if (e.button !== 0) return
-        //var pos = $(this.getDOMNode()).offset()
-        //console.log(e.pageX,e.pageY)
-        this.setState({
-          // Устанавливаем флаг перетаскивания объекта в значение истина
-          dragging: true,
-          //rel: { x: e.pageX - pos.left, y: e.pageY - pos.top + 110, },
-        })
-        // Прекращает дальнейшую передачу текущего события
-        e.stopPropagation()
-        // Отменяет действия браузера по умолчанию
-        e.preventDefault()
+        /*
+        rnMouseDown: function (e) {
+            if (e.button !== 0) return
+            //var pos = $(this.getDOMNode()).offset()
+            //console.log(e.pageX,e.pageY)
+            this.setState({
+              // Устанавливаем флаг перетаскивания объекта в значение истина
+              dragging: true,
+              //rel: { x: e.pageX - pos.left, y: e.pageY - pos.top + 110, },
+            })
+            // Прекращает дальнейшую передачу текущего события
+            e.stopPropagation()
+            // Отменяет действия браузера по умолчанию
+            e.preventDefault()
 
-        console.log(this.props.onMouseDown)
-        if (typeof this.props.onMouseDown === 'function') {
-            console.log(e)
-            this.props.onMouseDown(e)
-        }
-    },
-    onMouseUp: function (e) {
-        // Устанавливаем флаг перетаскивания объекта в значение ложь
-        this.setState({dragging: false})
-        // Прекращает дальнейшую передачу текущего события
-        e.stopPropagation()
-        // Отменяет действия браузера по умолчанию
-        e.preventDefault()
-    },
-    onMouseMove: function (e) {
-        // Если флаг перетаскивания не истина, отменяем дальнейшую обработку
-        if (!this.state.dragging) return
-        //console.log(e.pageX-this.state.rel.x)
-        this.setState({
-            x: e.pageX + 1,
-            y: e.pageY - 122,
-        })
-        // Прекращает дальнейшую передачу текущего события
-        e.stopPropagation()
-        // Отменяет действия браузера по умолчанию
-        e.preventDefault()
-    },
-    */
+            console.log(this.props.onMouseDown)
+            if (typeof this.props.onMouseDown === 'function') {
+                console.log(e)
+                this.props.onMouseDown(e)
+            }
+        },
+        onMouseUp: function (e) {
+            // Устанавливаем флаг перетаскивания объекта в значение ложь
+            this.setState({dragging: false})
+            // Прекращает дальнейшую передачу текущего события
+            e.stopPropagation()
+            // Отменяет действия браузера по умолчанию
+            e.preventDefault()
+        },
+        onMouseMove: function (e) {
+            // Если флаг перетаскивания не истина, отменяем дальнейшую обработку
+            if (!this.state.dragging) return
+            //console.log(e.pageX-this.state.rel.x)
+            this.setState({
+                x: e.pageX + 1,
+                y: e.pageY - 122,
+            })
+            // Прекращает дальнейшую передачу текущего события
+            e.stopPropagation()
+            // Отменяет действия браузера по умолчанию
+            e.preventDefault()
+        },
+        */
     onClick: function () {
         console.log(this.props.data)
     },
@@ -346,34 +338,6 @@ var GraphNodePerson = React.createClass({
                     d="M 24.827,0 C 11.138,0 0.001,11.138 0.001,24.827 c 0,13.689 11.137,24.827 24.826,24.827 13.688,0 24.826,-11.138 24.826,-24.827 C 49.653,11.138 38.517,0 24.827,0 Z m 14.315,38.51 c 0,-0.574 0,-0.979 0,-0.979 0,-3.386 -3.912,-4.621 -6.006,-5.517 -0.758,-0.323 -2.187,-1.011 -3.653,-1.728 -0.495,-0.242 -0.941,-0.887 -0.997,-1.438 l -0.162,-1.604 c 1.122,-1.045 2.133,-2.5 2.304,-4.122 l 0.253,0 c 0.398,0 0.773,-0.298 0.832,-0.663 l 0.397,-2.453 c 0.053,-0.524 -0.442,-0.842 -0.843,-0.842 0.011,-0.052 0.02,-0.105 0.025,-0.149 0.051,-0.295 0.082,-0.58 0.102,-0.857 0.025,-0.223 0.045,-0.454 0.056,-0.693 0.042,-1.158 -0.154,-2.171 -0.479,-2.738 -0.33,-0.793 -0.83,-1.563 -1.526,-2.223 -1.939,-1.836 -4.188,-2.551 -6.106,-1.075 -1.306,-0.226 -2.858,0.371 -3.979,1.684 -0.612,0.717 -0.993,1.537 -1.156,2.344 -0.146,0.503 -0.243,1.112 -0.267,1.771 -0.026,0.733 0.046,1.404 0.181,1.947 -0.382,0.024 -0.764,0.338 -0.764,0.833 l 0.396,2.453 c 0.059,0.365 0.434,0.663 0.832,0.663 l 0.227,0 c 0.36,1.754 1.292,3.194 2.323,4.198 l -0.156,1.551 c -0.056,0.55 -0.502,1.193 -0.998,1.438 -1.418,0.692 -2.815,1.358 -3.651,1.703 -1.97,0.812 -6.006,2.131 -6.006,5.517 l 0,0.766 C 7.033,34.756 5.005,30.031 5.005,24.83 c 0,-10.932 8.894,-19.826 19.826,-19.826 10.933,0 19.826,8.894 19.826,19.826 -0.004,5.303 -2.109,10.116 -5.515,13.68 z"/>
             </g>
         )
-        /*
-                <path 
-                d="M24.827,0C11.138,0,0.001,11.138,0.001,24.827c0,13.689,11.137,24.827,24.826,24.827
-                c13.688,0,24.826-11.138,24.826-24.827C49.653,11.138,38.517,0,24.827,0z M39.142,38.51c0-0.574,0-0.979,0-0.979
-                c0-3.386-3.912-4.621-6.006-5.517c-0.758-0.323-2.187-1.011-3.653-1.728c-0.495-0.242-0.941-0.887-0.997-1.438l-0.162-1.604
-                c1.122-1.045,2.133-2.5,2.304-4.122h0.253c0.398,0,0.773-0.298,0.832-0.663l0.397-2.453c0.053-0.524-0.442-0.842-0.843-0.842
-                c0.011-0.052,0.02-0.105,0.025-0.149c0.051-0.295,0.082-0.58,0.102-0.857c0.025-0.223,0.045-0.454,0.056-0.693
-                c0.042-1.158-0.154-2.171-0.479-2.738c-0.33-0.793-0.83-1.563-1.526-2.223c-1.939-1.836-4.188-2.551-6.106-1.075
-                c-1.306-0.226-2.858,0.371-3.979,1.684c-0.612,0.717-0.993,1.537-1.156,2.344c-0.146,0.503-0.243,1.112-0.267,1.771
-                c-0.026,0.733,0.046,1.404,0.181,1.947c-0.382,0.024-0.764,0.338-0.764,0.833l0.396,2.453c0.059,0.365,0.434,0.663,0.832,0.663
-                h0.227c0.36,1.754,1.292,3.194,2.323,4.198l-0.156,1.551c-0.056,0.55-0.502,1.193-0.998,1.438
-                c-1.418,0.692-2.815,1.358-3.651,1.703c-1.97,0.812-6.006,2.131-6.006,5.517v0.766c-3.288-3.541-5.316-8.266-5.316-13.467
-                c0-10.932,8.894-19.826,19.826-19.826c10.933,0,19.826,8.894,19.826,19.826C44.653,30.133,42.548,34.946,39.142,38.51z"/>
-                d="M32.102,19.679c1.211-0.259,2.328-1.26,2.51-3.48c0.15-1.817-0.316-2.753-1.004-3.23c1.91-7.785-3.358-9.309-3.358-9.309
-                s-3.937-6.679-11.618-1.992c-0.977,0.596-2.496,1.738-3.401,2.917c-1.453,1.546-2.442,4.059-2.597,8.129
-                c-0.938,0.358-1.675,1.264-1.492,3.484c0.192,2.321,1.403,3.309,2.677,3.511c1.72,4.189,5.116,7.641,9.135,7.641
-                C26.982,27.35,30.385,23.882,32.102,19.679z M22.954,25.397c-4.647,0-8.389-6.31-8.389-11.535c0-0.716,0.023-1.38,0.067-1.996
-                c6.797,0.297,10.817-2.428,13.005-4.792c2.075,2.068,3.153,4.68,3.704,6.619c0,0.056,0.001,0.111,0.001,0.168
-                C31.343,19.087,27.602,25.397,22.954,25.397z"/>
-                <path transform={scale} 
-                d="M20.292,33.297l0.538-2.227c0.062-0.257,0.195-0.477,0.375-0.646c-0.055-0.039-0.109-0.08-0.162-0.123l-4.806-3.979
-                l-2.925,0.684c-4.953,1.165-8.443,5.348-8.443,10.146v6.3c0,1.24,1.103,2.229,2.423,2.229h12.381l1.888-10.762
-                C20.713,34.908,20.092,34.125,20.292,33.297z"/>
-                <path transform={scale} 
-                d="M32.42,27.006l-2.885-0.684l-4.801,3.979c-0.053,0.043-0.105,0.084-0.16,0.123c0.181,0.169,0.314,0.389,0.377,0.646
-                l0.537,2.227c0.201,0.827-0.42,1.611-1.269,1.623l1.888,10.762h12.381c1.32,0,2.324-0.988,2.324-2.229v-6.3
-                C40.814,32.354,37.373,28.171,32.42,27.006z"/>
-        */
     }
 })
 
@@ -390,6 +354,7 @@ var GraphNodeCircle = React.createClass({
                 cx={this.props.cx}
                 cy={this.props.cy}
                 r={this.props.r}
+                //transform={scale}
                 //onMouseDown={this.onMouseDown}
                 onClick={this.props.onClick}
             />
@@ -453,6 +418,26 @@ var GraphNodePoly = React.createClass({
 */
 
 
+var Filter = React.createClass({
+    render: function() {
+                /*
+                <AttributesFilter
+                    updateAttributesFilter={this.updateAttributesFilter}
+                />
+                */
+        return (
+            <form onSubmit={this.handleSubmit} ref="forceGraphFilterForm">
+                <TaxonomyFilter
+                    updateTaxonomy={this.updateTaxonomy}
+                />
+                <input type="submit" className="btn btn-warning" value="Отфильтровать" />
+            </form>
+        );
+    },
+})
+
+
+/*
 var AttributesFilter = React.createClass({
     loadDataFromServer: function() {
         $.ajax({
@@ -499,8 +484,10 @@ var AttributesFilter = React.createClass({
         );
     },
 })
+*/
 
 
+/*
 var TaxonomyFilter = React.createClass({
     loadDataFromServer: function() {
         $.ajax({
@@ -547,7 +534,134 @@ var TaxonomyFilter = React.createClass({
         );
     },
 })
+*/
 
 
+var TaxonomyFilter = React.createClass({
+    loadDataFromServer: function() {
+        $.ajax({
+            // url по которому на стороне сервера формируется ассоциативный массив существующих типов в формате json
+            url: '/json-taxonomy/',
+
+            dataType: 'json',
+            cache: false,
+            success: function(data) {
+                this.setState({data: data});
+            }.bind(this),
+            error: function(xhr, status, err) {
+                console.error(this.props.url, status, err.toString())
+            }.bind(this)
+        })
+    },
+    getInitialState: function() {
+        // Получаем  данные с сервера в формате json
+        this.loadDataFromServer()
+        return {
+            // ассоциативный массив данных, полученный с сервера в формате json
+            data: [],
+            state: {},
+        }
+    },
+    handleChange: function(checkboxGroupState) {
+        this.setState({ state: checkboxGroupState })
+        // Передаём обновлённый словарь состояний родительскому компоненту
+        if (typeof this.props.updateTaxonomy === 'function') {
+            this.props.updateTaxonomy(checkboxGroupState)
+        }
+    },
+    render: function() {
+        console.log(this.state.data)
+        return (
+            <Taxonomy
+                key='taxonomy'
+                children={this.state.data}
+                onChange={this.handleChange}
+            />
+        )
+    },
+})
+
+
+var Taxonomy = React.createClass({
+    getDefaultProps: function() {
+        return {
+            key: '',
+            tid: '',
+            display: 'Типы информационных объектов:',
+            value: '',
+            children: [],
+            checked: false,
+        }
+    },
+    getInitialState: function() {
+        return {
+            children: this.props.children,
+            checked: true,
+        }
+    },
+    handleChange: function(checkboxGroupState) {
+        this.setState({ taxonomyState: checkboxGroupState })
+
+        // Передаём обновлённый словарь состояний родительскому компоненту
+        if (typeof this.props.updateTaxonomy === 'function') {
+            this.props.updateTaxonomy(checkboxGroupState)
+        }
+    },
+    handleClick: function() {
+        console.log(this.state.checked)
+        var bool = this.state.checked
+        bool = bool ? false : true
+        this.setState({ checked: bool, })
+    },
+    render: function() {
+        rows = []
+        this.props.children.forEach(function(term, key) {
+            rows.push(<Taxonomy
+                key={term.tid}
+                tid={term.tid}
+                value={term.value}
+                display={term.display}
+                children={term.children}
+            />)
+        })
+        /*
+                <CMRadioGroupButton 
+                    key={this.props.tid}
+                    value={this.props.value}
+                    display={this.props.display} 
+                    checked={this.props.checked}
+                    //onChange={this.handleChange}
+                    //onClick={this.handleReClick} 
+                />
+                <CMCheckboxTaxonomyGroup
+                    properties={this.props.children}
+                    onChange={this.handleChange}
+                />
+                */
+
+        return (
+            <div>
+                <label>
+                <input 
+                    type="checkbox" 
+                    key={this.props.tid}
+                    value={this.props.value}
+                    display={this.props.display} 
+                    checked={this.state.checked}
+                    //onChange={this.handleChange}
+                    onClick={this.handleClick} 
+                />
+                {this.props.display} 
+                <div className="otstup">
+                    {rows}
+                </div>
+                </label>
+            </div>
+        );
+    },
+})
+
+React.render( <Filter/>, mountFilter)
 React.render( <Scene/>, mountNode)
+
 

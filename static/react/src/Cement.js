@@ -205,6 +205,79 @@ var CMCheckboxGroup = React.createClass({
 })
 
 
+var CMCheckboxTaxonomyGroup = React.createClass({
+    propTypes: {
+        // вызывает родительскую функцию onChange и параметры к ней
+        onChange:   React.PropTypes.func, 
+
+        // вызывает родительскую функцию onClick и параметры к ней
+        onClick:    React.PropTypes.func,
+    },
+    getInitialState: function() {
+        return {
+            // Ассоциативный массив всех определяющих компонент атрибутов
+            componentState: {},
+        }
+    },
+    // Обновляем ассоциативный массив всех определяющих компонент атрибутов
+    handleChange: function(key, value, obj) {
+        var state = this.state.componentState
+        state[key] = value
+        this.setState({ componentState: state })
+
+        // Передаём родителю состояние массива componentState
+        if (typeof this.props.onChange === 'function') {
+            this.props.onChange(state)
+        }
+
+        /*
+        joinedState = joinAsTrue(state)
+        //console.log('> ',joinedState)
+        // Проверяем, выбран ли хотя бы один атрибут
+        if (joinedState.length == 0) {
+            console.log('Необходимо выбрать хотя бы один атрибут')
+            obj.setState({ checked: true })
+            obj.setState({ className: "btn btn-primary active" })
+            console.log(obj)
+            React.findDOMNode(obj.refs.checkbox).checked = true
+        } else {
+            // Передаём родителю состояние массива componentState
+            if (typeof this.props.onChange === 'function') {
+                this.props.onChange(state)
+            }
+        }
+        */
+    },
+    handleReClick: function(e) {
+        //console.log(this.constructor.displayName,' > ',this.state.ComponentState)
+        // Передаём обработку клика родительскому компоненту
+        if (typeof this.props.onClick === 'function') {
+            this.props.onClick(e)
+        }
+    },
+    render: function() {
+        var rows = []
+        this.props.properties.forEach(function(prop, key) {
+            // Формируем массив rows дочерних компонентов
+            rows.push(<CMCheckboxButton 
+                key={key}
+                display={prop.display} 
+                value={prop.value.toString()}
+                checked={prop.checked}
+                onChange={this.handleChange}
+                onClick={this.handleReClick} 
+            />)
+        }.bind(this))
+
+        return (
+            <div className="btn-group" data-toggle="buttons">
+            {rows}
+            </div>
+        )
+    },
+})
+
+
 var CMCheckboxButton = React.createClass({
     propTypes: {
         value:      React.PropTypes.string,

@@ -326,3 +326,30 @@ def create_filtered_graph(graphFilter):
 
     return graph.body
 
+
+#
+#
+# Класс для работы с таксономией
+class Taxonomy():
+    def get_taxonomy(self, tid=None):
+        data = []
+        cursor = connections['mysql'].cursor()
+        # Получаем массив "детей" термина из семантической кучи
+        if tid:
+            sql = "SELECT * FROM taxonomy WHERE facet_id=0 AND parent_id=%i" % (tid)
+        else:
+            sql = "SELECT * FROM taxonomy WHERE facet_id=0 AND parent_id IS NULL"
+        cursor.execute(sql)
+        terms = cursor.fetchall()
+
+        for term in terms:
+            parent_tid = term[1]
+            children = self.get_taxonomy(term[0])
+            data.append({'tid': term[0], 'parent_tid': parent_tid, 'value': term[0], 'display': term[3], 'children': children})
+
+        return data
+
+
+#
+#
+#
