@@ -27,7 +27,7 @@ $f(a)=12πi∮γf(z)z−adz$
         <a href="/admin/zcore/graph/{{ graph.id }}" target=blank>id {{ graph.id }}</a>
         -
         <!-- <a href="{% url 'viewForceD3' graph.id '' '' '' %}" target=blank>{{ graph.title }}: </a> -->
-        <a href="{% url 'viewTimeline' graph.id %}" target=blank>{{ graph.title }}: </a> 
+        <a href="{% url 'viewGraph' graph.id %}" target=blank>{{ graph.title }}: </a> 
     </li>
 {% endfor %}
 </ul>

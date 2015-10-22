@@ -192,8 +192,8 @@ def to_plane_graph(body):
 def to_main_graph(body):
     H = json.loads(body)
     G = json_graph.node_link_graph(H)
-    layout = nx.spring_layout(G)
-    #layout = nx.random_layout(G)
+    #layout = nx.spring_layout(G)
+    layout = nx.random_layout(G)
     #nodes = G.nodes(data=True)
     nodes = G.nodes()
     #data = {'nodes':[], 'links':[]}
