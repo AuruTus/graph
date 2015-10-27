@@ -182,6 +182,7 @@ var OptionsFilter = React.createClass({
 })
 
 
+/*
 var NewGraph = React.createClass({
     loadDataFromServer: function() {
         $.ajax({
@@ -216,6 +217,7 @@ var NewGraph = React.createClass({
         );
     },
 })
+*/
 
 
 React.render( <NewProjectFilter/>, mountNode)

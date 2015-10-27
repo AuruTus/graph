@@ -246,7 +246,7 @@ def semheap_create_max_graph():
     for node in nodes:
         nid = int(node[0])
         # Если ID узла является цифровым значением и не равно нулю:
-        if nid and counter < 900:
+        if nid and counter < 5000:
             counter = counter + 1
             # Добавляем узел в объект типа граф, предоставленного библиотекой NetworkX
             semheap_add_node(nid, G)
@@ -345,7 +345,7 @@ class Taxonomy():
         for term in terms:
             parent_tid = term[1]
             children = self.get_taxonomy(term[0])
-            data.append({'tid': term[0], 'parent_tid': parent_tid, 'value': term[0], 'display': term[3], 'children': children})
+            data.append({'tid': term[0], 'parent_tid': parent_tid, 'value': term[0], 'display': term[3], 'children': children, 'checked': True})
 
         return data
 

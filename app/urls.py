@@ -36,6 +36,7 @@ urlpatterns += [
     url(r'^json-chord/(?P<id>[-\w]+)/(?P<gfilter>.*)/$', 'zcore.views.json_chord', name='jsonChord'),
     url(r'^json-timeline/(?P<id>[-\w]+)/(?P<gfilter>.*)/$', 'zcore.views.json_timeline', name='jsonTimeline'),
     url(r'^json-main-graph/(?P<id>[-\w]+)/$', 'zcore.views.json_main_graph', name='jsonMainGraph'),
+    url(r'^json-main-graph/(?P<id>[-\w]+)/(?P<gfilter>.*)/$', 'zcore.views.json_main_graph', name='jsonMainGraph'),
     
     # вывод справочников
     url(r'^json-attributes/$', 'zcore.views.json_attributes', name='jsonAttributes'),

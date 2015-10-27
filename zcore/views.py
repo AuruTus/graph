@@ -189,7 +189,7 @@ def to_plane_graph(body):
     return data
 
 
-def to_main_graph(body):
+def to_main_graph(body, gfilter):
     H = json.loads(body)
     G = json_graph.node_link_graph(H)
     #layout = nx.spring_layout(G)
@@ -202,6 +202,7 @@ def to_main_graph(body):
     #e = G.edges()
     #links = {'links': e}
     #data.update(links)
+    print('filter',gfilter)
     for nid in layout:
         point = layout.get(nid)
         x = str(point[0])
@@ -367,13 +368,13 @@ def json_circular(request, id):
     return response 
 
 # Преобразование графа для вывода по алгоритму spring
-def json_main_graph(request, id):
+def json_main_graph(request, id, gfilter=None):
     graph = get_object_or_404(Graph, pk=id)
 
     response = HttpResponse()
     response['Content-Type'] = "text/javascript; charset=utf-8"
 
-    data = to_main_graph(graph.body)
+    data = to_main_graph(graph.body, gfilter)
     #data = to_plane_graph(graph.body)
 
     response.write(data)
@@ -757,9 +758,11 @@ def json_taxonomy(request):
             checked = False
         data.append({'value': id, 'parent_tid': parent_id, 'display': name, 'checked': checked})
 
-    # Преобразуем данные в json-формат
+    # Инициализируем объект таксономии и получаем структуру всей таксономии многомерной проекции
     t = Taxonomy()
     data = t.get_taxonomy()
+
+    # Преобразуем данные в json-формат
     content = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
 
     # Создаём объект response для динамического создания html-страницы

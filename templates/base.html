@@ -52,10 +52,13 @@
     <div id="main-menu">MainMenu</div>
     <script src="{% static 'react/build/MainMenu.js' %}"></script>
 
-    <div id="side-bar">
+
     {% block side_bar %}
-    {% endblock side_bar %}
+    <div id="side-bar">
+        <div id="heap-info"></div>
+        <script src="{% static 'react/build/HeapInfo.js' %}"></script>
     </div><!-- /#side-bar -->
+    {% endblock side_bar %}
 
 
     <div id="content">

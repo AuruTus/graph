@@ -111,22 +111,33 @@ svg .node {
         fill: green;
     }
 
-.otstup {
-    margin-left: 20px;
+.taxonomy {
+    padding: 5px;
+    background-color: lightgray;
+}
+    .taxonomy div,
+    .taxonomy label {
+        float: left;
+    }
+    .taxonomy .otstup {
+        margin-left: 20px;
     }
 
 
 /* 
 * bootstrap
 */
-input.btn,
+.btn-group {
+    margin: 5px 0 0 5px;
+}
 .btn-group label {
-    margin: 5px 0 0 0;
-    padding: 5px 10px;
+    //margin: 5px 0 0 5px;
+    //padding: 5px 10px;
     font-size: 80%;
 }
 input.btn {
-    margin: 5px 0 0 15px;
+    margin: 5px 0 0 5px;
+    font-size: 80%;
 }
 
 

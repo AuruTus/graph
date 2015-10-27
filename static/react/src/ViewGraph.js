@@ -1,66 +1,4 @@
-var Scene = React.createClass({
-    getInitialState: function() {
-        return {
-            filterAttributes: {},
-            taxonomy: {},
-            filterOptions: {zero: 'no'},
-        }
-    },
-    handleSubmit: function(e) {
-        e.preventDefault();
-        
-        // Формируем массив json-данных graphFilter
-        var graphFilter = { 
-            filterAttributes: this.state.filterAttributes ,
-            filterOptions: this.state.filterOptions,
-            filterTaxonomy: this.state.taxonomy,
-        } 
-        console.log(this.constructor.displayName,' graphFilter > ',graphFilter)
-
-        // Преобразовываем массив json-данных graphFilter для передачи через url 
-        graphFilter = encodeURIComponent(JSON.stringify(graphFilter))
-
-        // Формируем и отправляен get-запрос на сервер
-        /*
-        var client = new XMLHttpRequest()
-        var url = '/create-project/' + graphFilter
-        client.open('GET', url)
-        client.send()
-
-        client.onreadystatechange = function() {
-          if(this.readyState == this.HEADERS_RECEIVED) {
-            //console.log(this.getAllResponseHeaders());
-            location.reload()
-          }
-        }
-        */
-
-    },
-    handleReClick: function(e) {
-        //this.handleSubmit(e)
-    },
-    updateAttributesFilter(filterAttributesState) {
-        this.setState({ filterAttributes: filterAttributesState })
-    },
-    updateTaxonomy(taxonomyState) {
-        this.setState({ taxonomy: taxonomyState })
-    },
-    render: function() {
-        return (
-            <Graph />
-        );
-    },
-})
-
-
 var Graph = React.createClass({
-    getDefaultProps: function() {
-        var ww = $(window).width() - scrollbarWidth()
-
-        return {
-            sceneWidth: ww,
-        }
-    },
     loadDataFromServer: function() {
         $.ajax({
             // url по которому на стороне сервера формируется ассоциативный массив данных графа в формате json
@@ -79,16 +17,79 @@ var Graph = React.createClass({
     getInitialState: function() {
         // Получаем  данные с сервера в формате json
         this.loadDataFromServer()
-
         return {
             // ассоциативный массив данных, полученный с сервера в формате json
             data: [],
+            filterAttributes: {},
+            taxonomy: {},
+            filterOptions: {zero: 'no'},
+        }
+    },
+    handleSubmit: function(e) {
+        e.preventDefault();
+        // Формируем массив json-данных graphFilter
+        var graphFilter = { 
+            filterAttributes: this.state.filterAttributes ,
+            filterOptions: this.state.filterOptions,
+            filterTaxonomy: this.state.taxonomy,
+        } 
+        //console.log(this.constructor.displayName,' graphFilter > ',graphFilter.filterTaxonomy)
+        // Преобразовываем массив json-данных graphFilter для передачи через url 
+        console.log(graphFilter.filterTaxonomy)
+        graphFilter = encodeURIComponent(JSON.stringify(graphFilter))
+        // Указываем адрес, по которому будет производится запрос
+        var url = '/json-main-graph/' + gid + '/'
+        // Инициализируем объект XMLHttpReques, позволяющий отправлять асинхронные запросы веб-серверу
+        // и получать ответ без перезагрузки страницы
+        var xhr = new XMLHttpRequest()
+        xhr.open('GET', url)
+        xhr.responseType = 'json'
+        xhr.send()
+        // Производим обработку данных, после получения ответа от сервера
+        xhr.onreadystatechange = function() {
+          if(xhr.readyState == 4) { // `DONE`
+          //if(this.readyState == this.HEADERS_RECEIVED) {
+            //console.log(this.getAllResponseHeaders());
+            this.setState({data: xhr.response})
+          }
+        }.bind(this)
+    },
+    updateTaxonomy(taxonomyState) {
+        console.log('tax',taxonomyState)
+        this.setState({ taxonomy: taxonomyState })
+    },
+    render: function() {
+        return (
+            <div>
+                <Filter
+                    handleSubmit={this.handleSubmit}
+                    updateTaxonomy={this.updateTaxonomy}
+                />
+                <SVGScene 
+                    data={this.state.data}
+                />
+            </div>
+        );
+    },
+})
+
+
+var SVGScene = React.createClass({
+    getDefaultProps: function() {
+        var ww = $(window).width() - scrollbarWidth()
+        return {
+            sceneWidth: ww,
+        }
+    },
+    getInitialState: function() {
+        return {
             //x: this.props.x,
             //y: this.props.y,
             dragging: false,
             nodeToMove: 0,
         }
     },
+    /*
     componentDidUpdate: function (props, state) {
         if (this.state.dragging && !state.dragging) {
             document.addEventListener('mousemove', this.onMouseMove)
@@ -140,6 +141,7 @@ var Graph = React.createClass({
             edge.setState({x: x, y: y,})
         })
     },
+    */
     render: function() {
         var sceneHeight = 600
         var scale = 500
@@ -148,7 +150,7 @@ var Graph = React.createClass({
         var r = 5
         var width = 16
         var height = 12
-        var nodes = this.state.data.nodes
+        var nodes = this.props.data.nodes
         var nodeRows = []
         var edgeRows = []
 
@@ -156,10 +158,10 @@ var Graph = React.createClass({
         if (typeof nodes !== "undefined") {
             // Создаём массив объектов типа GraphNode
             Object.keys(nodes).forEach(function(key) {
-                //console.log('nodes:',key)
                 var node = nodes[key]
                 var x = node.x*scale+xOffset 
                 var y = node.y*scale+yOffset 
+                //console.log('x',x,'y',y)
                 nodeRows.push(<GraphNode
                     key={key}
                     ref={"theGraphNode"+key}
@@ -173,16 +175,16 @@ var Graph = React.createClass({
                     r={r}
                     width={width}
                     height={height}
-                    onMouseDown={this.onMouseDown}
+                    //onMouseDown={this.onMouseDown}
                 />)
             }.bind(this))
 
             // Создаём массив объектов типа GraphEdge
             Object.keys(nodes).forEach(function(key) {
+                //console.log('update edges')
                 var node = nodes[key]
                 var x1 = node.x*scale+xOffset
                 var y1 = node.y*scale+yOffset
-
                 node.neighbors.forEach(function(nid) {
                     //console.log('edges:',key,'>',nid)
                     var x2 = nodes[nid].x*scale+xOffset
@@ -198,21 +200,17 @@ var Graph = React.createClass({
                         y2={y2}
                     />)
                 })
-            })
+            }.bind(this))
         }
 
-                    /*
-                    {edgeRows}
-                    {nodeRows}
-                    */
         return (
             <svg 
                 width={this.props.sceneWidth}
                 height={sceneHeight}
                 className="graph"
             >
-                <g>
-                </g>
+                {edgeRows}
+                {nodeRows}
             </svg>
         );
     },
@@ -221,13 +219,19 @@ var Graph = React.createClass({
 
 var GraphNode = React.createClass({
     getInitialState: function() {
+        //console.log('x',this.props.x,'y',this.props.y)
         return {
             x: this.props.x,
             y: this.props.y,
-            dragging: false,
+            //dragging: false,
         }
     },
     componentDidUpdate: function (props, state) {
+        //console.log('x',this.state.x,'y',this.state.y)
+        //console.log('x',state.x,'y',state.y)
+        //state.x = this.props.x
+        //state.y = this.props.y
+        /*
         if (this.state.dragging && !state.dragging) {
             //console.log(state)
             document.addEventListener('mousemove', this.onMouseMove)
@@ -236,15 +240,10 @@ var GraphNode = React.createClass({
             document.removeEventListener('mousemove', this.onMouseMove)
             document.removeEventListener('mouseup', this.onMouseUp)
         }
+        */
     },
-    onMouseDown: function(e, nid) {
-        if (typeof this.props.onMouseDown === 'function') {
-            //console.log(nid)
-            this.props.onMouseDown(e, nid)
-        }
-    },
-        /*
-        rnMouseDown: function (e) {
+    /*
+        onMouseDown: function (e) {
             if (e.button !== 0) return
             //var pos = $(this.getDOMNode()).offset()
             //console.log(e.pageX,e.pageY)
@@ -304,8 +303,8 @@ var GraphNode = React.createClass({
             <g>
                 <NodeType
                     {...this.props}
-                    cx={this.state.x}
-                    cy={this.state.y}
+                    cx={this.props.x}
+                    cy={this.props.y}
                     onMouseDown={this.onMouseDown}
                     onClick={this.onClick}
                 />
@@ -364,6 +363,7 @@ var GraphNodeCircle = React.createClass({
 })
 
 
+/*
 var GraphNodeRect = React.createClass({
     onMouseDown: function(e) {
         if (typeof this.props.onMouseDown === 'function') {
@@ -382,6 +382,7 @@ var GraphNodeRect = React.createClass({
         )
     }
 })
+*/
 
 
 var GraphEdge = React.createClass({
@@ -419,122 +420,30 @@ var GraphNodePoly = React.createClass({
 
 
 var Filter = React.createClass({
+    /*
+    handleSubmit: function(e) {
+        e.preventDefault();
+        if (typeof this.props.handleSubmit === 'function') {
+            this.props.handleSubmit(e)
+        }
+    },
+    updataTaxonomy: function() {
+        if (typeof this.props.updataTaxonomy === 'function') {
+            this.props.updataTaxonomy(e)
+        }
+    },
+    */
     render: function() {
-                /*
-                <AttributesFilter
-                    updateAttributesFilter={this.updateAttributesFilter}
-                />
-                */
         return (
-            <form onSubmit={this.handleSubmit} ref="forceGraphFilterForm">
+            <form onSubmit={this.props.handleSubmit} ref="forceGraphFilterForm" className='taxonomy'>
                 <TaxonomyFilter
-                    updateTaxonomy={this.updateTaxonomy}
+                    updateTaxonomy={this.props.updateTaxonomy}
                 />
                 <input type="submit" className="btn btn-warning" value="Отфильтровать" />
             </form>
         );
     },
 })
-
-
-/*
-var AttributesFilter = React.createClass({
-    loadDataFromServer: function() {
-        $.ajax({
-            // url по которому на стороне сервера формируется ассоциативный массив атрибутов узлов в формате json
-            url: '/json-attributes/',
-
-            dataType: 'json',
-            cache: false,
-            success: function(data) {
-                this.setState({properties: data});
-            }.bind(this),
-            error: function(xhr, status, err) {
-                console.error(this.props.url, status, err.toString())
-            }.bind(this)
-        })
-    },
-    getInitialState: function() {
-        // Получаем  данные с сервера в формате json
-        this.loadDataFromServer()
-
-        return {
-            // ассоциативный массив данных, полученный с сервера в формате json
-            properties: [],
-
-            filterAttributesState: {},
-        }
-    },
-    handleChange: function(checkboxGroupState) {
-        this.setState({ filterAttributesState: checkboxGroupState })
-
-        // Передаём обновлённый словарь состояний родительскому компоненту
-        if (typeof this.props.updateAttributesFilter === 'function') {
-            this.props.updateAttributesFilter(checkboxGroupState)
-        }
-        
-    },
-    render: function() {
-        return (
-            <CMCheckboxGroup
-                name='attributes'
-                properties={this.state.properties}
-                onChange={this.handleChange}
-            />
-        );
-    },
-})
-*/
-
-
-/*
-var TaxonomyFilter = React.createClass({
-    loadDataFromServer: function() {
-        $.ajax({
-            // url по которому на стороне сервера формируется ассоциативный массив существующих типов в формате json
-            url: '/json-taxonomy/',
-
-            dataType: 'json',
-            cache: false,
-            success: function(data) {
-                this.setState({properties: data});
-            }.bind(this),
-            error: function(xhr, status, err) {
-                console.error(this.props.url, status, err.toString())
-            }.bind(this)
-        })
-    },
-    getInitialState: function() {
-        // Получаем  данные с сервера в формате json
-        this.loadDataFromServer()
-
-        return {
-            // ассоциативный массив данных, полученный с сервера в формате json
-            properties: [],
-
-            taxonomyState: {},
-        }
-    },
-    handleChange: function(checkboxGroupState) {
-        this.setState({ taxonomyState: checkboxGroupState })
-
-        // Передаём обновлённый словарь состояний родительскому компоненту
-        if (typeof this.props.updateTaxonomy === 'function') {
-            this.props.updateTaxonomy(checkboxGroupState)
-        }
-        
-    },
-    render: function() {
-        return (
-            <CMCheckboxGroup
-                name='taxonomy'
-                properties={this.state.properties}
-                onChange={this.handleChange}
-            />
-        );
-    },
-})
-*/
 
 
 var TaxonomyFilter = React.createClass({
@@ -570,13 +479,15 @@ var TaxonomyFilter = React.createClass({
         }
     },
     render: function() {
-        console.log(this.state.data)
+        //console.log(this.state.data)
         return (
-            <Taxonomy
-                key='taxonomy'
-                children={this.state.data}
-                onChange={this.handleChange}
-            />
+            <div>
+                <Taxonomy
+                    key='taxonomy'
+                    children={this.state.data}
+                    onChange={this.handleChange}
+                />
+            </div>
         )
     },
 })
@@ -599,6 +510,7 @@ var Taxonomy = React.createClass({
             checked: true,
         }
     },
+    /*
     handleChange: function(checkboxGroupState) {
         this.setState({ taxonomyState: checkboxGroupState })
 
@@ -607,8 +519,9 @@ var Taxonomy = React.createClass({
             this.props.updateTaxonomy(checkboxGroupState)
         }
     },
-    handleClick: function() {
-        console.log(this.state.checked)
+    */
+    handleChange: function() {
+        //console.log(this.state.checked)
         var bool = this.state.checked
         bool = bool ? false : true
         this.setState({ checked: bool, })
@@ -624,21 +537,6 @@ var Taxonomy = React.createClass({
                 children={term.children}
             />)
         })
-        /*
-                <CMRadioGroupButton 
-                    key={this.props.tid}
-                    value={this.props.value}
-                    display={this.props.display} 
-                    checked={this.props.checked}
-                    //onChange={this.handleChange}
-                    //onClick={this.handleReClick} 
-                />
-                <CMCheckboxTaxonomyGroup
-                    properties={this.props.children}
-                    onChange={this.handleChange}
-                />
-                */
-
         return (
             <div>
                 <label>
@@ -648,8 +546,8 @@ var Taxonomy = React.createClass({
                     value={this.props.value}
                     display={this.props.display} 
                     checked={this.state.checked}
-                    //onChange={this.handleChange}
-                    onClick={this.handleClick} 
+                    onChange={this.handleChange}
+                    //onClick={this.handleClick} 
                 />
                 {this.props.display} 
                 <div className="otstup">
@@ -661,7 +559,6 @@ var Taxonomy = React.createClass({
     },
 })
 
-React.render( <Filter/>, mountFilter)
-React.render( <Scene/>, mountNode)
+React.render( <Graph/>, mountGraph)
 
 
