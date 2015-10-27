@@ -121,6 +121,7 @@ svg .node {
     }
     .taxonomy .otstup {
         margin-left: 20px;
+        clear: both;
     }
 
 

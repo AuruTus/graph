@@ -3,7 +3,6 @@ var Graph = React.createClass({
         $.ajax({
             // url по которому на стороне сервера формируется ассоциативный массив данных графа в формате json
             url: '/json-main-graph/' + gid + '/',
-
             dataType: 'json',
             cache: false,
             success: function(data) {
@@ -35,7 +34,7 @@ var Graph = React.createClass({
         } 
         //console.log(this.constructor.displayName,' graphFilter > ',graphFilter.filterTaxonomy)
         // Преобразовываем массив json-данных graphFilter для передачи через url 
-        console.log(graphFilter.filterTaxonomy)
+        //console.log(graphFilter.filterTaxonomy)
         graphFilter = encodeURIComponent(JSON.stringify(graphFilter))
         // Указываем адрес, по которому будет производится запрос
         var url = '/json-main-graph/' + gid + '/'
@@ -156,6 +155,7 @@ var SVGScene = React.createClass({
 
         // В случае, если массив данных nodes уже проинициализирован, то:
         if (typeof nodes !== "undefined") {
+            console.log('Updating graph...')
             // Создаём массив объектов типа GraphNode
             Object.keys(nodes).forEach(function(key) {
                 var node = nodes[key]
@@ -427,12 +427,12 @@ var Filter = React.createClass({
             this.props.handleSubmit(e)
         }
     },
-    updataTaxonomy: function() {
+    */
+    updataTaxonomy: function(state) {
         if (typeof this.props.updataTaxonomy === 'function') {
-            this.props.updataTaxonomy(e)
+            this.props.updataTaxonomy(state)
         }
     },
-    */
     render: function() {
         return (
             <form onSubmit={this.props.handleSubmit} ref="forceGraphFilterForm" className='taxonomy'>
@@ -451,7 +451,6 @@ var TaxonomyFilter = React.createClass({
         $.ajax({
             // url по которому на стороне сервера формируется ассоциативный массив существующих типов в формате json
             url: '/json-taxonomy/',
-
             dataType: 'json',
             cache: false,
             success: function(data) {
@@ -471,21 +470,27 @@ var TaxonomyFilter = React.createClass({
             state: {},
         }
     },
-    handleChange: function(checkboxGroupState) {
-        this.setState({ state: checkboxGroupState })
+    handleChange: function(key, value) {
+        console.log('TOP lvl change')
+        var state = this.state.state
+        state[key] = value
+        this.setState({ state: state })
+        console.log('state',state)
         // Передаём обновлённый словарь состояний родительскому компоненту
         if (typeof this.props.updateTaxonomy === 'function') {
-            this.props.updateTaxonomy(checkboxGroupState)
+            this.props.updateTaxonomy(state)
         }
+    },
+    updateState: function(state) {
+        console.log('TaxFilterState',state)
     },
     render: function() {
         //console.log(this.state.data)
         return (
-            <div>
+            <div ref='TaxonomyFilter'>
                 <Taxonomy
-                    key='taxonomy'
                     children={this.state.data}
-                    onChange={this.handleChange}
+                    //onChange={this.handleChange}
                 />
             </div>
         )
@@ -496,47 +501,83 @@ var TaxonomyFilter = React.createClass({
 var Taxonomy = React.createClass({
     getDefaultProps: function() {
         return {
-            key: '',
-            tid: '',
+            key: 'taxonomy',
+            tid: null,
             display: 'Типы информационных объектов:',
             value: '',
             children: [],
-            checked: false,
+            checked: true,
         }
     },
     getInitialState: function() {
         return {
             children: this.props.children,
-            checked: true,
+            checked: this.props.checked,
+            childrenState: {},
         }
     },
-    /*
-    handleChange: function(checkboxGroupState) {
-        this.setState({ taxonomyState: checkboxGroupState })
-
-        // Передаём обновлённый словарь состояний родительскому компоненту
-        if (typeof this.props.updateTaxonomy === 'function') {
-            this.props.updateTaxonomy(checkboxGroupState)
+    // Производим обработку изменений для родительского компонента
+    handleParentChange: function(childTid, childChecked, childChildrenState) {
+        console.log('parent change>',this.props.tid)
+        var childrenState = this.state.childrenState
+        if (typeof childTid === 'number') {
+            //childrenState[childTid.toString()] = childChecked
+            childrenState[childTid] = childChecked
+            console.log('this [tid>',this.props.tid,this.state.checked,'] child [child',childTid,childChecked,'CCS',childChildrenState,']')
+            //console.log('this childrenState',childrenState)
+            // Конкатенация ассоциативного массива состояний потомков данного компонента 
+            // с переданным ассоциативным массивом состояний потомков потомка
+            Object.keys(childChildrenState).forEach(function(child) {
+                //console.log(childrenState[child])
+                childrenState[child] = childChildrenState[child]
+            })
+        } 
+        // Обновляем значения массива state
+        this.setState({ childrenState: childrenState })
+        // Передаём обработку изменений рекурсивному родителю 
+        if (typeof this.props.parentChange === 'function') {
+            this.props.parentChange(this.props.tid, this.state.checked, childrenState)
         }
+        // В случае, когда функция не определена, передаем значения состояний чекбоксов
+        // родительскому компоненту для всей таксономии
+        else {
+            //node = eval('TaxonomyFilter')
+            //console.log(React.findDOMNode('TaxonomyFilter'))
+            //console.log('typeof',typeof this.props.parentChange)
+            console.log('NULL childrenState',childrenState)
+        }
+        console.log(' ')
     },
-    */
     handleChange: function() {
-        //console.log(this.state.checked)
-        var bool = this.state.checked
-        bool = bool ? false : true
-        this.setState({ checked: bool, })
+        console.log('change as change>',this.props.tid)
+        // Производим обработку изменений для данного компонента
+        var checked = this.state.checked
+        checked = checked ? false : true
+        // Обновляем значения массива state
+        this.setState({ checked: checked })
+        // Передаём рекурсивному родителю уникальный идентификатор текущего компонента и значение state
+        if (typeof this.props.parentChange === 'function') {
+            this.props.parentChange(this.props.tid, checked, this.state.childrenState)
+        }
+        console.log(' ')
     },
     render: function() {
-        rows = []
+        var rows = []
+        var childrenState = {}
         this.props.children.forEach(function(term, key) {
+            // Инициализируем ассоциативный массив состояний чекбоксов дочерних элементов
+            childrenState[term.tid] = term.checked
+            // Инициализируем массив дочерних компонентов
             rows.push(<Taxonomy
                 key={term.tid}
                 tid={term.tid}
                 value={term.value}
                 display={term.display}
                 children={term.children}
+                checked={term.checked}
+                parentChange={this.handleParentChange}
             />)
-        })
+        }.bind(this))
         return (
             <div>
                 <label>
@@ -546,9 +587,10 @@ var Taxonomy = React.createClass({
                     value={this.props.value}
                     display={this.props.display} 
                     checked={this.state.checked}
+                    childrenState={childrenState}
                     onChange={this.handleChange}
-                    //onClick={this.handleClick} 
                 />
+                {this.props.tid} 
                 {this.props.display} 
                 <div className="otstup">
                     {rows}
