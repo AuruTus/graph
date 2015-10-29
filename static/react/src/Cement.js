@@ -320,6 +320,133 @@ function scrollbarWidth() {
 }
 
 
+var RecursiveCheckboxTree = React.createClass({
+    // Объявление статичных переменных класса
+    statics: {
+        // Ассоциативный массив состояний всех терминов таксономии
+        taxonomyState: {},
+    },
+    getDefaultProps: function() {
+        return {
+            key: 'taxonomy',
+            tid: null,
+            display: 'Выбрать:',
+            value: '',
+            children: [],
+            checked: true,
+        }
+    },
+    getInitialState: function() {
+        return {
+            children: this.props.children,
+            checked: this.props.checked,
+            //childrenState: this.props.childrenState,
+        }
+    },
+    /*
+    // Производим обработку изменений для родительского компонента
+    handleParentChange: function(childTid, childChecked, childChildrenState) {
+        console.log('parent change>',this.props.tid)
+
+        var childrenState = this.state.childrenState ? this.state.childrenState : {}
+        // Передаём обработку изменений рекурсивному родителю 
+        if (typeof this.props.parentChange === 'function') {
+            this.props.parentChange(this.props.tid, this.state.checked, childrenState)
+        }
+        // В случае, когда функция не определена, передаем значения состояний чекбоксов
+        // родительскому компоненту для всей таксономии
+        else {
+            //node = eval('TaxonomyFilter')
+            //console.log(React.findDOMNode('TaxonomyFilter'))
+            //console.log('typeof',typeof this.props.parentChange)
+            console.log('NULL childrenState',childrenState)
+        }
+        //console.log('CCS>',childChildrenState)
+        console.log('childTid',childTid,'CS>',childrenState,'childChecke',childChecked)
+        var childrenState = this.state.childrenState
+        if (typeof childTid === 'number') {
+            //childrenState[childTid.toString()] = childChecked
+            //childrenState[childTid] = childChecked
+            console.log('this [tid>',this.props.tid,this.state.checked,'] child [child',childTid,childChecked,'CCS',childChildrenState,']')
+            //console.log('this childrenState',childrenState)
+            // Конкатенация ассоциативного массива состояний потомков данного компонента 
+            // с переданным ассоциативным массивом состояний потомков потомка
+            if (childChildrenState) {
+                Object.keys(childChildrenState).forEach(function(child) {
+                    //console.log(childrenState[child])
+                    childrenState[child] = childChildrenState[child]
+                })
+            }
+        } 
+        // Обновляем значения массива state
+        this.setState({ childrenState: childrenState })
+        console.log(' ')
+    },
+    */
+    handleChange: function() {
+        //console.log('change as change>',this.props.tid)
+        // Производим обработку изменений для данного компонента
+        var checked = this.state.checked
+        checked = checked ? false : true
+        // Обновляем значения массива state
+        this.setState({ checked: checked })
+        // Передаём дальнейшую обработку изменений рекурсивному родителю 
+        if (typeof this.props.parentChange === 'function') {
+            this.props.parentChange(this.props.tid, checked, this.state.childrenState)
+        }
+    },
+    getState: function() {
+        //console.log(this.constructor.taxonomyState)
+        if (this.props.tid) {
+            this.constructor.taxonomyState[eval(this.props.tid)] = this.state.checked
+        }
+        this.props.children.forEach(function(term) {
+            eval('this.refs.theTaxonomy'+term.tid).getState()
+        }.bind(this))
+        return this.constructor.taxonomyState
+    },
+    render: function() {
+        //this.getState()
+        var rows = []
+        //var childrenState = {}
+        this.props.children.forEach(function(term, key) {
+            // Инициализируем ассоциативный массив состояний чекбоксов дочерних элементов
+            //childrenState[term.tid] = term.checked
+            // Инициализируем массив дочерних компонентов
+            rows.push(<RecursiveCheckboxTree
+                key={term.tid}
+                ref={'theTaxonomy'+term.tid}
+                tid={term.tid}
+                value={term.value}
+                display={term.display}
+                children={term.children}
+                checked={term.checked}
+                parentChange={this.handleParentChange}
+            />)
+        }.bind(this))
+        //console.log(this.props.tid,'CS',childrenState)
+        return (
+            <div>
+                <label>
+                <input 
+                    type="checkbox" 
+                    value={this.props.value}
+                    display={this.props.display} 
+                    checked={this.state.checked}
+                    //childrenState={childrenState}
+                    onChange={this.handleChange}
+                />
+                {this.props.tid} 
+                {this.props.display} 
+                <div className="otstup">
+                    {rows}
+                </div>
+                </label>
+            </div>
+        );
+    },
+})
+
 /*
 handleParentChange: function(childTid, childChecked, childChildrenState) {
     console.log('parent change>',this.props.tid)

@@ -246,7 +246,7 @@ def semheap_create_max_graph():
     for node in nodes:
         nid = int(node[0])
         # Если ID узла является цифровым значением и не равно нулю:
-        if nid and counter < 5000:
+        if nid and counter < 1000:
             counter = counter + 1
             # Добавляем узел в объект типа граф, предоставленного библиотекой NetworkX
             semheap_add_node(nid, G)
@@ -261,20 +261,20 @@ def semheap_create_max_graph():
 #
 
 
-def create_filtered_graph(graphFilter):
+def create_filtered_graph(gfilter):
     # Создаем максимально возможный граф из исходных данных - семантической кучи
     G = semheap_create_max_graph()
 
     # Преобразуем в объект json-массив параметров, полученных из url 
     try: 
-        graphFilter = json.loads(graphFilter)
+        gfilter = json.loads(gfilter)
     except:
-        render_content('Ошибка при обработке json-массива graphFilter')
+        render_content('Ошибка при обработке json-массива gfilter')
         raise
 
     # Обрабатываем массив filterOptions
     try:
-        filterOptions = graphFilter['filterOptions']
+        filterOptions = gfilter['filterOptions']
         # Производим фильтрацию полученного графа по выбранным в фильтре опциям
         G = GFilterZero(G, filterOptions['removeZero'])
     except:
@@ -283,7 +283,7 @@ def create_filtered_graph(graphFilter):
 
     # Обрабатываем массив filterAttributes
     try:
-        filterAttributes = graphFilter['filterAttributes']
+        filterAttributes = gfilter['filterAttributes']
         #print_json(filterAttributes)
         #G = GFilterAttributes(G, filterAttributes)
     except:
@@ -292,10 +292,10 @@ def create_filtered_graph(graphFilter):
 
     # Обрабатываем массив filterTaxonomy
     try:
-        filterTaxonomy = graphFilter['filterTaxonomy']
-        #print_json(filterTaxonomy)
+        filterTaxonomy = gfilter['filterTaxonomy']
+        print_json(filterTaxonomy)
         #  Производим фильтрацию по выбранным типам ИО
-        #G = GFilterTaxonomy(G, filterTaxonomy)
+        G = GFilterTaxonomy(G, filterTaxonomy)
     except:
         render_content('Ошибка при обработке json-массива filterTaxonomy')
         raise
@@ -322,7 +322,7 @@ def create_filtered_graph(graphFilter):
     # Преобразуем данные в json-формат
     graph.body = json.dumps(data, ensure_ascii=False)
     # Сохраняем граф в собственную базу данных
-    graph.save() 
+    #graph.save() 
 
     return graph.body
 

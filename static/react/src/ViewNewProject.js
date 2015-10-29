@@ -220,6 +220,6 @@ var NewGraph = React.createClass({
 */
 
 
-React.render( <NewProjectFilter/>, mountNode)
+React.render( <NewProjectFilter/>, mountNewProject)
 
 
