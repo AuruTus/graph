@@ -321,29 +321,64 @@ function scrollbarWidth() {
 
 
 /*
-    handleParentChange: function(childTid, childChecked, childChildrenState) {
-        console.log('parent change>',this.props.tid)
-        // Производим обработку изменений для данного компонента
-        var checked = this.state.checked
-        checked = checked ? false : true
-        var childrenState = this.state.childrenState
-        //childrenState[childTid.toString()] = childChecked
-        // Конкатенация ассоциативного массива состояний потомков данного компонента 
-        // с переданным ассоциативным массивом состояний потомков потомка
-        if (typeof childTid === 'number') {
-            console.log('tid>',this.props.tid,checked,'child',childTid,childChecked)
+handleParentChange: function(childTid, childChecked, childChildrenState) {
+    console.log('parent change>',this.props.tid)
+    // Производим обработку изменений для данного компонента
+    var checked = this.state.checked
+    checked = checked ? false : true
+    var childrenState = this.state.childrenState
+    //childrenState[childTid.toString()] = childChecked
+    // Конкатенация ассоциативного массива состояний потомков данного компонента 
+    // с переданным ассоциативным массивом состояний потомков потомка
+    if (typeof childTid === 'number') {
+        console.log('tid>',this.props.tid,checked,'child',childTid,childChecked)
+    }
+    //console.log('childrenState',childrenState)
+    //console.log(childrenState[childTid])
+    //childChildrenState.forEach(function(child, key) { console.log(key,'>',child) })
+    // Обновляем значения массива state
+    this.setState({ checked: checked, childrenState: childrenState })
+    // Передаём рекурсивному родителю уникальный идентификатор текущего компонента и значение state
+    if (typeof this.props.onChange === 'function') {
+        this.props.onChange(this.props.tid, checked, childrenState)
+    }
+    console.log(' ')
+},
+
+
+var TaxonomyFilter = React.createClass({
+    getInitialState: function() {
+        return {
+            //state: {},
         }
-        //console.log('childrenState',childrenState)
-        //console.log(childrenState[childTid])
-        //childChildrenState.forEach(function(child, key) { console.log(key,'>',child) })
-        // Обновляем значения массива state
-        this.setState({ checked: checked, childrenState: childrenState })
-        // Передаём рекурсивному родителю уникальный идентификатор текущего компонента и значение state
-        if (typeof this.props.onChange === 'function') {
-            this.props.onChange(this.props.tid, checked, childrenState)
-        }
-        console.log(' ')
     },
+    handleChange: function(key, value) {
+        console.log('TOP lvl change')
+        var state = this.state.state
+        state[key] = value
+        this.setState({ state: state })
+        console.log('state',state)
+        // Передаём обновлённый словарь состояний родительскому компоненту
+        if (typeof this.props.updateTaxonomy === 'function') {
+            this.props.updateTaxonomy(state)
+        }
+    },
+    updateState: function(state) {
+        console.log('TaxFilterState',state)
+    },
+    render: function() {
+        //console.log(this.state.data)
+        return (
+            <div ref='TaxonomyFilter'>
+                <Taxonomy
+                    children={this.state.data}
+                    display={'Фильтр по типам ИО:'}
+                    //onChange={this.handleChange}
+                />
+            </div>
+        )
+    },
+})
 */
 
 

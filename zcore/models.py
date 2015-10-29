@@ -295,7 +295,7 @@ def create_filtered_graph(graphFilter):
         filterTaxonomy = graphFilter['filterTaxonomy']
         #print_json(filterTaxonomy)
         #  Производим фильтрацию по выбранным типам ИО
-        G = GFilterTaxonomy(G, filterTaxonomy)
+        #G = GFilterTaxonomy(G, filterTaxonomy)
     except:
         render_content('Ошибка при обработке json-массива filterTaxonomy')
         raise

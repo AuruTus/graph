@@ -192,6 +192,8 @@ def to_plane_graph(body):
 def to_main_graph(body, gfilter):
     H = json.loads(body)
     G = json_graph.node_link_graph(H)
+    print('filter',gfilter)
+
     #layout = nx.spring_layout(G)
     layout = nx.random_layout(G)
     #nodes = G.nodes(data=True)
@@ -202,7 +204,6 @@ def to_main_graph(body, gfilter):
     #e = G.edges()
     #links = {'links': e}
     #data.update(links)
-    print('filter',gfilter)
     for nid in layout:
         point = layout.get(nid)
         x = str(point[0])
