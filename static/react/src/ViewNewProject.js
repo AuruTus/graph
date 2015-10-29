@@ -2,29 +2,28 @@ var NewProjectFilter = React.createClass({
     getInitialState: function() {
         return {
             attributes: {},
-            taxonomy: {},
             options: {},
         }
     },
     handleSubmit: function(e) {
         e.preventDefault();
-        // Формируем массив json-данных graphFilter
-        var graphFilter = { 
+        // Формируем массив json-данных gfilter
+        var gfilter = { 
             filterAttributes: this.state.attributes ,
             filterOptions: this.state.options,
-            filterTaxonomy: this.state.taxonomy,
+            filterTaxonomy: this.getTaxonomyFilterState(),
         } 
-        // Преобразовываем массив json-данных graphFilter для передачи через url 
-        graphFilter = encodeURIComponent(JSON.stringify(graphFilter))
+        // Преобразовываем массив json-данных gfilter для передачи через url 
+        gfilter = encodeURIComponent(JSON.stringify(gfilter))
         // Формируем и отправляен get-запрос на сервер
         var client = new XMLHttpRequest()
-        var url = '/create-project/' + graphFilter
+        var url = '/create-project/' + gfilter
         client.open('GET', url)
         client.send()
         client.onreadystatechange = function() {
           if(this.readyState == this.HEADERS_RECEIVED) {
             //console.log(this.getAllResponseHeaders());
-            location.reload()
+            //location.reload()
           }
         }
 
@@ -38,16 +37,18 @@ var NewProjectFilter = React.createClass({
     updateOptions(state) {
         this.setState({ options: state })
     },
-    render: function() {
+    getTaxonomyFilterState: function() {
+        // Получаем состояние чекбоксов всех компонентов таксономии
+        var taxonomyState = eval('this.refs.theTaxonomyFilter').getState()
 
-                    /*
-                    <AttributesFilter updateAttributesFilter={this.updateAttributesFilter} />
-                    <hr/>
-                    */
+        return taxonomyState
+    },
+    render: function() {
+        /* <AttributesFilter updateAttributesFilter={this.updateAttributesFilter} /> */
         return (
             <div>
                 <form onSubmit={this.handleSubmit} ref="forceGraphFilterForm">
-                    <TaxonomyFilter updateTaxonomy={this.updateTaxonomy} />
+                    <TaxonomyFilter ref="theTaxonomyFilter" />
                     <OptionsFilter updateOptions={this.updateOptions} />
                     <input type="submit" className="btn btn-warning" value="Создать" />
                 </form>
@@ -105,54 +106,6 @@ var AttributesFilter = React.createClass({
 })
 
 
-var TaxonomyFilter = React.createClass({
-    loadDataFromServer: function() {
-        $.ajax({
-            // url по которому на стороне сервера формируется ассоциативный массив существующих типов в формате json
-            url: '/json-taxonomy/',
-
-            dataType: 'json',
-            cache: false,
-            success: function(data) {
-                this.setState({properties: data});
-            }.bind(this),
-            error: function(xhr, status, err) {
-                console.error(this.props.url, status, err.toString())
-            }.bind(this)
-        })
-    },
-    getInitialState: function() {
-        // Получаем  данные с сервера в формате json
-        this.loadDataFromServer()
-
-        return {
-            // ассоциативный массив данных, полученный с сервера в формате json
-            properties: [],
-
-            taxonomyState: {},
-        }
-    },
-    handleChange: function(checkboxGroupState) {
-        this.setState({ taxonomyState: checkboxGroupState })
-
-        // Передаём обновлённый словарь состояний родительскому компоненту
-        if (typeof this.props.updateTaxonomy === 'function') {
-            this.props.updateTaxonomy(checkboxGroupState)
-        }
-        
-    },
-    render: function() {
-        return (
-            <CMCheckboxGroup
-                name='taxonomy'
-                properties={this.state.properties}
-                onChange={this.handleChange}
-            />
-        );
-    },
-})
-
-
 var OptionsFilter = React.createClass({
     getInitialState: function() {
         return {
@@ -180,44 +133,6 @@ var OptionsFilter = React.createClass({
         );
     },
 })
-
-
-/*
-var NewGraph = React.createClass({
-    loadDataFromServer: function() {
-        $.ajax({
-            // url по которому на стороне сервера формируется ассоциативный массив атрибутов узлов в формате json
-            url: '/json-main-graph/377/',
-
-            dataType: 'json',
-            cache: false,
-            success: function(data) {
-                this.setState({data: data});
-            }.bind(this),
-            error: function(xhr, status, err) {
-                console.error(this.props.url, status, err.toString())
-            }.bind(this)
-        })
-    },
-    getInitialState: function() {
-        // Получаем  данные с сервера в формате json
-        this.loadDataFromServer()
-
-        return {
-            // ассоциативный массив данных, полученный с сервера в формате json
-            data: [],
-        }
-    },
-    render: function() {
-        //console.log(this.state.data)
-        return (
-            <div>
-                {this.state.data}
-            </div>
-        );
-    },
-})
-*/
 
 
 React.render( <NewProjectFilter/>, mountNewProject)

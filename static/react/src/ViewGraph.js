@@ -449,7 +449,6 @@ var Filter = React.createClass({
     },
     handleSubmit: function(e) {
         e.preventDefault()
-        // Получаем ссылку на корневой экземпляр компонента таксономии
         // Получаем состояние чекбоксов всех компонентов таксономии
         var taxonomyState = eval('this.refs.theTaxonomy').getState()
         // Передаём обработку родительской функции
@@ -460,11 +459,13 @@ var Filter = React.createClass({
     render: function() {
         return (
             <form onSubmit={this.handleSubmit} ref="forceGraphFilterForm" className='taxonomy'>
-                <RecursiveCheckboxTree
-                    ref={'theTaxonomy'}
-                    children={this.state.taxonomyData}
-                    display={'Фильтр по типам ИО:'}
-                />
+                <div className={'RecursiveCheckboxTree'}>
+                    <RecursiveCheckboxTree
+                        ref={'theTaxonomy'}
+                        children={this.state.taxonomyData}
+                        display={'Фильтр по типам ИО:'}
+                    />
+                </div>
                 <input type="submit" className="btn btn-warning" value="Отфильтровать" />
             </form>
         );

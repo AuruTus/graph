@@ -246,7 +246,7 @@ def semheap_create_max_graph():
     for node in nodes:
         nid = int(node[0])
         # Если ID узла является цифровым значением и не равно нулю:
-        if nid and counter < 1000:
+        if nid and counter < 500:
             counter = counter + 1
             # Добавляем узел в объект типа граф, предоставленного библиотекой NetworkX
             semheap_add_node(nid, G)
@@ -268,6 +268,7 @@ def create_filtered_graph(gfilter):
     # Преобразуем в объект json-массив параметров, полученных из url 
     try: 
         gfilter = json.loads(gfilter)
+        #print_json(gfilter)
     except:
         render_content('Ошибка при обработке json-массива gfilter')
         raise
@@ -293,7 +294,7 @@ def create_filtered_graph(gfilter):
     # Обрабатываем массив filterTaxonomy
     try:
         filterTaxonomy = gfilter['filterTaxonomy']
-        print_json(filterTaxonomy)
+        #print_json(filterTaxonomy)
         #  Производим фильтрацию по выбранным типам ИО
         G = GFilterTaxonomy(G, filterTaxonomy)
     except:

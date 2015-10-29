@@ -111,15 +111,15 @@ svg .node {
         fill: green;
     }
 
-.taxonomy {
+.RecursiveCheckboxTree {
     padding: 5px;
     background-color: lightgray;
 }
-    .taxonomy div,
-    .taxonomy label {
+    .RecursiveCheckboxTree div,
+    .RecursiveCheckboxTree label {
         float: left;
     }
-    .taxonomy .otstup {
+    .RecursiveCheckboxTree .otstup {
         margin-left: 20px;
         clear: both;
     }
