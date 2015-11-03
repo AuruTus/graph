@@ -560,3 +560,56 @@ var TaxonomyFilter = React.createClass({
 */
 
 
+    /*
+    componentDidUpdate: function (props, state) {
+        if (this.state.dragging && !state.dragging) {
+            document.addEventListener('mousemove', this.onMouseMove)
+            document.addEventListener('mouseup', this.onMouseUp)
+        } else if (!this.state.dragging && state.dragging) {
+            document.removeEventListener('mousemove', this.onMouseMove)
+            document.removeEventListener('mouseup', this.onMouseUp)
+        }
+    },
+    onMouseDown: function (e, nid) {
+        //console.log(nid)
+        if (e.button !== 0) return
+        // Устанавливаем флаг перетаскивания объекта в значение истина
+        this.setState({dragging: true, nodeToMove: nid,})
+        // Прекращает дальнейшую передачу текущего события
+        e.stopPropagation()
+        // Отменяет действия браузера по умолчанию
+        e.preventDefault()
+    },
+    onMouseUp: function (e) {
+        // Устанавливаем флаг перетаскивания объекта в значение ложь
+        this.setState({dragging: false})
+        e.stopPropagation()
+        e.preventDefault()
+    },
+    onMouseMove: function (e) {
+        // Если флаг перетаскивания не истина, отменяем дальнейшую обработку
+        if (!this.state.dragging) return
+        var x = e.pageX + 1
+        var y = e.pageY - 122
+        this.setState({
+            x: x,
+            y: y,
+        })
+        e.stopPropagation()
+        e.preventDefault()
+        this.updateGraphNodePos(this.state.nodeToMove, x, y)
+        this.updateGraphEdgePos(this.state.edgesToMove, x, y)
+    },
+    updateGraphNodePos: function (nid, x, y) {
+        //console.log(nid,'>',x,'-',y)
+        node = eval('this.refs.theGraphNode' + nid)
+        //console.log(node)
+        node.setState({x: x, y: y,})
+    },
+    updateGraphEdgePos: function (eids, x, y) {
+        eids.forEach(function(eid) {
+            edge = eval('this.refs.theGraphEdge' + eid)
+            edge.setState({x: x, y: y,})
+        })
+    },
+    */

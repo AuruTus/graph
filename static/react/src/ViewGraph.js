@@ -1,6 +1,3 @@
-var globalState
-
-
 var Graph = React.createClass({
     loadDataFromServer: function() {
         $.ajax({
@@ -62,15 +59,32 @@ var Graph = React.createClass({
         this.setState({ taxonomy: taxonomyState })
     },
     */
+    handleNodeClick(data, attributes) {
+        var text = data + '; '
+        //console.log(attributes)
+        attributes.forEach(function(attr) {
+            if (attr.display) {
+                text = text + attr.name + ' - '
+                text = text + attr.display + '; '
+            }
+        })
+        eval('this.refs.theInfo').updateState(text)
+    },
     render: function() {
+        var sceneWidth = $(window).width() - scrollbarWidth()
         return (
-            <div>
-                <Filter
-                    _handleSubmit={this.handleSubmit}
-                    //updateTaxonomy={this.updateTaxonomy}
-                />
+            <div className="graph">
+                <div className="filter">
+                    <Filter
+                        _handleSubmit={this.handleSubmit}
+                        //updateTaxonomy={this.updateTaxonomy}
+                    />
+                </div>
+                <Info ref={'theInfo'} width={sceneWidth}/>
                 <SVGScene 
                     data={this.state.data}
+                    sceneWidth={sceneWidth}
+                    _handleNodeClick={this.handleNodeClick}
                 />
             </div>
         );
@@ -79,12 +93,6 @@ var Graph = React.createClass({
 
 
 var SVGScene = React.createClass({
-    getDefaultProps: function() {
-        var ww = $(window).width() - scrollbarWidth()
-        return {
-            sceneWidth: ww,
-        }
-    },
     getInitialState: function() {
         return {
             //x: this.props.x,
@@ -93,59 +101,6 @@ var SVGScene = React.createClass({
             nodeToMove: 0,
         }
     },
-    /*
-    componentDidUpdate: function (props, state) {
-        if (this.state.dragging && !state.dragging) {
-            document.addEventListener('mousemove', this.onMouseMove)
-            document.addEventListener('mouseup', this.onMouseUp)
-        } else if (!this.state.dragging && state.dragging) {
-            document.removeEventListener('mousemove', this.onMouseMove)
-            document.removeEventListener('mouseup', this.onMouseUp)
-        }
-    },
-    onMouseDown: function (e, nid) {
-        //console.log(nid)
-        if (e.button !== 0) return
-        // Устанавливаем флаг перетаскивания объекта в значение истина
-        this.setState({dragging: true, nodeToMove: nid,})
-        // Прекращает дальнейшую передачу текущего события
-        e.stopPropagation()
-        // Отменяет действия браузера по умолчанию
-        e.preventDefault()
-    },
-    onMouseUp: function (e) {
-        // Устанавливаем флаг перетаскивания объекта в значение ложь
-        this.setState({dragging: false})
-        e.stopPropagation()
-        e.preventDefault()
-    },
-    onMouseMove: function (e) {
-        // Если флаг перетаскивания не истина, отменяем дальнейшую обработку
-        if (!this.state.dragging) return
-        var x = e.pageX + 1
-        var y = e.pageY - 122
-        this.setState({
-            x: x,
-            y: y,
-        })
-        e.stopPropagation()
-        e.preventDefault()
-        this.updateGraphNodePos(this.state.nodeToMove, x, y)
-        this.updateGraphEdgePos(this.state.edgesToMove, x, y)
-    },
-    updateGraphNodePos: function (nid, x, y) {
-        //console.log(nid,'>',x,'-',y)
-        node = eval('this.refs.theGraphNode' + nid)
-        //console.log(node)
-        node.setState({x: x, y: y,})
-    },
-    updateGraphEdgePos: function (eids, x, y) {
-        eids.forEach(function(eid) {
-            edge = eval('this.refs.theGraphEdge' + eid)
-            edge.setState({x: x, y: y,})
-        })
-    },
-    */
     render: function() {
         var sceneHeight = 600
         var scale = 500
@@ -174,12 +129,13 @@ var SVGScene = React.createClass({
                     data={node.data}
                     x={x}
                     y={y}
-                    //neighbors={node.neighbors}
                     taxonomy={node.taxonomy}
+                    attributes={node.attributes}
                     degree={node.degree}
                     r={r}
                     width={width}
                     height={height}
+                    _handleNodeClick={this.props._handleNodeClick}
                     //onMouseDown={this.onMouseDown}
                 />)
             }.bind(this))
@@ -212,7 +168,6 @@ var SVGScene = React.createClass({
             <svg 
                 width={this.props.sceneWidth}
                 height={sceneHeight}
-                className="graph"
             >
                 {edgeRows}
                 {nodeRows}
@@ -291,7 +246,9 @@ var GraphNode = React.createClass({
         },
         */
     onClick: function () {
-        console.log(this.props.data)
+        if (typeof this.props._handleNodeClick === 'function') {
+            this.props._handleNodeClick(this.props.data, this.props.attributes)
+        }
     },
     render: function() {
         switch(this.props.taxonomy.tid) {
@@ -320,11 +277,13 @@ var GraphNode = React.createClass({
 
 
 var GraphNodePerson = React.createClass({
+    /*
     handleClick: function(e) {
         if (typeof this.props.handleClick === 'function') {
             this.props.handleClick()
         }
     },
+    */
     render: function() {
         //var transform = "scale(.7,.7) translate("+this.props.cx+","+this.props.cy+")"
         //var transform = "translate("+(this.props.cx-15)+","+(this.props.cy-15)+")"
@@ -466,9 +425,62 @@ var Filter = React.createClass({
                         display={'Фильтр по типам ИО:'}
                     />
                 </div>
+                <Position />
                 <input type="submit" className="btn btn-warning" value="Отфильтровать" />
             </form>
         );
+    },
+})
+
+
+var Position = React.createClass({
+    getInitialState: function() {
+        // Получаем данные с сервера в формате json
+        return {
+            // Ассоциативный массив данных, полученный с сервера в формате json
+            data: [
+                {'tid': 1, 'value': 'Президент', 'display': 'Президент', 'checked': true},
+                {'tid': 2, 'value': 'Премьер', 'display': 'Премьер', 'checked': true},
+                {'tid': 3, 'value': 'Губернатор', 'display': 'Губернатор', 'checked': true},
+                {'tid': 4, 'value': 'Чиновник', 'display': 'Чиновник', 'checked': true},
+                {'tid': 5, 'value': 'Депутат', 'display': 'Депутат', 'checked': true},
+                {'tid': 6, 'value': 'Журналист', 'display': 'Журналист', 'checked': true},
+                {'tid': 7, 'value': 'Активист', 'display': 'Активист', 'checked': true},
+            ],
+        }
+    },
+    render: function() {
+        return (
+            <div className={'RecursiveCheckboxTree'}>
+                <RecursiveCheckboxTree
+                    ref={'thePositionTaxonomy'}
+                    children={this.state.data}
+                    display={'Фильтр по типам должностей:'}
+                />
+            </div>
+        )
+    },
+})
+
+
+var Info = React.createClass({
+    getInitialState: function() {
+        return {
+            text: "node info test",
+        }
+    },
+    getState: function() {
+        return this.state.text
+    },
+    updateState: function(text) {
+        this.setState({text: text});
+    },
+    render: function() {
+        return (
+            <div className="info">
+                {this.state.text}
+            </div>
+        )
     },
 })
 

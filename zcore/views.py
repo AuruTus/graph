@@ -232,6 +232,7 @@ def to_main_graph(body, gfilter):
             'x':x,
             'y':y, 
             'taxonomy': G.node[nid]['taxonomy'],
+            'attributes': G.node[nid]['attributes'],
             'neighbors': G.neighbors(nid),
         }
     data = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)

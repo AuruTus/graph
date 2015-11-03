@@ -2,7 +2,7 @@
 import json
 import networkx as nx
 from networkx.readwrite import json_graph
-#from random import randint
+from random import randint
 import numpy as np
 #from numpy import array
 
@@ -147,113 +147,127 @@ def render_content(content):
 #
 #
 # Создаем граф с максимально возможным кол-вом узлов и связей исходя из исходный данных - семантической кучи
+class MGraph():
+    # Получение атрибутов информационного объекта вида узел
+    def get_node_taxonomy(self, nid):
+        sql = "SELECT tax.* FROM elementclasses as elc, taxonomy as tax WHERE elc.element_id=%i AND elc.class_id=tax.id" % (nid)
+        self.cursor.execute(sql)
+        term = self.cursor.fetchone()
+        data = {'tid':term[0],'parent_tid':term[1],'name':term[2]}
 
-# Получение атрибутов информационного объекта вида узел
-def semheap_get_node_taxonomy(nid):
-    cursor = connections['mysql'].cursor()
-    sql = "SELECT tax.* FROM elementclasses as elc, taxonomy as tax WHERE elc.element_id=%i AND elc.class_id=tax.id" % (nid)
-    cursor.execute(sql)
-    term = cursor.fetchone()
-    data = {'tid':term[0],'parent_tid':term[1],'name':term[2]}
-
-    return data
-
-
-# Получение атрибутов информационного объекта вида узел
-def semheap_get_node_attributes(nid):
-    cursor = connections['mysql'].cursor()
-    sql = "SELECT prpdf.name, prpdf.display, prp.str_val FROM properties as prp, propertydefs as prpdf WHERE prp.def_id=prpdf.id AND target_id=%i" % (nid)
-    cursor.execute(sql)
-    attributes = cursor.fetchall()
-    data = []
-    for attribute in attributes:
-        data.append({'val':attribute[0],'name':attribute[1],'display':attribute[2]})
-    nodeAttributes = data
-
-    return nodeAttributes
+        return data
 
 
-# Получение атрибутов информационного объекта вида дуга
-def semheap_get_edge_attributes(element_id):
-    return ''
+    # Получение атрибутов информационного объекта вида узел
+    def get_node_attributes(self, nid):
+        sql = "SELECT prpdf.name, prpdf.display, prp.str_val FROM properties as prp, propertydefs as prpdf WHERE prp.def_id=prpdf.id AND target_id=%i" % (nid)
+        self.cursor.execute(sql)
+        attributes = self.cursor.fetchall()
+        data = []
+        for attribute in attributes:
+            data.append({'val':attribute[0],'name':attribute[1],'display':attribute[2]})
+        nodeAttributes = data
+
+        return nodeAttributes
 
 
-# Добавляем узел в граф при создании многомерной проекции "семантической кучи"
-def semheap_add_node(nid, G):
-    # Для предотвращения случайного дублирования одного и того же узла с одинаковым id, но 
-    # с разным типом данных - int и str, производим преобразование типов
-    nid = int(nid)
-    # Получаем значение поля data
-    cursor = connections['mysql'].cursor()
-    sql = "SELECT el.data  FROM elements as el WHERE el.id=%i" % (nid)
-    cursor.execute(sql)
-    row = cursor.fetchone()
-    nodeData = row[0]
-
-    # Для каждого узла с помощью отдельной функции получаем словарь атрибутов
-    nodeAttributes = semheap_get_node_attributes(nid)
-    # Для каждого узла с помощью отдельной функции получаем тип узла
-    nodeTaxonomy = semheap_get_node_taxonomy(nid)
-    # Добавляем узел в граф вместе с полученнымы словарями атрибутов, таксономии
-    # В качестве атрибута data указываем значение поля data у заданного nid'ом информационного объекта 
-    G.add_node(nid, data=nodeData, attributes=nodeAttributes, taxonomy=nodeTaxonomy)
-
-    return nid
+    # Получение атрибутов информационного объекта вида дуга
+    def get_edge_attributes(self, element_id):
+        return ''
 
 
-# Добавляем дуги к указанному узлу
-def semheap_add_node_with_edges(nid, G):
-    cursor = connections['mysql'].cursor()
-    sql = "SELECT rel.id, rel.arg1, rel.arg2, el.data \
-        FROM relations as rel, elements as el \
-        WHERE rel.id = el.id AND (rel.arg1=%i OR rel.arg2=%i)" \
-        % (nid, nid)
-    cursor.execute(sql) # Выполняем sql-запрос
-    edges = dictfetchall(cursor) # Получаем массив значений результата sql-запроса в виде словаря
-    # Проходимся в цикле по всем строкам результата sql-запроса и добавляем в граф дуги
-    # и сопутствующие данные к новым узлам графа
-    for edge in edges:
-        enid = edge['arg2'] if nid == edge['arg1'] else edge['arg1']
-        # Для каждой дуги с помощью отдельной функции получаем словарь атрибутов.
-        edgeAttributes = semheap_get_edge_attributes(edge['id'])
-        # Добавляем дугу в граф для указанного узла и её атрибуты
-        G.add_edge(nid, enid, id=edge['id'], data=edge['data'], attributes=edgeAttributes)
-        # Добавляем в граф отсутствующий узел
-        semheap_add_node(enid, G)
+    # Добавляем узел в граф при создании многомерной проекции "семантической кучи"
+    def add_node(self, nid):
+        # Для предотвращения случайного дублирования одного и того же узла с одинаковым id, но 
+        # с разным типом данных - int и str, производим преобразование типов
+        nid = int(nid)
+        # Получаем значение поля data
+        sql = "SELECT el.data  FROM elements as el WHERE el.id=%i" % (nid)
+        self.cursor.execute(sql)
+        row = self.cursor.fetchone()
+        nodeData = row[0]
 
-    return True
+        # Для каждого узла с помощью отдельной функции получаем словарь атрибутов
+        nodeAttributes = self.get_node_attributes(nid)
+        # Для каждого узла с помощью отдельной функции получаем тип узла
+        nodeTaxonomy = self.get_node_taxonomy(nid)
+        
+        # Симуляция обработки данных о должности персоны
+        if nodeTaxonomy['tid'] == 1 and self.positions:
+            count = len(self.positions) - 1
+            rand = randint(0,count)
+            print('rand',rand)
+            position = self.positions[rand][0]
+            nodeAttributes.append({'val': 'position', 'display': position, 'name': 'Должность'})
+            #print(nodeAttributes)
+        # /Симуляция обработки данных о должности персоны
+        
+        # Добавляем узел в граф вместе с полученнымы словарями атрибутов, таксономии
+        # В качестве атрибута data указываем значение поля data у заданного nid'ом информационного объекта 
+        self.G.add_node(nid, data=nodeData, attributes=nodeAttributes, taxonomy=nodeTaxonomy)
+
+        return nid
 
 
-# Главная функция создания максимально большого графа 
-def semheap_create_max_graph():
-    pdev("creating max graph...")
-    # Cоздаём пустой NetworkX-граф
-    G = nx.Graph()
+    # Добавляем дуги к указанному узлу
+    def add_node_with_edges(self, nid):
+        sql = "SELECT rel.id, rel.arg1, rel.arg2, el.data \
+            FROM relations as rel, elements as el \
+            WHERE rel.id = el.id AND (rel.arg1=%i OR rel.arg2=%i)" \
+            % (nid, nid)
+        self.cursor.execute(sql) # Выполняем sql-запрос
+        edges = dictfetchall(self.cursor) # Получаем массив значений результата sql-запроса в виде словаря
+        # Проходимся в цикле по всем строкам результата sql-запроса и добавляем в граф дуги
+        # и сопутствующие данные к новым узлам графа
+        for edge in edges:
+            enid = edge['arg2'] if nid == edge['arg1'] else edge['arg1']
+            # Для каждой дуги с помощью отдельной функции получаем словарь атрибутов.
+            edgeAttributes = self.get_edge_attributes(edge['id'])
+            # Добавляем дугу в граф для указанного узла и её атрибуты
+            self.G.add_edge(nid, enid, id=edge['id'], data=edge['data'], attributes=edgeAttributes)
+            # Добавляем в граф отсутствующий узел
+            self.add_node(enid)
 
-    # Устанавливаем соединение с БД, в которой хранятся семантически связанные данные
-    cursor = connections['mysql'].cursor()
+        return True
 
-    # Формируем sql-запрос к таблице elements, содержащей информационные объекты (далее ИО).
-    # объекты со значением ent_or_rel=1 -  являются вершинами нашего графа
-    sql = "SELECT el.id FROM elements as el WHERE el.ent_or_rel=1"
 
-    cursor.execute(sql) # Выполняем sql-запрос
-    nodes = cursor.fetchall() # Получаем массив значений результата sql-запроса
+    # Главная функция создания максимально большого графа 
+    def create(self):
+        pdev("creating max graph...")
+        # Cоздаём пустой NetworkX-граф
+        self.G = nx.Graph()
+        # Устанавливаем соединение с БД, в которой хранятся семантически связанные данные
+        self.cursor = connections['mysql'].cursor()
 
-    # В цикле проходимся по каждой строке результата запроса и добавляем в граф узлы
-    # node[0] - id узла, node[1] - поле data
-    counter = 0
-    for node in nodes:
-        nid = int(node[0])
-        # Если ID узла является цифровым значением и не равно нулю:
-        if nid and counter < 500:
-            counter = counter + 1
-            # Добавляем узел в объект типа граф, предоставленного библиотекой NetworkX
-            semheap_add_node(nid, G)
-            # Добавляем дуги к указанному узлу
-            semheap_add_node_with_edges(nid, G)
+        # Симуляция обработки должности 
+        sql = "SELECT DISTINCT el.data FROM elements as el, elementclasses as ec \
+            WHERE el.id=ec.element_id AND ec.class_id=2"
+        self.cursor.execute(sql)
+        self.positions = self.cursor.fetchall()
+        # /Симуляция обработки должности 
 
-    return G
+
+        # Формируем sql-запрос к таблице elements, содержащей информационные объекты (далее ИО).
+        # объекты со значением ent_or_rel=1 -  являются вершинами нашего графа
+        sql = "SELECT el.id FROM elements as el WHERE el.ent_or_rel=1"
+        self.cursor.execute(sql) # Выполняем sql-запрос
+        nodes = self.cursor.fetchall() # Получаем массив значений результата sql-запроса
+
+        # В цикле проходимся по каждой строке результата запроса и добавляем в граф узлы
+        # node[0] - id узла, node[1] - поле data
+        counter = 0
+        for node in nodes:
+            nid = int(node[0])
+            # Если ID узла является цифровым значением и не равно нулю:
+            if nid and counter < 1500:
+                counter = counter + 1
+                # Добавляем узел в объект типа граф, предоставленного библиотекой NetworkX
+                # positions - массив должностей, count - кол-во; нужно для симуляции обработки должности
+                self.add_node(nid)
+                # Добавляем дуги к указанному узлу
+                self.add_node_with_edges(nid)
+
+        return self.G
 
 
 # /Создаем граф с максимально возможным кол-вом узлов и связей исходя из данных семантической кучи
@@ -263,7 +277,8 @@ def semheap_create_max_graph():
 
 def create_filtered_graph(gfilter):
     # Создаем максимально возможный граф из исходных данных - семантической кучи
-    G = semheap_create_max_graph()
+    MG = MGraph()
+    G = MG.create()
 
     # Преобразуем в объект json-массив параметров, полученных из url 
     try: 
@@ -323,7 +338,7 @@ def create_filtered_graph(gfilter):
     # Преобразуем данные в json-формат
     graph.body = json.dumps(data, ensure_ascii=False)
     # Сохраняем граф в собственную базу данных
-    #graph.save() 
+    graph.save() 
 
     return graph.body
 
@@ -353,4 +368,4 @@ class Taxonomy():
 
 #
 #
-#
+
