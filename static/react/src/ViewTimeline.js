@@ -1,4 +1,6 @@
 var multiplier = 30
+var globOffset = 200
+var globMonth = [1,2,3,4,5,6,7,8,9,10]
 
 // Создаём шкалу
 var xScale = d3.scale.linear()
@@ -22,15 +24,15 @@ var Timeline = React.createClass({
         }
     },
     loadDataFromServer: function() {
-        var gfilter = {"options":{"rmzero":"true","radius":"byDegree"}}
+        var gfilter = {"options":{"rmzero":"true",}}
         gfilter = encodeURIComponent(JSON.stringify(gfilter))
         $.ajax({
             // url по которому на стороне сервера формируется массив атрибутов узлов в формате json
-            url: '/json-timeline/' + gid + '/' + gfilter + '/',
+            //url: '/json-timeline/' + gid + '/' + gfilter + '/',
+            url: '/json-timeline/' + gid + '//',
             dataType: 'json',
             cache: false,
             success: function(data) {
-                //console.log(data.nodes[0])
                 this.setState({nodes: data.nodes})
             }.bind(this),
             error: function(xhr, status, err) {
@@ -48,11 +50,9 @@ var Timeline = React.createClass({
         this.loadDataFromServer()
     },
     updateNodeBar: function(month) {
-        this.state.nodes.forEach(function(prop, key) {
-            if (prop.transfers) {
-                node = eval('this.refs.theNodeBar' + key)
-                //console.log(React.findDOMNode(node))
-                node.updateMonthBar(month)
+        this.state.nodes.forEach(function(node) {
+            if (node.transfers) {
+                eval('this.refs.theNodeBar'+node.id).updateMonthBar(month)
             }
         }.bind(this))
     },
@@ -76,25 +76,30 @@ var Timeline = React.createClass({
         // внутри окна броузера
         xScale.range([0, this.props.sceneWidth])
 
-//console.log(maxX,'-',xScale(maxX))
-        this.state.nodes.forEach(function(prop, key) {
+        var i = 0
+        this.state.nodes.forEach(function(node) {
             // Формируем массив rows дочерних компонентов
-            if (prop.transfers) {
+            if (node.transfers) {
+                var id = node.id
                 // Динамически определяем высотy сцены (svg-элемента)
                 sceneHeight += nodeBarHeight
-//console.log(prop.transfersNumber)
+                // Формируем массив NodeBar
                 rows.push(<NodeBar 
-                    key={key}
-                    ref={"theNodeBar"+key}
-                    reactKey={key}
-                    width={xScale(prop.transfersNumber)}
+                    key={id}
+                    reactKey={id}
+                    ref={"theNodeBar"+id}
+                    order={i}
+                    data={node.data}
+                    //width={xScale(prop.transfersNumber)}
+                    width={node.transfersNumber*multiplier}
                     height={nodeBarHeight}
-                    transfers={prop.transfers} 
-                    transfersNumber={prop.transfersNumber}
+                    transfers={node.transfers} 
+                    transfersNumber={node.transfersNumber}
                 />)
+                i++
             }
         }.bind(this))
-//console.log('==================================')
+        sceneHeight += 30
 
         return (
             <svg 
@@ -104,7 +109,7 @@ var Timeline = React.createClass({
             >
                 {rows}
                 <NavBar 
-                    x="20"
+                    x={globOffset}
                     y={sceneHeight-navBarHeight/2}
                     reClick={this.updateNodeBar}
                 />
@@ -121,10 +126,9 @@ var NodeBar = React.createClass({
         }
     },
     getInitialState: function() {
-        var key = this.props.reactKey
+        var order = this.props.order
         return {
-            yoffset: key*this.props.height + key,
-            //color: randcolor(),
+            yoffset: order * this.props.height + order,
             color: "lightblue",
         }
     },
@@ -132,19 +136,27 @@ var NodeBar = React.createClass({
         //console.log(this.getDOMNode())
     },
     updateMonthBar: function(month) {
-        //console.log('month ', month)
+        var nodeBarKey = this.props.reactKey
         this.props.transfers.forEach(function(prop, key) {
-            node = eval('this.refs.theMonthBar' + key)
-            node.hide()
+            if(prop.month <= globMonth.length && prop.month > month) {
+                eval('this.refs.theNodeBar'+nodeBarKey+'theMonthBar'+key).hide()
+            }
         }.bind(this))
         this.props.transfers.forEach(function(prop, key) {
             if(prop.month <= month) {
-                node = eval('this.refs.theMonthBar' + key)
-                console.log(key)
-                node.show()
+                eval('this.refs.theNodeBar'+nodeBarKey+'theMonthBar'+key).show()
             }
         }.bind(this))
-//console.log('======================================================')
+        this.updateTransfersSum(month)
+    },
+    updateTransfersSum(month) {
+        var sum = 0
+        this.props.transfers.forEach(function(prop) {
+            if(prop.month <= month) {
+                sum += prop.number
+            }
+        }.bind(this))
+        this.setState({transfersSum: sum})
     },
     render: function() {
         var rows = []
@@ -152,46 +164,45 @@ var NodeBar = React.createClass({
         var xoffset = 0
         var width = 0
         var zcount = 0
-console.log("------------------------------------")
-console.log(this.props.transfersNumber,'>',xScale(this.props.transfersNumber))
+        var parentKey = this.props.reactKey
         this.props.transfers.forEach(function(prop, key) {
-
-            // Вычисляем ширину прямоугольника с учётом масштаба
-            width = xScale(prop.number)
-
-            prexoffset = xoffset
-            //xoffset = prexoffset + prop.number*multiplier
-            xoffset = prexoffset + width
-//console.log(prexoffset,'-',width)
-//console.log(xScale(prop.number))
-console.log(prop.month,'-',prop.number,'>',xScale(prop.number))
-zcount+=xScale(prop.number)
-
-
-            // Формируем массив rows дочерних компонентов
-            rows.push(<MonthBar
-                key={key}
-                ref={"theMonthBar"+key}
-                reactKey={key}
-                month={prop.month} 
-                number={prop.number}
-                width={width}
-                xoffset={prexoffset}
-                yoffset={this.state.yoffset+5}
-                fill={monthColor(prop.month)}
-            />)
+            if (zcount < globMonth.length) {
+                // Вычисляем ширину прямоугольника с учётом масштаба
+                //width = xScale(prop.number)
+                width = prop.number*multiplier
+                prexoffset = xoffset
+                //xoffset = prexoffset + prop.number*multiplier
+                xoffset = prexoffset + width
+                // Формируем массив rows дочерних компонентов
+                rows.push(<MonthBar
+                    key={key}
+                    ref={"theNodeBar"+parentKey+"theMonthBar"+key}
+                    reactKey={key}
+                    month={prop.month} 
+                    number={prop.number}
+                    width={width}
+                    xoffset={prexoffset+globOffset}
+                    yoffset={this.state.yoffset+5}
+                    fill={monthColor(prop.month)}
+                />)
+                //console.log("theNodeBar"+parentKey+"theMonthBar"+key)
+                zcount ++
+            }
         }.bind(this))
-console.log(zcount,"------------------------------------")
         return (
-            <g className="node-bar">
+            <g className="NodeBar">
                 <rect 
                     width={this.props.width}
                     height={this.props.height}
+                    x={globOffset}
                     y={this.state.yoffset}
                     fill={this.state.color}
-                    className="transfers-number"
-                    onClick={this.handleUpdate}
+                    ////className="transfers-number"
+                    //onClick={this.handleUpdate}
                 />
+                <text x={10} y={this.state.yoffset+20}>{this.props.data}</text>
+                <text x={globOffset-18} y={this.state.yoffset+20}>{this.state.transfersSum}</text>
+                <text x={this.props.width+globOffset+3} y={this.state.yoffset+20}>{this.props.transfersNumber}</text>
                 {rows}
             </g>
         )
@@ -212,17 +223,17 @@ var MonthBar = React.createClass({
     },
     handleClick: function() {
         console.log(this.props.month)
-      this.unmount()
+        //this.unmount()
     },
     hide: function() {
         var node = this.getDOMNode()
         React.unmountComponentAtNode(node)
-        $(node).hide()
+        $(node).fadeOut("slow")
     },
     show: function() {
         var node = this.getDOMNode()
         React.unmountComponentAtNode(node)
-        $(node).show( "slow", function() { })
+        $(node).fadeIn("slow")
     },
     getInitialState: function() {
         return {
@@ -238,7 +249,7 @@ var MonthBar = React.createClass({
                 y={this.props.yoffset}
                 fill={this.props.fill}
                 onClick={this.handleClick}
-                className="month-bar"
+                className="MonthBar"
             />
         )
     },
@@ -248,7 +259,7 @@ var MonthBar = React.createClass({
 var NavBar = React.createClass({
     getInitialState: function() {
         return {
-            months: '123456789'.split(''),
+            months: globMonth,
         }
     },
     componentDidMount: function() {
@@ -268,9 +279,8 @@ var NavBar = React.createClass({
         return (
             <g 
                 transform={"translate(" + this.props.x + "," + this.props.y + ")"}
-                className="month-nav"
+                className="navBar"
             >
-                <div />
                 {rows}
             </g>
         )
@@ -300,19 +310,23 @@ var NavBarUnit = React.createClass({
     },
     render: function() {
         return (
-            <rect
-                width={this.props.width}
-                height={this.props.height}
-                x={this.state.x}
-                fill={monthColor(this.props.month)}
+            <g
                 onClick={this.handleClick}
-            />
+            >
+                <rect
+                    width={this.props.width}
+                    height={this.props.height}
+                    x={this.state.x}
+                    fill={monthColor(this.props.month)}
+                />
+                <text x={this.state.x+this.props.width/2-5} y={this.props.height/2+5}>{this.props.month}</text>
+            </g>
         )
     },
 })
 
 
-React.render( <Timeline />, mountNode)
+React.render( <Timeline />, TimeLine)
 
 
 var GraphFilter = React.createClass({
@@ -339,68 +353,6 @@ var GraphFilter = React.createClass({
 })
 
 
-React.render( <GraphFilter />, document.getElementById('graph-filter'))
+//React.render( <GraphFilter />, document.getElementById('graph-filter'))
 
 
-/*
-var GenericWrapper = React.createClass({
-  componentDidMount: function() {
-    console.log(Array.isArray(this.props.children)); // => true
-    //console.log(this.props.children.length);
-  },
-
-  render: function() {
-    return (
-        <div>
-            <Chil title="one"/>
-            <Chil title="two"/>
-        </div>
-    )
-  }
-});
-
-var Chil = React.createClass({
-    render: function() {
-        return (
-            <div>
-                {this.props.title}
-            </div>
-        )
-    },
-})
-
-var ListItemWrapper = React.createClass({
-  handleClick: function() {
-        this.props.reClick()
-    },
-  render: function() {
-    return <li onClick={this.handleClick}>{this.props.data}</li>;
-  },
-});
-var MyComponent = React.createClass({
-  componentDidMount: function() {
-    console.log(Array.isArray(this.props.children)); // => true
-    //console.log(this.props.children.length);
-  },
-    handleClick: function() {
-        console.log('re')
-    },
-  render: function() {
-    var results = [
-        {"id": "1","data":"one"},
-        {"id": "2","data":"two"},
-    ]
-    return (
-      <ul>
-        {results.map(function(result) {
-           return <ListItemWrapper key={result.id} ref={'chil' + result.id} data={result.data}
-                reClick={this.handleClick}
-            />;
-        })}
-      </ul>
-    );
-  }
-});
-
-React.render( <MyComponent/>, mountNode)
-*/

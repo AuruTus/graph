@@ -635,7 +635,7 @@ def GFilterTransfers(G):
         if doit == 1:
             G.node[nid]['class_id'] = 1
             G.node[nid]['transfers'] = []
-            months = "123456789"
+            months = [1,2,3,4,5,6,7,8,9,10]
             transfersInYear = 0
             for month in months:
                 transfersInMonth = randint(1,4)
@@ -666,22 +666,18 @@ def json_timeline(request, id, gfilter):
     #
     # Блок работы с данными в графовом представлении
     G = json_graph.node_link_graph(graphData)
-
     try:
         # Исключаем из графа узлы с нулевым весом (без связей)
         G = GFilterZero(G, gfilter['options']['rmzero'])
     except: pass
-
     try:
         # Производим фильтрацию графа по переданным в списке nodes узлам
         G = GFilterNodes(G,gfilter['nodes'])
     except: pass
-
     try:
         # Производим фильтрацию узлов графа по переданным в ассоциативном массивe attributes атрибутам узлов
         G = GFilterAttributes(G,gfilter['attributes'])
     except: pass
-
     # Добавляем сгенированную информацию о перемещениях объекта
     # это необходимо пока отсутствуют реальные данные
     try:

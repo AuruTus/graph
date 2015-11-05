@@ -68,10 +68,10 @@ svg .node {
     float: left;
 }
 
-.timeline {
+#TimeLine {
         border: solid 1px gray;
     }
-    .node-bar {
+    #TimeLine svg .nodeBar {
         border: solid 4px green;
     }
         .transfers-number {
@@ -84,6 +84,16 @@ svg .node {
         border: solid 4px green;
         fill: gray;
         background: gray;
+    }
+    #TimeLine svg g.navBar text {
+        fill: #333;
+        cursor: pointer;
+    }
+    #TimeLine svg g.navBar rect {
+        cursor: pointer;
+    }
+    #TimeLine svg g rect.MonthBar {
+        display: none;
     }
 
 .graph {
@@ -98,6 +108,9 @@ svg .node {
         padding: 15px 0;
         background-color: lightgray;
     }
+        .graph .filter .data {
+            padding: 0 15px;
+        }
     .graph svg {
         margin: 0 0 0 350px;
     }
@@ -121,6 +134,10 @@ svg .node {
         .graph svg .person {
             //fill: #264294;
             fill: green;
+        }
+        .graph svg text {
+            fill: #333;
+            stroke: #333;
         }
     .graph .info {
         margin: 0 0 0 352px;
