@@ -100,6 +100,43 @@ def GFilterTaxonomy(G, ttypes):
     return G
 
 
+# Оставляем в графе только те узлы, атрибут data которых совпадает с переданной строкой
+def GFilterData(G, data):
+    data = str(data).lower()
+    # Если data содержит текст, производим фильтрацию узлов
+    nodes = []
+    if len(data) > 0:
+        for node in G.nodes(data=True):
+            nid = int(node[0])
+            zstr = node[1]['data'].lower()
+            if data in zstr:
+                nodes.append(nid)
+        nodesList = []
+        for nid in nodes:
+            nodesList.append(nid)
+            neighbors = nx.all_neighbors(G, nid)
+            for neighbor in neighbors:
+                nodesList.append(neighbor)
+        G = G.subgraph(nodesList)
+
+        """
+        nodesList = []
+        for node in G.nodes(data=True):
+            nid = int(node[0])
+            zstr = node[1]['data'].lower()
+            if data in zstr:
+                nodesList.append(nid)
+            else:
+                neighbors = G.neighbors(nid)
+                print(nodesList,'-',neighbors)
+                #for n in nodesList:
+                    #if n not in neighbors: 
+                G.remove_node(nid)
+        """
+
+    return G
+    
+
 def pdev(str):
     print('\n',str,'\n')
     return True
@@ -185,7 +222,7 @@ class MGraph():
         sql = "SELECT el.data  FROM elements as el WHERE el.id=%i" % (nid)
         self.cursor.execute(sql)
         row = self.cursor.fetchone()
-        nodeData = row[0]
+        nodeData = ' '.join(str(row[0]).split())
 
         # Для каждого узла с помощью отдельной функции получаем словарь атрибутов
         nodeAttributes = self.get_node_attributes(nid)
@@ -196,7 +233,7 @@ class MGraph():
         if nodeTaxonomy['tid'] == 1 and self.positions:
             count = len(self.positions) - 1
             rand = randint(0,count)
-            print('rand',rand)
+            #print('rand',rand)
             position = self.positions[rand][0]
             nodeAttributes.append({'val': 'position', 'display': position, 'name': 'Должность'})
             #print(nodeAttributes)

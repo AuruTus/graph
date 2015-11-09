@@ -24,14 +24,16 @@ var Graph = React.createClass({
             filterOptions: {zero: 'no'},
         }
     },
-    handleSubmit: function(taxonomyState) {
+    handleSubmit: function(state) {
         // Формируем массив json-данных gfilter
         var gfilter = { 
             filterAttributes: this.state.filterAttributes ,
             filterOptions: this.state.filterOptions,
-            filterTaxonomy: taxonomyState,
+            filterTaxonomy: state.taxonomy,
+            filterData: state.data,
         } 
         // Преобразовываем массив json-данных gfilter для передачи через url 
+        console.log('gfilter',state.data)
         gfilter = encodeURIComponent(JSON.stringify(gfilter))
         // Указываем адрес, по которому будет производится запрос
         var url = '/json-main-graph/' + gid + '/' + gfilter
@@ -60,15 +62,20 @@ var Graph = React.createClass({
     },
     */
     handleNodeClick(data, attributes) {
-        var text = data + '; '
-        //console.log(attributes)
-        attributes.forEach(function(attr) {
-            if (attr.display) {
-                text = text + attr.name + ' - '
-                text = text + attr.display + '; '
-            }
-        })
-        eval('this.refs.theInfo').updateState(text)
+        //console.log(typeof data)
+        if (typeof data === 'string') {
+            var text = data + '; '
+            //console.log(attributes)
+            attributes.forEach(function(attr) {
+                if (attr.display) {
+                    text = text + attr.name + ' - '
+                    text = text + attr.display + '; '
+                }
+            })
+            eval('this.refs.theInfo').updateState(text)
+        } else {
+            //eval('this.refs.theInfo').updateState('')
+        }
     },
     render: function() {
         var sceneWidth = $(window).width() - scrollbarWidth()
@@ -85,6 +92,7 @@ var Graph = React.createClass({
                     data={this.state.data}
                     sceneWidth={sceneWidth}
                     _handleNodeClick={this.handleNodeClick}
+                    _handleSceneClick={this.handleNodeClick}
                 />
             </div>
         );
@@ -100,6 +108,10 @@ var SVGScene = React.createClass({
             dragging: false,
             nodeToMove: 0,
         }
+    },
+    handleClick() {
+        console.log('svg click')
+        eval('this.refs.theInfo').updateState('')
     },
     render: function() {
         var sceneHeight = 600
@@ -168,6 +180,7 @@ var SVGScene = React.createClass({
             <svg 
                 width={this.props.sceneWidth}
                 height={sceneHeight}
+                onClick={this.props._handleSceneClick}
             >
                 {edgeRows}
                 {nodeRows}
@@ -419,23 +432,23 @@ var Filter = React.createClass({
             data: '',
         }
     },
-    updateData () {
-    },
     handleSubmit: function(e) {
         e.preventDefault()
-        // Получаем состояние чекбоксов всех компонентов таксономии
-        var taxonomyState = eval('this.refs.theTaxonomy').getState()
         // Передаём обработку родительской функции
         if (typeof this.props._handleSubmit === 'function') {
-            this.props._handleSubmit(taxonomyState)
+            state = {}
+            // Получаем состояние чекбоксов всех компонентов таксономии
+            state.taxonomy = eval('this.refs.theTaxonomy').getState()
+            // Получаем значение поля Data input 
+            state.data = eval('this.refs.theFilterData').state.value
+            this.props._handleSubmit(state)
         }
     },
     render: function() {
         return (
             <form onSubmit={this.handleSubmit} ref="forceGraphFilterForm" className='taxonomy'>
                 <Data 
-                    ref={'theDataFilter'}
-                    _updateState={this.updateData}
+                    ref={'theFilterData'}
                 />
                 <div className={'RecursiveCheckboxTree'}>
                     <RecursiveCheckboxTree
@@ -453,11 +466,21 @@ var Filter = React.createClass({
 
 
 var Data = React.createClass({
+    getInitialState: function() {
+        return {value: '!'}
+    },
+    handleChange: function(event) {
+		this.setState({value: event.target.value});
+	},
     render: function() {
         return (
             <label className='data'>
                 Фильтрация по полю data
-                <input />
+                <input 
+					type="text"
+					value={this.state.value}
+					onChange={this.handleChange}
+				/>
             </label>
         )
     },

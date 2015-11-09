@@ -6,6 +6,7 @@ from networkx.readwrite import json_graph
 from random import randint
 import numpy as np
 #from numpy import array
+import warnings
 
 from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponse, HttpResponseRedirect
@@ -15,7 +16,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from .models import Graph, Node, Taxonomy, create_filtered_graph, render_content, print_json, pdev
-from .models import GFilterNodes, GFilterAttributes, GFilterZero, GFilterTaxonomy
+from .models import GFilterNodes, GFilterAttributes, GFilterZero, GFilterTaxonomy, GFilterData
 
 HTMLPREFIX = '<!DOCTYPE html><meta charset="utf-8"><body>'
 HTMLSUFFIX = '</body>'
@@ -200,16 +201,25 @@ def to_main_graph(body, gfilter):
         try: 
             gfilter = json.loads(gfilter)
         except:
-            render_content('Ошибка при обработке json-массива gfilter')
-            raise
+            warnings.warn('Ошибка при обработке json-массива gfilter', UserWarning)
+            #raise
         # Обрабатываем массив filterTaxonomy
         try:
             filterTaxonomy = gfilter['filterTaxonomy']
-            print_json(filterTaxonomy)
+            #print_json(filterTaxonomy)
             #  Производим фильтрацию по выбранным типам ИО
             G = GFilterTaxonomy(G, filterTaxonomy)
         except:
-            render_content('Ошибка при обработке json-массива filterTaxonomy')
+            warnings.warn('Ошибка при обработке json-массива filterTaxonomy', UserWarning)
+            #raise
+        # Обрабатываем параметр filterData
+        try:
+            data = gfilter['filterData']
+            print('data',data)
+            #  Производим фильтрацию по выбранным типам ИО
+            G = GFilterData(G, data)
+        except:
+            warnings.warn('Ошибка при обработке параметра filterData', UserWarning)
             raise
     #layout = nx.spring_layout(G)
     layout = nx.random_layout(G)
@@ -695,7 +705,10 @@ def json_timeline(request, id, gfilter):
     # Добавляем значение кол-ва узлов и дуг в представление графа
     numberOfNodes = G.number_of_nodes()
     numberOfEdges = G.number_of_edges()
-    gdata['graph'].append({'numberOfNodes': numberOfNodes, 'numberOfEdges': numberOfEdges})
+    if type(gdata['graph']) is dict:
+        gdata['graph'].update({'numberOfNodes': numberOfNodes, 'numberOfEdges': numberOfEdges})
+    elif type(gdata['graph']) is list:
+        gdata['graph'].append({'numberOfNodes': numberOfNodes, 'numberOfEdges': numberOfEdges})
 
     # Вывод отладочной информации
     pdev('G.nodes %i, G.edges %i' % (numberOfNodes,numberOfEdges))
