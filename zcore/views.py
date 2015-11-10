@@ -195,32 +195,20 @@ def to_main_graph(body, gfilter):
     H = json.loads(body)
     # Преобразуем структура графа в формате json в объект типа граф библиотеки NetworkX
     G = json_graph.node_link_graph(H)
-    # Если передан массив фильтрующих атрибутов, производим фильтрацию:
-    if gfilter:
-        # Декодируем json-объект - массив параметров, полученных из url 
-        try: 
-            gfilter = json.loads(gfilter)
-        except:
-            warnings.warn('Ошибка при обработке json-массива gfilter', UserWarning)
-            #raise
-        # Обрабатываем массив filterTaxonomy
-        try:
-            filterTaxonomy = gfilter['filterTaxonomy']
-            #print_json(filterTaxonomy)
-            #  Производим фильтрацию по выбранным типам ИО
-            G = GFilterTaxonomy(G, filterTaxonomy)
-        except:
-            warnings.warn('Ошибка при обработке json-массива filterTaxonomy', UserWarning)
-            #raise
-        # Обрабатываем параметр filterData
-        try:
-            data = gfilter['filterData']
-            print('data',data)
-            #  Производим фильтрацию по выбранным типам ИО
-            G = GFilterData(G, data)
-        except:
-            warnings.warn('Ошибка при обработке параметра filterData', UserWarning)
-            raise
+    # Если передан массив фильтрующих атрибутов, 
+    # декодируем json-объект gfilter - массив параметров, полученных из url 
+    # и производим фильтрацию в соответствии с полученными данными:
+    try: 
+        gfilter = json.loads(gfilter)
+        print_json(gfilter)
+        # Производим фильтрацию графа по переданным в списке nodes узлам
+        G = GFilterNodes(G, gfilter.get('nodes'))
+        # Производим фильтрацию узлов графа по переданному массиву типов ИО
+        G = GFilterTaxonomy(G, gfilter.get('taxonomy'))
+        # Оставляем в графе только те узлы, атрибут data которых совпадает с переданной строкой
+        G = GFilterData(G, gfilter.get('data'))
+    except:
+        warnings.warn('Ошибка при обработке json-массива gfilter', UserWarning)
     #layout = nx.spring_layout(G)
     layout = nx.random_layout(G)
     #nodes = G.nodes(data=True)

@@ -19,24 +19,14 @@ var Graph = React.createClass({
         return {
             // ассоциативный массив данных, полученный с сервера в формате json
             data: [],
-            filterAttributes: {},
-            taxonomy: {},
-            filterOptions: {zero: 'no'},
+            gfilter: {},
         }
     },
-    handleSubmit: function(state) {
-        // Формируем массив json-данных gfilter
-        var gfilter = { 
-            filterAttributes: this.state.filterAttributes ,
-            filterOptions: this.state.filterOptions,
-            filterTaxonomy: state.taxonomy,
-            filterData: state.data,
-        } 
+    handleSubmit: function(filter) {
         // Преобразовываем массив json-данных gfilter для передачи через url 
-        console.log('gfilter',state.data)
-        gfilter = encodeURIComponent(JSON.stringify(gfilter))
-        // Указываем адрес, по которому будет производится запрос
-        var url = '/json-main-graph/' + gid + '/' + gfilter
+        filterJSONed = encodeURIComponent(JSON.stringify(filter))
+        // Формируем адрес, по которому будет производится REST-запрос
+        var url = '/json-main-graph/' + gid + '/' + filterJSONed
         // Инициализируем объект XMLHttpReques, позволяющий отправлять асинхронные запросы веб-серверу
         // и получать ответ без перезагрузки страницы
         var xhr = new XMLHttpRequest()
@@ -48,7 +38,7 @@ var Graph = React.createClass({
           if(xhr.readyState == 4) { // `DONE`
           //if(this.readyState == this.HEADERS_RECEIVED) {
             //console.log(this.getAllResponseHeaders());
-            this.setState({data: xhr.response})
+            this.setState({data: xhr.response, gfilter: filter})
           }
         }.bind(this)
     },
@@ -61,37 +51,49 @@ var Graph = React.createClass({
         this.setState({ taxonomy: taxonomyState })
     },
     */
-    handleNodeClick(data, attributes) {
-        //console.log(typeof data)
-        if (typeof data === 'string') {
-            var text = data + '; '
-            //console.log(attributes)
-            attributes.forEach(function(attr) {
-                if (attr.display) {
-                    text = text + attr.name + ' - '
-                    text = text + attr.display + '; '
-                }
-            })
-            eval('this.refs.theInfo').updateState(text)
-        } else {
-            //eval('this.refs.theInfo').updateState('')
+    handleNodeClick(nid, checked) {
+        nid = parseInt(nid)
+        if (typeof nid === 'number') {
+            // Добавление/удаление выделенного по клику узла в массив Filter.state.nodes
+            filter = eval('this.refs.theFilter')
+            nodes = filter.state.nodes
+            if (checked) {
+                nodes.push(nid)
+            } else {
+                nodes.pop(nid)
+            }
+            filter.setState({nodes: nodes})
         }
+    },
+    handleNodeTip(data, attributes) {
+        var text = data + '; '
+        attributes.forEach(function(attr) {
+            if (attr.display) {
+                text = text + attr.name + ' - '
+                text = text + attr.display + '; '
+            }
+        })
+        eval('this.refs.theInfo').updateState(text)
     },
     render: function() {
         var sceneWidth = $(window).width() - scrollbarWidth()
         return (
-            <div className="graph">
-                <div className="filter">
+            <div className="Graph">
+                <div className="Filter">
                     <Filter
+                        ref='theFilter'
                         _handleSubmit={this.handleSubmit}
                         //updateTaxonomy={this.updateTaxonomy}
                     />
                 </div>
                 <Info ref={'theInfo'} width={sceneWidth}/>
                 <SVGScene 
+                    ref='theSVGScene'
                     data={this.state.data}
+                    filter={this.state.gfilter}
                     sceneWidth={sceneWidth}
                     _handleNodeClick={this.handleNodeClick}
+                    _handleNodeTip={this.handleNodeTip}
                     _handleSceneClick={this.handleNodeClick}
                 />
             </div>
@@ -130,14 +132,22 @@ var SVGScene = React.createClass({
             console.log('Updating graph...')
             // Создаём массив объектов типа GraphNode
             Object.keys(nodes).forEach(function(key) {
-                var node = nodes[key]
+                // В данном случае, специально, id узла совпадает с порядковым ключом ассоциативного массива объектов
+                nid = key
+                //console.log(key)
+                var node = nodes[nid]
                 var x = node.x*scale+xOffset 
                 var y = node.y*scale+yOffset 
-                //console.log('x',x,'y',y)
+                /*
+                var checked
+                if ('innodes',typeof this.props.filter.nodes === 'object') {
+                    console.log(nid,'-',this.props.filter.nodes)
+                }
+                */
                 nodeRows.push(<GraphNode
-                    key={key}
-                    ref={"theGraphNode"+key}
-                    nid={key}
+                    key={nid}
+                    ref={"theGraphNode"+nid}
+                    nid={nid}
                     data={node.data}
                     x={x}
                     y={y}
@@ -148,6 +158,7 @@ var SVGScene = React.createClass({
                     width={width}
                     height={height}
                     _handleNodeClick={this.props._handleNodeClick}
+                    _handleNodeTip={this.props._handleNodeTip}
                     //onMouseDown={this.onMouseDown}
                 />)
             }.bind(this))
@@ -180,7 +191,7 @@ var SVGScene = React.createClass({
             <svg 
                 width={this.props.sceneWidth}
                 height={sceneHeight}
-                onClick={this.props._handleSceneClick}
+                //onClick={this.props._handleSceneClick}
             >
                 {edgeRows}
                 {nodeRows}
@@ -196,10 +207,12 @@ var GraphNode = React.createClass({
         return {
             x: this.props.x,
             y: this.props.y,
+            checked: false,
             //dragging: false,
         }
     },
     componentDidUpdate: function (props, state) {
+        state.checked = false
         //console.log('x',this.state.x,'y',this.state.y)
         //console.log('x',state.x,'y',state.y)
         //state.x = this.props.x
@@ -258,9 +271,19 @@ var GraphNode = React.createClass({
             e.preventDefault()
         },
         */
+    onMouseOver: function () {
+        // Передача обработки родительскому компоненту
+        if (typeof this.props._handleNodeTip === 'function') {
+            this.props._handleNodeTip(this.props.data, this.props.attributes)
+        }
+    },
     onClick: function () {
+        var checked = this.state.checked
+        checked = checked ? false : true
+        this.setState({ checked: checked, })
+        // Передача обработки родительскому компоненту
         if (typeof this.props._handleNodeClick === 'function') {
-            this.props._handleNodeClick(this.props.data, this.props.attributes)
+            this.props._handleNodeClick(this.props.nid, checked, this.props.data, this.props.attributes)
         }
     },
     render: function() {
@@ -281,8 +304,10 @@ var GraphNode = React.createClass({
                     cx={this.props.x}
                     cy={this.props.y}
                     r={this.props.r}
-                    onMouseDown={this.onMouseDown}
-                    onClick={this.onClick}
+                    checked={this.state.checked}
+                    //onMouseDown={this.onMouseDown}
+                    _onMouseOver={this.onMouseOver}
+                    _onClick={this.onClick}
                 />
             </g>
         )
@@ -316,9 +341,10 @@ var GraphNodePerson = React.createClass({
         }
         return (
             <g 
-                className="person" 
+                className={'Person ' + this.props.checked}
                 transform={transform}
-                onClick={this.props.onClick}
+                onMouseOver={this.props._onMouseOver}
+                onClick={this.props._onClick}
                 >
                 <path
                     transform={scale}
@@ -330,21 +356,26 @@ var GraphNodePerson = React.createClass({
 })
 
 var GraphNodeCircle = React.createClass({
+    /*
     onMouseDown: function(e) {
         if (typeof this.props.onMouseDown === 'function') {
             this.props.onMouseDown(e, this.props.nid)
         }
     },
+        */
     render: function() {
         return (
-            <g>
+            <g
+                className={'Circle ' + this.props.checked}
+                onMouseOver={this.props._onMouseOver}
+                onClick={this.props._onClick}
+                //onMouseDown={this.onMouseDown}
+            >
             <circle 
                 cx={this.props.cx}
                 cy={this.props.cy}
                 r={this.props.r}
                 //transform={scale}
-                //onMouseDown={this.onMouseDown}
-                onClick={this.props.onClick}
             />
             </g>
         )
@@ -430,21 +461,29 @@ var Filter = React.createClass({
             // ассоциативный массив данных, полученный с сервера в формате json
             taxonomyData: [],
             data: '',
+            nodes: [],
         }
     },
     handleSubmit: function(e) {
         e.preventDefault()
         // Передаём обработку родительской функции
         if (typeof this.props._handleSubmit === 'function') {
-            state = {}
-            // Получаем состояние чекбоксов всех компонентов таксономии
-            state.taxonomy = eval('this.refs.theTaxonomy').getState()
-            // Получаем значение поля Data input 
-            state.data = eval('this.refs.theFilterData').state.value
-            this.props._handleSubmit(state)
+            var filter = {}
+            // Добавляем к состоянию фильтра значение словаря options
+            filter.options = {zero: 'no'}
+            // Добавляем к состоянию фильтра значение массива nodes
+            filter.nodes = this.state.nodes
+            // Добавляем к состоянию фильтра чекбоксов всех компонентов таксономии
+            filter.taxonomy = eval('this.refs.theTaxonomy').getState()
+            // Добавляем к состоянию фильтра значение поля Data input 
+            filter.data = eval('this.refs.theFilterData').state.value
+            if (typeof (func = this.props._handleSubmit) === 'function') { func(filter) }
+            // Обнуляем массив выделенных узлов
+            this.state.nodes = []
         }
     },
     render: function() {
+        console.log('Rendering filter...')
         return (
             <form onSubmit={this.handleSubmit} ref="forceGraphFilterForm" className='taxonomy'>
                 <Data 
@@ -467,7 +506,7 @@ var Filter = React.createClass({
 
 var Data = React.createClass({
     getInitialState: function() {
-        return {value: '!'}
+        return {value: ''}
     },
     handleChange: function(event) {
 		this.setState({value: event.target.value});
@@ -475,7 +514,7 @@ var Data = React.createClass({
     render: function() {
         return (
             <label className='data'>
-                Фильтрация по полю data
+                Фильтрация по атрибуту data
                 <input 
 					type="text"
 					value={this.state.value}

@@ -59,7 +59,7 @@ svg .node {
     //r: 5;
 }
 
-.filter ul {
+.Filter ul {
     margin: 0 0 0 -30px;
     list-style: none;
 }
@@ -96,10 +96,10 @@ svg .node {
         display: none;
     }
 
-.graph {
+.Graph {
     //border: solid gray 2px;
 }
-    .graph .filter {
+    .Graph .Filter {
         //border: solid gray 2px;
         overflow: hidden;
         display: block;
@@ -108,38 +108,34 @@ svg .node {
         padding: 15px 0;
         background-color: lightgray;
     }
-        .graph .filter .data {
+        .Graph .Filter .data {
             padding: 0 15px;
         }
-    .graph svg {
+    .Graph svg {
         margin: 0 0 0 350px;
     }
-        .graph circle {
-            stroke: #C2D6E6;
-            fill: #4682B4;
-        }
-        .graph rect {
-            stroke: #C2D6E6;
-            fill: #4682B4;
-        }
-        .graph polygon {
-            stroke: #C2D6E6;
-            fill: #4682B4;
-        }
         line,
-        .graph line {
+        .Graph line {
             stroke: #bbb;
             stroke-width: 1px;
         }
-        .graph svg .person {
+        .Graph svg .Person {
             //fill: #264294;
             fill: green;
         }
-        .graph svg text {
+        .Graph .Circle {
+            stroke: #C2D6E6;
+            fill: #4682B4;
+        }
+        .Graph svg text {
             fill: #333;
             stroke: #333;
         }
-    .graph .info {
+        .Graph svg .Circle.true,
+        .Graph svg .Person.true {
+            fill: orange;
+        }
+    .Graph .info {
         margin: 0 0 0 352px;
         padding: 5px;
         min-width: 500px;

@@ -14,9 +14,9 @@ from django.http import HttpResponse, HttpResponseRedirect
 # Производим фильтрацию графа по переданным в списке nodes узлам:
 # возвращаем соседние узлы (если есть), включая переданный;
 # где формат nodes [nid1, nid2, ...]
-def GFilterNodes(G, nodes=[]):
+def GFilterNodes(G, nodes):
     # Если список nodes содержит данные, производим фильтрацию узлов
-    if len(nodes) > 0:
+    if nodes and len(nodes) > 0:
         nodesList = []
         for nid in nodes:
             nodesList.append(nid)
@@ -317,6 +317,19 @@ def create_filtered_graph(gfilter):
     MG = MGraph()
     G = MG.create()
 
+    try: 
+        gfilter = json.loads(gfilter)
+        print_json(gfilter)
+        filterOptions = gfilter['options']
+        # Исключаем из графа узлы с нулевым весом (без связей)
+        G = GFilterZero(G, filterOptions.get('removeZero'))
+        # Производим фильтрацию узлов графа по переданным в ассоциативном массивe attributes атрибутам узлов;
+        #G = GFilterAttributes(G, gfilter.get('attributes'))
+        # Производим фильтрацию узлов графа по переданному массиву типов ИО
+        G = GFilterTaxonomy(G, gfilter.get('taxonomy'))
+    except:
+        warnings.warn('Ошибка при обработке json-массива gfilter', UserWarning)
+    """
     # Преобразуем в объект json-массив параметров, полученных из url 
     try: 
         gfilter = json.loads(gfilter)
@@ -352,6 +365,7 @@ def create_filtered_graph(gfilter):
     except:
         render_content('Ошибка при обработке json-массива filterTaxonomy')
         raise
+    """
 
     # Средствами бибилиотеки NetworkX,
     # экспортируем граф в виде подходящeм для json-сериализации
