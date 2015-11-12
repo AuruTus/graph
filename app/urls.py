@@ -21,6 +21,7 @@ urlpatterns += [
     url(r'^timeline/(?P<id>[-\w]+)/$', 'zcore.views.view_timeline', name='viewTimeline'),
     url(r'^new-project/$', 'zcore.views.view_new_project', name='viewNewProject'),
     url(r'^graph/(?P<id>[-\w]+)/$', 'zcore.views.view_graph', name='viewGraph'),
+    url(r'^map/(?P<id>[-\w]+)/$', 'zcore.views.view_map', name='viewMap'),
     # /view-cтраницы
     #
     #

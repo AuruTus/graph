@@ -5,6 +5,7 @@ if (gid  != "None" && gid != "") {
         //{'link': '/force-react/' + gid + '//', 'title': 'Граф-react'},
         {'link': '/force-d3/' + gid + '////', 'title': 'Граф-d3'},
         {'link': '/chord/' + gid, 'title': 'Диаграмма'},
+        {'link': '/map/' + gid, 'title': 'Карта'},
     ]
 }
 

@@ -1,3 +1,7 @@
+/* Заметки для всего проекта:
+Переименовать названия классов в css - вернуть как было имя-класса.
+*/
+
 body {
     //display: none;
     background-color: #eee;
@@ -156,9 +160,7 @@ svg .node {
     }
 
 
-/* 
-* bootstrap
-*/
+/* Bootstrap */
 .btn-group {
     margin: 5px 0 0 5px;
 }
@@ -171,5 +173,9 @@ input.btn {
     margin: 5px 0 0 5px;
     font-size: 80%;
 }
+/* /Bootstrap */
 
 
+/* Leaflet */
+#map { height: 380px; }
+/* /Leaflet */

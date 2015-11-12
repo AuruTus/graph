@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+
+{% block side_bar %}
+{% endblock side_bar %}
+
+
+{% block content %}
+    <div id='mountMap'></div>
+{% endblock content %}
+
+
+{% block js %}
+    <script src="{% static 'leaflet/leaflet.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'leaflet/leaflet.css' %}" />
+    <div id="map"></div>
+    <script src="{% static 'react/build/ViewMap.js' %}"></script>
+{% endblock js %}
+
+

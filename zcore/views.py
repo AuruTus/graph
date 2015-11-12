@@ -350,6 +350,13 @@ def view_chord(request, id):
     return render(request, 'zcore/chord.html', context)
 
 
+# Шаблон отображения данных на карте
+def view_map(request, id):
+    graph = get_object_or_404(Graph, pk=id)
+    context = {'graph': graph}
+    return render(request, 'zcore/map.html', context)
+
+
 # Шаблон отображения создания нового проекта
 def view_new_project(request):
     context = ''
