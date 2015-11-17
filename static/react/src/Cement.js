@@ -267,59 +267,6 @@ var CMCheckboxButton = React.createClass({
     }
 })
 
-/*
-* Общие функции javascript для многократного использования 
-*/
-function randint(min, max) {
-  return Math.floor(Math.random() * (max - min)) + min
-}
-
-
-function randcolor() {
-    var letters = '0123456789ABCDEF'.split('');
-    var color = '#';
-    for (var i = 0; i < 6; i++ ) {
-        color += letters[Math.floor(Math.random() * 16)];
-    }
-    return color
-}
-
-
-function monthColor(month) {
-    var color = []
-    color[12] = '#3300FF'
-    color[1] = '#3300CC'
-    color[2] = '#330099'
-
-    color[3] = '#999900'
-    color[4] = '#99CC00'
-    color[5] = '#99FF00'
-
-    color[6] = '#CC6600'
-    color[7] = '#CC3300'
-    color[8] = '#CC0000'
-
-    color[9] = '#CC9900'
-    color[10] = '#CCCC00'
-    color[11] = '#CCCC33'
-
-    return color[month]
-}
-
-
-// Вычисляем ширину полосы прокрутки
-function scrollbarWidth() {
-    var div = $('<div style="width:50px;height:50px;overflow:hidden;position:absolute;top:-200px;left:-200px;"><div style="height:100px;"></div>');
-    // Append our div, do our calculation and then remove it
-    $('body').append(div);
-    var w1 = $('div', div).innerWidth();
-    div.css('overflow-y', 'scroll');
-    var w2 = $('div', div).innerWidth();
-    $(div).remove();
-    return (w1 - w2);
-}
-
-
 var RecursiveCheckboxTree = React.createClass({
     // Объявление статичных переменных класса
     statics: {
@@ -343,10 +290,10 @@ var RecursiveCheckboxTree = React.createClass({
             //childrenState: this.props.childrenState,
         }
     },
-    /*
     // Производим обработку изменений для родительского компонента
     handleParentChange: function(childTid, childChecked, childChildrenState) {
         console.log('parent change>',this.props.tid)
+        /*
 
         var childrenState = this.state.childrenState ? this.state.childrenState : {}
         // Передаём обработку изменений рекурсивному родителю 
@@ -381,19 +328,33 @@ var RecursiveCheckboxTree = React.createClass({
         // Обновляем значения массива state
         this.setState({ childrenState: childrenState })
         console.log(' ')
+        */
     },
-    */
-    handleChange: function() {
+    // Производим обработку изменений для дочернего компонента
+    handleChildrenChange: function(e, forceCheck) {
+        //console.log('children as change>',this.props.tid)
+        this.props.children.forEach(function(term) {
+            node = eval('this.refs.theTaxonomy'+term.tid)
+            if (typeof node !== 'undefined') {
+                node.handleChange(e, forceCheck)
+            }
+        }.bind(this))
+    },
+    handleChange: function(e, forceCheck) {
         //console.log('change as change>',this.props.tid)
         // Производим обработку изменений для данного компонента
         var checked = this.state.checked
-        checked = checked ? false : true
+        if (typeof forceCheck === 'undefined') {
+            checked = checked ? false : true
+        } else {
+            checked = forceCheck
+        }
         // Обновляем значения массива state
         this.setState({ checked: checked })
+        // Передаём дальнейшую обработку изменений рекурсивному потомку 
+        this.handleChildrenChange(e, checked)
         // Передаём дальнейшую обработку изменений рекурсивному родителю 
-        if (typeof this.props.parentChange === 'function') {
-            this.props.parentChange(this.props.tid, checked, this.state.childrenState)
-        }
+        //if (typeof (func = this.props.parentChange) === 'function') { func(this.props.tid, checked, this.state.childrenState) }
     },
     getState: function() {
         //console.log(this.constructor.taxonomyState)
@@ -436,7 +397,7 @@ var RecursiveCheckboxTree = React.createClass({
                     //childrenState={childrenState}
                     onChange={this.handleChange}
                 />
-                {this.props.tid} 
+                {/*this.props.tid*/} 
                 {this.props.display} 
                 <div className="otstup">
                     {rows}

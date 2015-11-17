@@ -7,6 +7,8 @@ from random import randint
 import numpy as np
 #from numpy import array
 import warnings
+#import pygraphviz
+#import pydot
 
 from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponse, HttpResponseRedirect
@@ -198,6 +200,7 @@ def to_main_graph(body, gfilter):
     # Если передан массив фильтрующих атрибутов, 
     # декодируем json-объект gfilter - массив параметров, полученных из url 
     # и производим фильтрацию в соответствии с полученными данными:
+    #print('gfilter',gfilter)
     try: 
         gfilter = json.loads(gfilter)
         print_json(gfilter)
@@ -209,8 +212,12 @@ def to_main_graph(body, gfilter):
         G = GFilterData(G, gfilter.get('data'))
     except:
         warnings.warn('Ошибка при обработке json-массива gfilter', UserWarning)
-    layout = nx.spring_layout(G)
+        #raise
+    #layout = nx.spring_layout(G,scale=0.9)
     #layout = nx.random_layout(G)
+    layout = nx.shell_layout(G,scale=0.4)
+    #layout = nx.spectral_layout(G,scale=0.7)
+    #layout = nx.graphviz_layout(G,prog='neato')
     #nodes = G.nodes(data=True)
     nodes = G.nodes()
     #data = {'nodes':[], 'links':[]}
@@ -639,7 +646,7 @@ def GFilterTransfers(G):
         doit = 0
         attributes = G.node[nid]['attributes']
         for attribute in attributes:
-            if attribute['val'] == 'last_name':
+            if attribute['name'] == 'Фамилия':
                 doit = 1
 
         if doit == 1:
@@ -812,11 +819,11 @@ class HeapInfo(APIView):
 
     def get(self, request):
         cursor = connections['mysql'].cursor() # Устанавливаем соединения с базой данных 'mysql'
-        sql = "SELECT count(id) as nodes FROM elements WHERE ent_or_rel=1"
+        sql = "SELECT count(id) as nodes FROM element WHERE is_entity=1"
         cursor.execute(sql) # Выполняем sql-запрос
         nodes = cursor.fetchall()[0][0]
 
-        sql = "SELECT count(id) as edges FROM elements WHERE ent_or_rel=0"
+        sql = "SELECT count(id) as edges FROM element WHERE is_entity=0"
         cursor.execute(sql) # Выполняем sql-запрос
         edges = cursor.fetchall()[0][0]
 

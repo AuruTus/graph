@@ -1,25 +1,3 @@
-/*
-function encode_as_img_and_link(){
- // Add some critical information
- $("svg").attr({ version: '1.1' , xmlns:"http://www.w3.org/2000/svg"});
-
- var svg = $("svg").html();
- //var b64 = Base64.encode(svg); // or use btoa if supported
- //var b64 = Base64.encode(svg); // or use btoa if supported
-    var b64 = ''
-
- // Works in recent Webkit(Chrome)
- $("body").append($("<img src='data:image/svg+xml;base64,\n"+b64+"' alt='file.svg'/>"));
-
- // Works in Firefox 3.6 and Webit and possibly any browser which supports the data-uri
- $("body").append($("<a href-lang='image/svg+xml' href='data:image/svg+xml;base64,\n"+b64+"' title='file.svg'>Download</a>"));
-
-console.log('save',svg)
-}
-encode_as_img_and_link()
-*/
-
-
 var Graph = React.createClass({
     loadDataFromServer: function() {
         $.ajax({
@@ -87,12 +65,13 @@ var Graph = React.createClass({
             filter.setState({nodes: nodes})
         }
     },
-    handleNodeTip(data, attributes) {
+    handleNodeTip(data, attributes, name) {
         var text = data + '; '
+        text = text + 'тип - ' + name + '; '
         attributes.forEach(function(attr) {
-            if (attr.display) {
+            if (attr.value) {
                 text = text + attr.name + ' - '
-                text = text + attr.display + '; '
+                text = text + attr.value + '; '
             }
         })
         eval('this.refs.theInfo').updateState(text)
@@ -138,10 +117,10 @@ var SVGScene = React.createClass({
         eval('this.refs.theInfo').updateState('')
     },
     render: function() {
-        var sceneHeight = 800
-        var scale = 360
-        var xOffset = 500
-        var yOffset = 400
+        var sceneHeight = this.props.sceneWidth/2
+        var scale = this.props.sceneWidth/2
+        var xOffset = this.props.sceneWidth/3
+        var yOffset = this.props.sceneWidth/4
         var r = 5
         var width = 16
         var height = 12
@@ -297,7 +276,7 @@ var GraphNode = React.createClass({
     onMouseOver: function () {
         // Передача обработки родительскому компоненту
         if (typeof this.props._handleNodeTip === 'function') {
-            this.props._handleNodeTip(this.props.data, this.props.attributes)
+            this.props._handleNodeTip(this.props.data, this.props.attributes, this.props.taxonomy.name)
         }
     },
     onClick: function () {
@@ -311,7 +290,7 @@ var GraphNode = React.createClass({
     },
     render: function() {
         switch(this.props.taxonomy.tid) {
-            case 1:
+            case 10:
                 NodeType = GraphNodePerson
                 break
             default:
@@ -364,13 +343,13 @@ var GraphNodePerson = React.createClass({
         }
         return (
             <g 
+                fill='green'
                 className={'Person ' + this.props.checked}
                 transform={transform}
                 onMouseOver={this.props._onMouseOver}
                 onClick={this.props._onClick}
                 >
                 <path
-                    fill='green'
                     transform={scale}
                     d="M 24.827,0 C 11.138,0 0.001,11.138 0.001,24.827 c 0,13.689 11.137,24.827 24.826,24.827 13.688,0 24.826,-11.138 24.826,-24.827 C 49.653,11.138 38.517,0 24.827,0 Z m 14.315,38.51 c 0,-0.574 0,-0.979 0,-0.979 0,-3.386 -3.912,-4.621 -6.006,-5.517 -0.758,-0.323 -2.187,-1.011 -3.653,-1.728 -0.495,-0.242 -0.941,-0.887 -0.997,-1.438 l -0.162,-1.604 c 1.122,-1.045 2.133,-2.5 2.304,-4.122 l 0.253,0 c 0.398,0 0.773,-0.298 0.832,-0.663 l 0.397,-2.453 c 0.053,-0.524 -0.442,-0.842 -0.843,-0.842 0.011,-0.052 0.02,-0.105 0.025,-0.149 0.051,-0.295 0.082,-0.58 0.102,-0.857 0.025,-0.223 0.045,-0.454 0.056,-0.693 0.042,-1.158 -0.154,-2.171 -0.479,-2.738 -0.33,-0.793 -0.83,-1.563 -1.526,-2.223 -1.939,-1.836 -4.188,-2.551 -6.106,-1.075 -1.306,-0.226 -2.858,0.371 -3.979,1.684 -0.612,0.717 -0.993,1.537 -1.156,2.344 -0.146,0.503 -0.243,1.112 -0.267,1.771 -0.026,0.733 0.046,1.404 0.181,1.947 -0.382,0.024 -0.764,0.338 -0.764,0.833 l 0.396,2.453 c 0.059,0.365 0.434,0.663 0.832,0.663 l 0.227,0 c 0.36,1.754 1.292,3.194 2.323,4.198 l -0.156,1.551 c -0.056,0.55 -0.502,1.193 -0.998,1.438 -1.418,0.692 -2.815,1.358 -3.651,1.703 -1.97,0.812 -6.006,2.131 -6.006,5.517 l 0,0.766 C 7.033,34.756 5.005,30.031 5.005,24.83 c 0,-10.932 8.894,-19.826 19.826,-19.826 10.933,0 19.826,8.894 19.826,19.826 -0.004,5.303 -2.109,10.116 -5.515,13.68 z"/>
                 {text}
@@ -510,6 +489,7 @@ var Filter = React.createClass({
         console.log('Rendering filter...')
         return (
             <form onSubmit={this.handleSubmit} ref="forceGraphFilterForm" className='taxonomy'>
+                <input type="submit" className="btn btn-warning" value="Отфильтровать" />
                 <Data 
                     ref={'theFilterData'}
                 />

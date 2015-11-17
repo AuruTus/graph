@@ -99,7 +99,7 @@ DATABASES = {
     },
     'mysql': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'semanticheap02',
+        'NAME': '20151109',
         'USER': 'root',
         'PASSWORD': 'passw0rd',
         'HOST': '127.0.0.1',

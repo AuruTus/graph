@@ -5,6 +5,7 @@ from networkx.readwrite import json_graph
 from random import randint
 import numpy as np
 #from numpy import array
+import warnings
 
 from django.db import models
 from django.db import connections
@@ -187,22 +188,24 @@ def render_content(content):
 class MGraph():
     # Получение атрибутов информационного объекта вида узел
     def get_node_taxonomy(self, nid):
-        sql = "SELECT tax.* FROM elementclasses as elc, taxonomy as tax WHERE elc.element_id=%i AND elc.class_id=tax.id" % (nid)
+        sql = "SELECT tax.* FROM element_taxonomy as elt, taxonomy as tax WHERE elt.element_id=%i AND elt.taxonomy_id=tax.id" % (nid)
         self.cursor.execute(sql)
         term = self.cursor.fetchone()
-        data = {'tid':term[0],'parent_tid':term[1],'name':term[2]}
+        data = {'tid':term[0],'parent_tid':term[1],'name':term[3]}
 
         return data
 
 
     # Получение атрибутов информационного объекта вида узел
     def get_node_attributes(self, nid):
-        sql = "SELECT prpdf.name, prpdf.display, prp.str_val FROM properties as prp, propertydefs as prpdf WHERE prp.def_id=prpdf.id AND target_id=%i" % (nid)
+        sql = "SELECT p.id, p.name, ep.str_val \
+        FROM property as p, element_property as ep \
+        WHERE p.id=ep.property_id AND ep.element_id=%i" % (nid)
         self.cursor.execute(sql)
         attributes = self.cursor.fetchall()
         data = []
         for attribute in attributes:
-            data.append({'val':attribute[0],'name':attribute[1],'display':attribute[2]})
+            data.append({'id':attribute[0],'name':attribute[1],'value':attribute[2]})
         nodeAttributes = data
 
         return nodeAttributes
@@ -215,11 +218,12 @@ class MGraph():
 
     # Добавляем узел в граф при создании многомерной проекции "семантической кучи"
     def add_node(self, nid):
+        print('node',nid)
         # Для предотвращения случайного дублирования одного и того же узла с одинаковым id, но 
         # с разным типом данных - int и str, производим преобразование типов
         nid = int(nid)
         # Получаем значение поля data
-        sql = "SELECT el.data  FROM elements as el WHERE el.id=%i" % (nid)
+        sql = "SELECT el.data  FROM element as el WHERE el.id=%i" % (nid)
         self.cursor.execute(sql)
         row = self.cursor.fetchone()
         nodeData = ' '.join(str(row[0]).split())
@@ -248,16 +252,17 @@ class MGraph():
 
     # Добавляем дуги к указанному узлу
     def add_node_with_edges(self, nid):
-        sql = "SELECT rel.id, rel.arg1, rel.arg2, el.data \
-            FROM relations as rel, elements as el \
-            WHERE rel.id = el.id AND (rel.arg1=%i OR rel.arg2=%i)" \
+        print('edge',nid)
+        sql = "SELECT el.id, el.element_id_1, el.element_id_2, el.data \
+            FROM element as el \
+            WHERE el.element_id_1=%i OR el.element_id_2=%i" \
             % (nid, nid)
         self.cursor.execute(sql) # Выполняем sql-запрос
         edges = dictfetchall(self.cursor) # Получаем массив значений результата sql-запроса в виде словаря
         # Проходимся в цикле по всем строкам результата sql-запроса и добавляем в граф дуги
         # и сопутствующие данные к новым узлам графа
         for edge in edges:
-            enid = edge['arg2'] if nid == edge['arg1'] else edge['arg1']
+            enid = edge['element_id_2'] if nid == edge['element_id_1'] else edge['element_id_1']
             # Для каждой дуги с помощью отдельной функции получаем словарь атрибутов.
             edgeAttributes = self.get_edge_attributes(edge['id'])
             # Добавляем дугу в граф для указанного узла и её атрибуты
@@ -277,16 +282,18 @@ class MGraph():
         self.cursor = connections['mysql'].cursor()
 
         # Симуляция обработки должности 
-        sql = "SELECT DISTINCT el.data FROM elements as el, elementclasses as ec \
+        """
+        sql = "SELECT DISTINCT el.data FROM element as el, elementclasses as ec \
             WHERE el.id=ec.element_id AND ec.class_id=2"
         self.cursor.execute(sql)
         self.positions = self.cursor.fetchall()
+        """
         # /Симуляция обработки должности 
 
 
         # Формируем sql-запрос к таблице elements, содержащей информационные объекты (далее ИО).
         # объекты со значением ent_or_rel=1 -  являются вершинами нашего графа
-        sql = "SELECT el.id FROM elements as el WHERE el.ent_or_rel=1"
+        sql = "SELECT el.id FROM element as el WHERE el.is_entity=1"
         self.cursor.execute(sql) # Выполняем sql-запрос
         nodes = self.cursor.fetchall() # Получаем массив значений результата sql-запроса
 
@@ -296,7 +303,7 @@ class MGraph():
         for node in nodes:
             nid = int(node[0])
             # Если ID узла является цифровым значением и не равно нулю:
-            if nid and counter < 1500:
+            if nid and counter < 50:
                 counter = counter + 1
                 # Добавляем узел в объект типа граф, предоставленного библиотекой NetworkX
                 # positions - массив должностей, count - кол-во; нужно для симуляции обработки должности
@@ -329,6 +336,7 @@ def create_filtered_graph(gfilter):
         G = GFilterTaxonomy(G, gfilter.get('taxonomy'))
     except:
         warnings.warn('Ошибка при обработке json-массива gfilter', UserWarning)
+        raise
     """
     # Преобразуем в объект json-массив параметров, полученных из url 
     try: 
@@ -372,8 +380,8 @@ def create_filtered_graph(gfilter):
     data = json_graph.node_link_data(G)
 
     # отладочная информация
-    #jsonContent = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
-    #print(jsonContent)
+    jsonContent = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
+    print(jsonContent)
 
     # Создаём экземпляр класса Graph, для хранения структуры графа в базе данных
     graph = Graph() 

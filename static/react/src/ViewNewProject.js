@@ -10,8 +10,8 @@ var NewProjectFilter = React.createClass({
         // Формируем массив json-данных gfilter
         var gfilter = { 
             filterAttributes: this.state.attributes ,
-            filterOptions: this.state.options,
-            filterTaxonomy: this.getTaxonomyFilterState(),
+            options: this.state.options,
+            taxonomy: this.getTaxonomyFilterState(),
         } 
         // Преобразовываем массив json-данных gfilter для передачи через url 
         gfilter = encodeURIComponent(JSON.stringify(gfilter))
