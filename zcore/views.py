@@ -209,8 +209,8 @@ def to_main_graph(body, gfilter):
         G = GFilterData(G, gfilter.get('data'))
     except:
         warnings.warn('Ошибка при обработке json-массива gfilter', UserWarning)
-    #layout = nx.spring_layout(G)
-    layout = nx.random_layout(G)
+    layout = nx.spring_layout(G)
+    #layout = nx.random_layout(G)
     #nodes = G.nodes(data=True)
     nodes = G.nodes()
     #data = {'nodes':[], 'links':[]}
@@ -611,7 +611,12 @@ def json_chord(request, id, gfilter):
     # Добавляем значение кол-ва узлов и дуг в представление графа
     numberOfNodes = G.number_of_nodes()
     numberOfEdges = G.number_of_edges()
-    gdata['graph'].append({'numberOfNodes': numberOfNodes, 'numberOfEdges': numberOfEdges})
+
+    if type(gdata['graph']) is dict:
+        gdata['graph'].update({'numberOfNodes': numberOfNodes, 'numberOfEdges': numberOfEdges})
+    elif type(gdata['graph']) is list:
+        gdata['graph'].append({'numberOfNodes': numberOfNodes, 'numberOfEdges': numberOfEdges})
+
 
     # Вывод отладочной информации
     pdev('G.nodes %i, G.edges %i' % (numberOfNodes,numberOfEdges))
