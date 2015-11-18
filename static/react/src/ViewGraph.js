@@ -490,7 +490,7 @@ var Filter = React.createClass({
         return (
             <form onSubmit={this.handleSubmit} ref="forceGraphFilterForm" className='taxonomy'>
                 <input type="submit" className="btn btn-warning" value="Отфильтровать" />
-                <Data 
+                <NodeData 
                     ref={'theFilterData'}
                 />
                 <div className={'RecursiveCheckboxTree'}>
@@ -500,6 +500,7 @@ var Filter = React.createClass({
                         display={'Фильтр по типам ИО:'}
                     />
                 </div>
+                <Attributes />
                 <Position />
                 <input type="submit" className="btn btn-warning" value="Отфильтровать" />
             </form>
@@ -508,7 +509,39 @@ var Filter = React.createClass({
 })
 
 
-var Data = React.createClass({
+var Attributes = React.createClass({
+    getDataFromServer: function() {
+        // url по которому на стороне сервера формируется ассоциативный массив 
+        // в формате json существующих типов информационных объектов 
+        var url = '/json-taxonomy/'
+        var xhr = new XMLHttpRequest()
+        xhr.open('GET', url)
+        xhr.responseType = 'json'
+        xhr.send()
+        // Производим обработку данных, после получения ответа от сервера
+        xhr.onreadystatechange = function() {
+          if(xhr.readyState == 4) { // Операция завершена
+            this.setState({data: xhr.response})
+          }
+        }.bind(this)
+    },
+    getInitialState: function() {
+        // Получаем  данные с сервера в формате json
+        this.getDataFromServer()
+        return {
+            // ассоциативный массив данных, полученный с сервера в формате json
+            data: '',
+        }
+    },
+    render: function() {
+        return (
+            <div/>
+        )
+    }
+})
+
+
+var NodeData = React.createClass({
     getInitialState: function() {
         return {value: ''}
     },
