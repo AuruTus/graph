@@ -150,6 +150,14 @@ svg .node {
         min-height: 50px;
         background-color: lightgray;
     }
+.attributes-filter {
+}
+    h3,
+    .attributes-filter label {
+        padding: 0 0 0 15px;
+        display: block;
+        clear: both;
+    }
 
 .RecursiveCheckboxTree {
     padding: 5px;

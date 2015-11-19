@@ -206,6 +206,8 @@ def to_main_graph(body, gfilter):
         print_json(gfilter)
         # Производим фильтрацию графа по переданным в списке nodes узлам
         G = GFilterNodes(G, gfilter.get('nodes'))
+        # Производим фильтрацию графа по атрибутам узла
+        G = GFilterAttributes(G, gfilter.get('attributes'))
         # Производим фильтрацию узлов графа по переданному массиву типов ИО
         G = GFilterTaxonomy(G, gfilter.get('taxonomy'))
         # Оставляем в графе только те узлы, атрибут data которых совпадает с переданной строкой
@@ -732,7 +734,7 @@ def json_timeline(request, id, gfilter):
 # Получаем словарь атрибутов в формате json
 def json_attributes(request):
     cursor = connections['mysql'].cursor()
-    sql = "SELECT name, display FROM propertydefs"
+    sql = "SELECT id, name FROM property"
 
     # Выполняем sql-запрос
     cursor.execute(sql)
@@ -741,14 +743,14 @@ def json_attributes(request):
     # "ключ": "значение". Это необходимо для преоразования в json-формат
     attributes = dictfetchall(cursor)
     data = []
-    initValues = ['doc_name', 'doc_timestamp', 'full_name']
+    initValues = [10, 20, 30]
     for attribute in attributes:
-        value = attribute['name']
+        value = attribute['id']
         if value in initValues:
             checked = True
         else:
             checked = False
-        display = attribute['display']
+        display = attribute['name']
         data.append({'value': value, 'display': display, 'checked': checked})
 
     # Преобразуем данные в json-формат

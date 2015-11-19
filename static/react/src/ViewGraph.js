@@ -443,6 +443,7 @@ var GraphNodePoly = React.createClass({
 
 
 var Filter = React.createClass({
+    statics: { filter: {}, },
     loadTaxonomyDataFromServer: function() {
         $.ajax({
             // url по которому на стороне сервера формируется ассоциативный массив существующих типов в формате json
@@ -478,12 +479,19 @@ var Filter = React.createClass({
             filter.nodes = this.state.nodes
             // Добавляем к состоянию фильтра чекбоксов всех компонентов таксономии
             filter.taxonomy = eval('this.refs.theTaxonomy').getState()
-            // Добавляем к состоянию фильтра значение поля Data input 
+            // Добавляем к состоянию фильтра значение поля NodeData input 
             filter.data = eval('this.refs.theFilterData').state.value
+            // Добавляем к состоянию фильтра значение фильтра аттрибутов
+            filter.attributes = eval('this.refs.theFilterAttributes').constructor.filter
+            // Передаём обработку родительскому компоненту
             if (typeof (func = this.props._handleSubmit) === 'function') { func(filter) }
             // Обнуляем массив выделенных узлов
             this.state.nodes = []
         }
+    },
+    updateFilterState (name, filter) {
+        this.constructor.filter[name] = filter 
+        //console.log('f',this.constructor.filter)
     },
     render: function() {
         console.log('Rendering filter...')
@@ -500,7 +508,7 @@ var Filter = React.createClass({
                         display={'Фильтр по типам ИО:'}
                     />
                 </div>
-                <Attributes />
+                <Attributes ref='theFilterAttributes' _updateFilterState={this.updateFilterState} />
                 <Position />
                 <input type="submit" className="btn btn-warning" value="Отфильтровать" />
             </form>
@@ -510,10 +518,11 @@ var Filter = React.createClass({
 
 
 var Attributes = React.createClass({
+    statics: { filter: {}, },
     getDataFromServer: function() {
         // url по которому на стороне сервера формируется ассоциативный массив 
         // в формате json существующих типов информационных объектов 
-        var url = '/json-taxonomy/'
+        var url = '/json-attributes/'
         var xhr = new XMLHttpRequest()
         xhr.open('GET', url)
         xhr.responseType = 'json'
@@ -533,9 +542,61 @@ var Attributes = React.createClass({
             data: '',
         }
     },
+    updateFilterState(key, value) {
+        this.constructor.filter[key] = value
+        if (typeof (func = this.props._updateFilterState) === 'function') { func('attributes', this.constructor.filter) }
+    },
     render: function() {
+        //console.log(this.state.data)
+        var rows = []
+        attributes = this.state.data
+        Object.keys(attributes).forEach(function(key) {
+            attr = attributes[key]
+            rows.push(<AttributesLabel
+                    key={attr.value}
+                    value={attr.value}
+                    checked={attr.checked}
+                    display={attr.display}
+                    _updateFilterState={this.updateFilterState}
+                />)
+        }.bind(this))
         return (
-            <div/>
+            <div className='attributes-filter'>
+                <h3>Фильтр по атрибутам</h3>
+                {rows}
+            </div>
+        )
+    }
+})
+
+
+var AttributesLabel = React.createClass({
+    getInitialState: function() {
+        return {
+            checked: this.props.checked,
+        }
+    },
+    componentDidMount: function() {
+        if (typeof (func = this.props._updateFilterState) === 'function') { func(this.props.value, this.state.checked) }
+    },
+    handleChange: function(e) {
+        var checked = this.state.checked
+        checked = checked ? false : true
+        this.setState({ checked: checked })
+        if (typeof (func = this.props._updateFilterState) === 'function') { func(this.props.value, checked) }
+    },
+    render: function() {
+        //console.log('render attr')
+        return (
+            <label>
+                <input 
+                    type="checkbox" 
+                    value={this.props.value}
+                    checked={this.state.checked}
+                    onChange={this.handleChange}
+                />
+                {this.props.display} 
+            </label>
         )
     }
 })

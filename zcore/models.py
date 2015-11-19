@@ -55,22 +55,23 @@ def GFilterAttributes(G, attributes):
         attributesFlatten = []
         for attr in attributes:
             if attributes[attr]:
-                attributesFlatten.append(attr)
+                attributesFlatten.append(str(attr))
 
         nodes = G.nodes(data=True)
         for node in nodes:
             nid = int(node[0])
             #print(nid,'>',G.node[nid])
             # проходимся по списку атрибутов каждого узла
+            #print('attributes: ',node[1]['attributes'])
             for attr in node[1]['attributes']:
-                #print(nid,'>',attr['val'],'>',attributesFlatten)
+                print('\n\n',nid,'>',str(attr['id']),'>',attributesFlatten)
                 # В случае отсутствия соответствия, удаляем узел из графа
-                if attr['val'] not in attributesFlatten:
+                if str(attr['id']) not in attributesFlatten:
                     try:
-                        pass
                         G.remove_node(nid)
+                        print('remove: ',node[1]['data'])
                     except:
-                        pdev('Узел с id ' + str(nid) + ' не найден')
+                        #pdev('Узел с id ' + str(nid) + ' не найден')
                         pass
 
     return G
@@ -218,7 +219,6 @@ class MGraph():
 
     # Добавляем узел в граф при создании многомерной проекции "семантической кучи"
     def add_node(self, nid):
-        print('node',nid)
         # Для предотвращения случайного дублирования одного и того же узла с одинаковым id, но 
         # с разным типом данных - int и str, производим преобразование типов
         nid = int(nid)
@@ -252,7 +252,6 @@ class MGraph():
 
     # Добавляем дуги к указанному узлу
     def add_node_with_edges(self, nid):
-        print('edge',nid)
         sql = "SELECT el.id, el.element_id_1, el.element_id_2, el.data \
             FROM element as el \
             WHERE el.element_id_1=%i OR el.element_id_2=%i" \
@@ -381,7 +380,7 @@ def create_filtered_graph(gfilter):
 
     # отладочная информация
     jsonContent = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
-    print(jsonContent)
+    #print(jsonContent)
 
     # Создаём экземпляр класса Graph, для хранения структуры графа в базе данных
     graph = Graph() 

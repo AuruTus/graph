@@ -409,6 +409,7 @@ var RecursiveCheckboxTree = React.createClass({
 })
 
 
+/*
 // ? добавить обработку ошибки запроса
 var TaxonomyFilter = React.createClass({
     loadTaxonomyDataFromServer: function() {
@@ -437,12 +438,10 @@ var TaxonomyFilter = React.createClass({
     getState: function() {
         // Получаем состояние чекбоксов всех компонентов таксономии
         var taxonomyState = eval('this.refs.theTaxonomy').getState()
-        /*
         // Передаём обработку родительской функции
         if (typeof this.props._getState === 'function') {
             this.props._getState(taxonomyState)
         }
-        */
         return taxonomyState
     },
     render: function() {
@@ -459,7 +458,6 @@ var TaxonomyFilter = React.createClass({
 })
 
 
-/*
 handleParentChange: function(childTid, childChecked, childChildrenState) {
     console.log('parent change>',this.props.tid)
     // Производим обработку изменений для данного компонента
@@ -519,6 +517,8 @@ var TaxonomyFilter = React.createClass({
     },
 })
 */
+
+
 
 
     /*
