@@ -77,10 +77,18 @@ var Graph = React.createClass({
         eval('this.refs.theInfo').updateState(text)
     },
     render: function() {
-        var sceneWidth = $(window).width() - scrollbarWidth()
+        var graphFilter = $('.graph .filter')
+        //var bordersOnBothSides = graphFilter.outerWidth() - graphFilter.innerWidth()
+        //console.log('bb',bordersOnBothSides)
+        var sceneWidth = $(window).width() - scrollbarWidth() - graphFilter.width() - 4
+        //console.log('css',parseInt(graphFilter.css("borderLeftWidth"), 10))
+        //console.log($('.graph .filter').width())
+        //console.log('window',$(window).width())
+        //console.log('scroll',scrollbarWidth())
+        //console.log('sceneWidth',sceneWidth)
         return (
             <div className="graph">
-                <div className="Filter">
+                <div className="filter">
                     <Filter
                         ref='theFilter'
                         _handleSubmit={this.handleSubmit}
@@ -93,6 +101,7 @@ var Graph = React.createClass({
                     data={this.state.data}
                     filter={this.state.gfilter}
                     sceneWidth={sceneWidth}
+                    sceneHeight={sceneWidth}
                     _handleNodeClick={this.handleNodeClick}
                     _handleNodeTip={this.handleNodeTip}
                     _handleSceneClick={this.handleNodeClick}
@@ -110,13 +119,27 @@ var SVGScene = React.createClass({
             //y: this.props.y,
             dragging: false,
             nodeToMove: 0,
+
+            //view: [this.props.sceneWidth/2,this.props.sceneHeight/2],
+            view: [40,40],
+            scale: 5,
+            multiplier: 100,
         }
+    },
+    project(_point) {
+        var point = {}
+        point.x = _point[0] * (this.state.scale * this.state.multiplier) + this.state.view[0]
+        point.y = _point[1] * (this.state.scale * this.state.multiplier) + this.state.view[1]
+        //var x = node.x*scale+xOffset 
+        //var y = node.y*scale+yOffset 
+        return point
     },
     handleClick() {
         console.log('svg click')
         eval('this.refs.theInfo').updateState('')
     },
     render: function() {
+        console.log('scene: ',this.props.sceneWidth,'-',this.props.sceneHeight)
         var sceneHeight = this.props.sceneWidth/2
         var scale = this.props.sceneWidth/2
         var xOffset = this.props.sceneWidth/3
@@ -139,6 +162,7 @@ var SVGScene = React.createClass({
                 var node = nodes[nid]
                 var x = node.x*scale+xOffset 
                 var y = node.y*scale+yOffset 
+                var point = this.project([node.x,node.y])
                 /*
                 var checked
                 if ('innodes',typeof this.props.filter.nodes === 'object') {
@@ -150,8 +174,8 @@ var SVGScene = React.createClass({
                     ref={"theGraphNode"+nid}
                     nid={nid}
                     data={node.data}
-                    x={x}
-                    y={y}
+                    x={point.x}
+                    y={point.y}
                     taxonomy={node.taxonomy}
                     attributes={node.attributes}
                     degree={node.degree}
@@ -190,8 +214,7 @@ var SVGScene = React.createClass({
 
         return (
             <svg 
-                //width={this.props.sceneWidth}
-                width={'1500'}
+                width={this.props.sceneWidth}
                 height={sceneHeight}
                 //onClick={this.props._handleSceneClick}
             >
@@ -466,13 +489,21 @@ var Filter = React.createClass({
             taxonomyData: [],
             data: '',
             nodes: [],
+            filter: {},
         }
+    },
+    updateFilter(key, value) {
+        this.constructor.filter[key] = value 
+        //console.log('f',this.constructor.filter)
     },
     handleSubmit: function(e) {
         e.preventDefault()
         // Передаём обработку родительской функции
         if (typeof this.props._handleSubmit === 'function') {
             var filter = {}
+            // Добавляем к состоянию фильтра значение способа компоновки
+            //console.log('filter',this.constructor.filter.layout)
+            filter.layout = this.constructor.filter.layout
             // Добавляем к состоянию фильтра значение словаря options
             filter.options = {zero: 'no'}
             // Добавляем к состоянию фильтра значение массива nodes
@@ -489,14 +520,11 @@ var Filter = React.createClass({
             this.state.nodes = []
         }
     },
-    updateFilterState (name, filter) {
-        this.constructor.filter[name] = filter 
-        //console.log('f',this.constructor.filter)
-    },
     render: function() {
         console.log('Rendering filter...')
         return (
             <form onSubmit={this.handleSubmit} ref="forceGraphFilterForm" className='taxonomy'>
+                <Layout _updateFilter={this.updateFilter} _submit={this.handleSubmit} />
                 <input type="submit" className="btn btn-warning" value="Отфильтровать" />
                 <NodeData 
                     ref={'theFilterData'}
@@ -505,10 +533,10 @@ var Filter = React.createClass({
                     <RecursiveCheckboxTree
                         ref={'theTaxonomy'}
                         children={this.state.taxonomyData}
-                        display={'Фильтр по типам ИО:'}
+                        display={'Классификатор сущностей:'}
                     />
                 </div>
-                <Attributes ref='theFilterAttributes' _updateFilterState={this.updateFilterState} />
+                <Attributes ref='theFilterAttributes' _updateFilterState={this.updateFilter} />
                 <Position />
                 <input type="submit" className="btn btn-warning" value="Отфильтровать" />
             </form>
@@ -542,7 +570,7 @@ var Attributes = React.createClass({
             data: '',
         }
     },
-    updateFilterState(key, value) {
+    updateFilter(key, value) {
         this.constructor.filter[key] = value
         if (typeof (func = this.props._updateFilterState) === 'function') { func('attributes', this.constructor.filter) }
     },
@@ -557,7 +585,7 @@ var Attributes = React.createClass({
                     value={attr.value}
                     checked={attr.checked}
                     display={attr.display}
-                    _updateFilterState={this.updateFilterState}
+                    _updateFilterState={this.updateFilter}
                 />)
         }.bind(this))
         return (
@@ -673,6 +701,38 @@ var Info = React.createClass({
         return (
             <div className="info">
                 {this.state.text}
+            </div>
+        )
+    },
+})
+
+
+var Layout = React.createClass({
+    getInitialState: function() {
+        return {
+            layouts: ['shell', 'random', 'spring'],
+            value: 'shell',
+        }
+    },
+    handleChange(e) {
+        var value = e.target.value.substr(0, 140)
+        this.setState({value: value})
+        if (typeof (func = this.props._updateFilter) === 'function') { func('layout', value) }
+        if (typeof (func = this.props._submit) === 'function') { func(e) }
+    },
+    render: function() {
+        rows = []
+        this.state.layouts.forEach(function(layout) {
+            rows.push(
+                <option value={layout}>{layout}</option>
+            )
+        })
+        return (
+            <div className="form-group">
+                <label>Выбор способа компоновки:</label>
+                <select value={this.state.value} onChange={this.handleChange} className="form-control">
+                    {rows}
+                </select>
             </div>
         )
     },

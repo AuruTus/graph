@@ -192,6 +192,17 @@ def to_plane_graph(body):
     return data
 
 
+def get_graph_layout(G, argument):
+    switcher = {
+        'random': nx.random_layout(G),
+        'spring': nx.spring_layout(G,scale=0.9),
+    }
+    #layout = nx.spectral_layout(G,scale=0.7)
+    #layout = nx.graphviz_layout(G,prog='neato')
+    func = switcher.get(argument, nx.shell_layout(G,scale=0.4))
+    return func
+
+
 def to_main_graph(body, gfilter):
     # Декодируем json-объект - структуру графа
     H = json.loads(body)
@@ -201,25 +212,24 @@ def to_main_graph(body, gfilter):
     # декодируем json-объект gfilter - массив параметров, полученных из url 
     # и производим фильтрацию в соответствии с полученными данными:
     #print('gfilter',gfilter)
+    layoutArgument = ''
     try: 
         gfilter = json.loads(gfilter)
         print_json(gfilter)
         # Производим фильтрацию графа по переданным в списке nodes узлам
         G = GFilterNodes(G, gfilter.get('nodes'))
         # Производим фильтрацию графа по атрибутам узла
-        G = GFilterAttributes(G, gfilter.get('attributes'))
+        #G = GFilterAttributes(G, gfilter.get('attributes'))
         # Производим фильтрацию узлов графа по переданному массиву типов ИО
         G = GFilterTaxonomy(G, gfilter.get('taxonomy'))
         # Оставляем в графе только те узлы, атрибут data которых совпадает с переданной строкой
         G = GFilterData(G, gfilter.get('data'))
+        # Получаем значение выбранного способа компоновки (layout)
+        layoutArgument = gfilter.get('layout')
     except:
         warnings.warn('Ошибка при обработке json-массива gfilter', UserWarning)
         #raise
-    #layout = nx.spring_layout(G,scale=0.9)
-    #layout = nx.random_layout(G)
-    layout = nx.shell_layout(G,scale=0.4)
-    #layout = nx.spectral_layout(G,scale=0.7)
-    #layout = nx.graphviz_layout(G,prog='neato')
+    layout = get_graph_layout(G, layoutArgument)
     #nodes = G.nodes(data=True)
     nodes = G.nodes()
     #data = {'nodes':[], 'links':[]}

@@ -67,11 +67,6 @@ svg .node {
     //r: 5;
 }
 
-.Filter ul {
-    margin: 0 0 0 -30px;
-    list-style: none;
-}
-
 .btn-primary {
     float: left;
 }
@@ -107,7 +102,7 @@ svg .node {
 .graph {
     //border: solid gray 2px;
 }
-    .graph .Filter {
+    .graph .filter {
         //border: solid gray 2px;
         overflow: hidden;
         display: block;
@@ -116,11 +111,16 @@ svg .node {
         padding: 15px 0;
         background-color: lightgray;
     }
-        .graph .Filter .data {
+        .graph .filter ul {
+            margin: 0 0 0 -30px;
+            list-style: none;
+        }
+        .graph .filter .data {
             padding: 0 15px;
         }
     .graph svg {
-        margin: 0 0 0 350px;
+        border: solid 1px gray;
+        margin: 2px 0 0 352px;
     }
         line,
         .graph line {
@@ -184,6 +184,10 @@ svg .node {
 input.btn {
     margin: 5px 0 0 5px;
     font-size: 80%;
+}
+.form-group {
+    margin: 5px 5px;
+    width: 95%;
 }
 /* /Bootstrap */
 
