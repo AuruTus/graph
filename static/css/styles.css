@@ -150,6 +150,16 @@ svg .node {
         min-height: 50px;
         background-color: lightgray;
     }
+    .graph svg .scale-nav {
+        cursor: pointer;
+    }
+        .graph svg .scale-nav rect {
+            fill: #ccc;
+        }
+        .graph svg .scale-nav text {
+            font-size: 30px;
+        }
+
 .attributes-filter {
 }
     h3,
@@ -195,3 +205,12 @@ input.btn {
 /* Leaflet */
 #map { height: 380px; }
 /* /Leaflet */
+
+.noselect {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}

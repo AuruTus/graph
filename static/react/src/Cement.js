@@ -409,7 +409,6 @@ var RecursiveCheckboxTree = React.createClass({
 })
 
 
-/*
 // ? добавить обработку ошибки запроса
 var TaxonomyFilter = React.createClass({
     loadTaxonomyDataFromServer: function() {
@@ -458,6 +457,7 @@ var TaxonomyFilter = React.createClass({
 })
 
 
+/*
 handleParentChange: function(childTid, childChecked, childChildrenState) {
     console.log('parent change>',this.props.tid)
     // Производим обработку изменений для данного компонента

@@ -1,3 +1,11 @@
+        var testNodes = {
+            '1': {'x': 0.00, 'y': 0.00, 'taxonomy': {'name': 'Организация', 'parent_tid': null, 'tid': 30}, "data": "test", "attributes": [],}, 
+            '2': {'x': 0.50, 'y': 0.25, 'taxonomy': {'name': 'Организация', 'parent_tid': null, 'tid': 30}, "data": "test", "attributes": [],}, 
+            '3': {'x': 0.50, 'y': 0.50, 'taxonomy': {'name': 'Организация', 'parent_tid': null, 'tid': 30}, "data": "test", "attributes": [],}, 
+            '4': {'x': 0.75, 'y': 0.75, 'taxonomy': {'name': 'Организация', 'parent_tid': null, 'tid': 30}, "data": "test", "attributes": [],}, 
+            '5': {'x': 1.00, 'y': 1.00, 'taxonomy': {'name': 'Организация', 'parent_tid': null, 'tid': 30}, "data": "test", "attributes": [],}, 
+        }
+
 var Graph = React.createClass({
     loadDataFromServer: function() {
         $.ajax({
@@ -65,7 +73,7 @@ var Graph = React.createClass({
             filter.setState({nodes: nodes})
         }
     },
-    handleNodeTip(data, attributes, name) {
+    handleNodeTip(data, attributes, name, x, y) {
         var text = data + '; '
         text = text + 'тип - ' + name + '; '
         attributes.forEach(function(attr) {
@@ -74,6 +82,7 @@ var Graph = React.createClass({
                 text = text + attr.value + '; '
             }
         })
+        text = text + 'x: ' + x + ' y: ' + y + '; '
         eval('this.refs.theInfo').updateState(text)
     },
     render: function() {
@@ -81,7 +90,8 @@ var Graph = React.createClass({
         //var bordersOnBothSides = graphFilter.outerWidth() - graphFilter.innerWidth()
         //console.log('bb',bordersOnBothSides)
         var sceneWidth = $(window).width() - scrollbarWidth() - graphFilter.width() - 4
-        sceneWidth = 400
+        //sceneWidth = 200
+        sceneHeight = 700
         //console.log('css',parseInt(graphFilter.css("borderLeftWidth"), 10))
         //console.log($('.graph .filter').width())
         //console.log('window',$(window).width())
@@ -89,7 +99,7 @@ var Graph = React.createClass({
         //console.log('sceneWidth',sceneWidth)
         return (
             <div className="graph">
-                <div className="filter">
+                <div className="filter noselect">
                     <Filter
                         ref='theFilter'
                         _handleSubmit={this.handleSubmit}
@@ -102,7 +112,9 @@ var Graph = React.createClass({
                     data={this.state.data}
                     filter={this.state.gfilter}
                     sceneWidth={sceneWidth}
-                    sceneHeight={sceneWidth}
+                    sceneHeight={sceneHeight}
+                    svgWidth={sceneWidth}
+                    svgHeight={sceneHeight}
                     _handleNodeClick={this.handleNodeClick}
                     _handleNodeTip={this.handleNodeTip}
                     _handleSceneClick={this.handleNodeClick}
@@ -116,31 +128,36 @@ var Graph = React.createClass({
 var SVGScene = React.createClass({
     getInitialState: function() {
         return {
-            //x: this.props.x,
-            //y: this.props.y,
-            dragging: false,
-            nodeToMove: 0,
-
-            //view: [this.props.sceneWidth/2,this.props.sceneHeight/2],
-            view: [40,40],
-            scale: 5,
-            multiplier: 100,
+            scale: 1,
+            vx: 0.5,
+            vy: 0.5,
+        }
+    },
+    handleSceneClick() {
+        console.log('svg click')
+    },
+    handleScaleClick(e, sign) {
+        var scale = this.state.scale
+        scale = eval(scale + sign + '1')
+        if (scale > 0) {
+            this.setState({scale: scale})
         }
     },
     project(_point) {
         var point = {}
-        point.x = _point[0] * (this.state.scale * this.state.multiplier) + this.state.view[0]
-        point.y = _point[1] * (this.state.scale * this.state.multiplier) + this.state.view[1]
-        //var x = node.x*scale+xOffset 
-        //var y = node.y*scale+yOffset 
+        var x = _point[0]
+        var y = _point[1]
+        var xs = x * this.props.svgWidth*this.state.scale
+        var ys = y * this.props.svgHeight*this.state.scale
+        var vxs = this.state.vx * this.props.svgWidth*this.state.scale
+        var vys = this.state.vy * this.props.svgHeight*this.state.scale
+        var dx = vxs - this.props.svgWidth/2
+        var dy = vys - this.props.svgHeight/2
+        point.x = xs - dx
+        point.y = ys - dy
         return point
     },
-    handleClick() {
-        console.log('svg click')
-        eval('this.refs.theInfo').updateState('')
-    },
     render: function() {
-        console.log('scene: ',this.props.sceneWidth,'-',this.props.sceneHeight)
         var sceneHeight = this.props.sceneWidth/2
         var scale = this.props.sceneWidth/1
         var xOffset = this.props.sceneWidth/2
@@ -157,13 +174,17 @@ var SVGScene = React.createClass({
             console.log('Updating graph...')
             // Создаём массив объектов типа GraphNode
             Object.keys(nodes).forEach(function(key) {
+            //Object.keys(testNodes).forEach(function(key) {
+                //console.log('key',key)
                 // В данном случае, специально, id узла совпадает с порядковым ключом ассоциативного массива объектов
                 nid = key
-                //console.log(key)
                 var node = nodes[nid]
+                //var node = testNodes[nid]
+                //console.log(node)
                 var x = node.x*scale+xOffset 
                 var y = node.y*scale+yOffset 
                 var point = this.project([node.x,node.y])
+                //console.log('x',point.x,' y',point.y)
                 /*
                 var checked
                 if ('innodes',typeof this.props.filter.nodes === 'object') {
@@ -200,16 +221,18 @@ var SVGScene = React.createClass({
                     var x2 = nodes[nid].x*scale+xOffset
                     var y2 = nodes[nid].y*scale+yOffset
                     var eid = key+nid
+                    var startPoint = this.project([node.x,node.y])
+                    var endPoint = this.project([nodes[nid].x,nodes[nid].y])
                     edgeRows.push(<GraphEdge
                         key={eid}
                         ref={"theGraphEdge"+eid}
                         eid={eid}
-                        startx={x1}
-                        starty={y1}
-                        x2={x2}
-                        y2={y2}
+                        startx={startPoint.x}
+                        starty={startPoint.y}
+                        x2={endPoint.x}
+                        y2={endPoint.y}
                     />)
-                })
+                }.bind(this))
             }.bind(this))
         }
 
@@ -217,13 +240,59 @@ var SVGScene = React.createClass({
             <svg 
                 width={this.props.sceneWidth}
                 height={this.props.sceneHeight}
-                //onClick={this.props._handleSceneClick}
+                onClick={this.handleSceneClick}
             >
                 {edgeRows}
                 {nodeRows}
+                <ScaleNav _handleClick={this.handleScaleClick}/>
             </svg>
         );
     },
+})
+
+
+var ScaleNav = React.createClass({
+    handleClick(e, sign) {
+        if (typeof (func = this.props._handleClick) === 'function') { func(e, sign) }
+    },
+    render: function() {
+        return(
+            <g className='scale-nav noselect'>
+                <ScaleNavPlus _handleClick={this.handleClick} />
+                <ScaleNavMinus _handleClick={this.handleClick} />
+            </g>
+        )
+    }
+})
+var ScaleNavPlus = React.createClass({
+    handleClick(e) {
+        if (typeof (func = this.props._handleClick) === 'function') { func(e, '+') }
+    },
+    render: function() {
+        return(
+            <g className='scale-nav-plus' onClick={this.handleClick}>
+                <g>
+                    <rect x='2' y='2' rx='2' ry='2' width="25" height="25" />
+                    <text x='6' y='24'>+</text>
+                </g>
+            </g>
+        )
+    }
+})
+var ScaleNavMinus = React.createClass({
+    handleClick(e) {
+        if (typeof (func = this.props._handleClick) === 'function') { func(e, '-') }
+    },
+    render: function() {
+        return(
+            <g className='scale-nav-minus' onClick={this.handleClick}>
+                <g>
+                    <rect x='2' y='28' rx='2' ry='2' width="25" height="25" />
+                    <text x='9' y='48'>-</text>
+                </g>
+            </g>
+        )
+    }
 })
 
 
@@ -300,7 +369,7 @@ var GraphNode = React.createClass({
     onMouseOver: function () {
         // Передача обработки родительскому компоненту
         if (typeof this.props._handleNodeTip === 'function') {
-            this.props._handleNodeTip(this.props.data, this.props.attributes, this.props.taxonomy.name)
+            this.props._handleNodeTip(this.props.data, this.props.attributes, this.props.taxonomy.name, this.props.x, this.props.y)
         }
     },
     onClick: function () {
