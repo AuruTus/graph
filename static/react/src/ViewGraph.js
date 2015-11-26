@@ -81,6 +81,7 @@ var Graph = React.createClass({
         //var bordersOnBothSides = graphFilter.outerWidth() - graphFilter.innerWidth()
         //console.log('bb',bordersOnBothSides)
         var sceneWidth = $(window).width() - scrollbarWidth() - graphFilter.width() - 4
+        sceneWidth = 400
         //console.log('css',parseInt(graphFilter.css("borderLeftWidth"), 10))
         //console.log($('.graph .filter').width())
         //console.log('window',$(window).width())
@@ -141,9 +142,9 @@ var SVGScene = React.createClass({
     render: function() {
         console.log('scene: ',this.props.sceneWidth,'-',this.props.sceneHeight)
         var sceneHeight = this.props.sceneWidth/2
-        var scale = this.props.sceneWidth/2
-        var xOffset = this.props.sceneWidth/3
-        var yOffset = this.props.sceneWidth/4
+        var scale = this.props.sceneWidth/1
+        var xOffset = this.props.sceneWidth/2
+        var yOffset = this.props.sceneWidth/2
         var r = 5
         var width = 16
         var height = 12
@@ -215,7 +216,7 @@ var SVGScene = React.createClass({
         return (
             <svg 
                 width={this.props.sceneWidth}
-                height={sceneHeight}
+                height={this.props.sceneHeight}
                 //onClick={this.props._handleSceneClick}
             >
                 {edgeRows}
