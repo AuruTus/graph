@@ -238,10 +238,13 @@ def to_main_graph(body, gfilter):
     #e = G.edges()
     #links = {'links': e}
     #data.update(links)
+    maxx = 0
+    maxy = 0
     for nid in layout:
+        #enid = edge['element_id_2'] if nid == edge['element_id_1'] else edge['element_id_1']
         point = layout.get(nid)
-        x = str(point[0])
-        y = str(point[1])
+        x = point[0]
+        y = point[1]
         data['nodes'][nid] = {
             'id': nid, 
             'data': G.node[nid]['data'], 

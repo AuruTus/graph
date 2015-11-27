@@ -127,18 +127,35 @@ var Graph = React.createClass({
 
 var SVGScene = React.createClass({
     getInitialState: function() {
+        var scale = 1
+        var vx = 0.5
+        var vy = 0.5
+        var vxs = vx * this.props.svgWidth*scale
+        var vys = vy * this.props.svgHeight*scale
+        var dx = vxs - this.props.svgWidth/2
+        var dy = vys - this.props.svgHeight/2
+        console.log('dx',dx,' dy',dy)
         return {
-            scale: 1,
-            vx: 0.5,
-            vy: 0.5,
+            scale: scale,
+            vx: vx,
+            vy: vy,
+            dx: dx,
+            dy: dy,
         }
     },
-    handleSceneClick() {
-        console.log('svg click')
+    handleSceneClick(e) {
+        console.log('svgScene click',e.pageX)
+        var dx = e.pageX - this.props.svgWidth/2
+        var dy = e.pageY - this.props.svgHeight/2
+        var vx = e.pageX / this.props.svgWidth*this.state.scale
+        var vy = e.pageY / this.props.svgHeight*this.state.scale
+        console.log('vx ',vx,' vy',vy)
+        var dx = e.pageX - this.props.svgWidth/2
+        //this.setState({dx: dx, dy: dy})
     },
     handleScaleClick(e, sign) {
         var scale = this.state.scale
-        scale = eval(scale + sign + '1')
+        scale = eval(scale + sign + '0.5')
         if (scale > 0) {
             this.setState({scale: scale})
         }
@@ -149,12 +166,8 @@ var SVGScene = React.createClass({
         var y = _point[1]
         var xs = x * this.props.svgWidth*this.state.scale
         var ys = y * this.props.svgHeight*this.state.scale
-        var vxs = this.state.vx * this.props.svgWidth*this.state.scale
-        var vys = this.state.vy * this.props.svgHeight*this.state.scale
-        var dx = vxs - this.props.svgWidth/2
-        var dy = vys - this.props.svgHeight/2
-        point.x = xs - dx
-        point.y = ys - dy
+        point.x = xs - this.state.dx
+        point.y = ys - this.state.dy
         return point
     },
     render: function() {
