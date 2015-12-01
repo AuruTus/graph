@@ -89,7 +89,7 @@ var Graph = React.createClass({
         var graphFilter = $('.graph .filter')
         //var bordersOnBothSides = graphFilter.outerWidth() - graphFilter.innerWidth()
         //console.log('bb',bordersOnBothSides)
-        var sceneWidth = $(window).width() - scrollbarWidth() - graphFilter.width() - 4
+        var sceneWidth = $(window).width() - scrollbarWidth() - graphFilter.width() - 20
         //sceneWidth = 200
         sceneHeight = 700
         //console.log('css',parseInt(graphFilter.css("borderLeftWidth"), 10))
@@ -145,13 +145,14 @@ var SVGScene = React.createClass({
     },
     handleSceneClick(e) {
         console.log('svgScene click',e.pageX)
-        var dx = e.pageX - this.props.svgWidth/2
-        var dy = e.pageY - this.props.svgHeight/2
-        var vx = e.pageX / this.props.svgWidth*this.state.scale
-        var vy = e.pageY / this.props.svgHeight*this.state.scale
-        console.log('vx ',vx,' vy',vy)
-        var dx = e.pageX - this.props.svgWidth/2
+        //var dx = e.pageX - this.props.svgWidth/2
+        //var dy = e.pageY - this.props.svgHeight/2
+        //var vx = e.pageX / this.props.svgWidth*this.state.scale
+        //var vy = e.pageY / this.props.svgHeight*this.state.scale
+        //console.log('vx ',vx,' vy',vy)
+        //var dx = e.pageX - this.props.svgWidth/2
         //this.setState({dx: dx, dy: dy})
+        console.log('dx ',dx,' dy',dy)
     },
     handleScaleClick(e, sign) {
         var scale = this.state.scale
