@@ -127,7 +127,7 @@ svg .node {
             stroke: #bbb;
             stroke-width: 1px;
         }
-        .graph svg .Person {
+        .graph svg .person {
             //fill: #264294;
             fill: green;
         }
@@ -138,16 +138,22 @@ svg .node {
         .graph svg text {
             fill: #333;
             stroke: #333;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
         }
         .graph svg .Circle.true,
-        .graph svg .Person.true {
+        .graph svg .person.true {
             fill: orange;
         }
     .graph .info {
         margin: 0 0 0 352px;
         padding: 5px;
-        min-width: 500px;
-        min-height: 50px;
+        //min-width: 500px;
+        height: 70px;
         background-color: lightgray;
     }
     .graph svg .scale-nav {

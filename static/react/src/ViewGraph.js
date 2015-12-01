@@ -1,25 +1,24 @@
-        var testNodes = {
-            '1': {'x': 0.00, 'y': 0.00, 'taxonomy': {'name': 'Организация', 'parent_tid': null, 'tid': 30}, "data": "test", "attributes": [],}, 
-            '2': {'x': 0.50, 'y': 0.25, 'taxonomy': {'name': 'Организация', 'parent_tid': null, 'tid': 30}, "data": "test", "attributes": [],}, 
-            '3': {'x': 0.50, 'y': 0.50, 'taxonomy': {'name': 'Организация', 'parent_tid': null, 'tid': 30}, "data": "test", "attributes": [],}, 
-            '4': {'x': 0.75, 'y': 0.75, 'taxonomy': {'name': 'Организация', 'parent_tid': null, 'tid': 30}, "data": "test", "attributes": [],}, 
-            '5': {'x': 1.00, 'y': 1.00, 'taxonomy': {'name': 'Организация', 'parent_tid': null, 'tid': 30}, "data": "test", "attributes": [],}, 
-        }
-
 var Graph = React.createClass({
-    loadDataFromServer: function() {
-        $.ajax({
-            // url по которому на стороне сервера формируется ассоциативный массив данных графа в формате json
-            url: '/json-main-graph/' + gid + '/',
-            dataType: 'json',
-            cache: false,
-            success: function(data) {
-                this.setState({data: data});
-            }.bind(this),
-            error: function(xhr, status, err) {
-                console.error(this.props.url, status, err.toString())
-            }.bind(this)
-        })
+    loadDataFromServer: function(filter) {
+        // Преобразовываем массив json-данных gfilter для передачи через url 
+        var filterJSONed = encodeURIComponent(JSON.stringify(filter))
+        // Формируем адрес, по которому будет производится REST-запрос
+        var url = '/json-main-graph/' + gid + '/' + filterJSONed
+        // Инициализируем объект XMLHttpReques, позволяющий отправлять асинхронные запросы веб-серверу
+        // и получать ответ без перезагрузки страницы
+        var xhr = new XMLHttpRequest()
+        xhr.open('GET', url)
+        xhr.responseType = 'json'
+        xhr.send()
+        // Производим обработку данных, после получения ответа от сервера
+        xhr.onreadystatechange = function() {
+            if(xhr.readyState == 4) { // `DONE`
+                this.setState({data: xhr.response, gfilter: filter})
+                var data = xhr.response
+                console.log('minx',data.minx)
+                eval('this.refs.theSVGScene').setView([data.averagex,data.averagey], data.averageScale)
+            }
+        }.bind(this)
     },
     getInitialState: function() {
         // Получаем  данные с сервера в формате json
@@ -31,34 +30,8 @@ var Graph = React.createClass({
         }
     },
     handleSubmit: function(filter) {
-        // Преобразовываем массив json-данных gfilter для передачи через url 
-        filterJSONed = encodeURIComponent(JSON.stringify(filter))
-        // Формируем адрес, по которому будет производится REST-запрос
-        var url = '/json-main-graph/' + gid + '/' + filterJSONed
-        // Инициализируем объект XMLHttpReques, позволяющий отправлять асинхронные запросы веб-серверу
-        // и получать ответ без перезагрузки страницы
-        var xhr = new XMLHttpRequest()
-        xhr.open('GET', url)
-        xhr.responseType = 'json'
-        xhr.send()
-        // Производим обработку данных, после получения ответа от сервера
-        xhr.onreadystatechange = function() {
-          if(xhr.readyState == 4) { // `DONE`
-          //if(this.readyState == this.HEADERS_RECEIVED) {
-            //console.log(this.getAllResponseHeaders());
-            this.setState({data: xhr.response, gfilter: filter})
-          }
-        }.bind(this)
+        this.loadDataFromServer(filter)
     },
-    /*
-    getTaxonomyState() {
-        console.log('tax',taxonomyState)
-    },
-    updateTaxonomy(taxonomyState) {
-        console.log('tax',taxonomyState)
-        this.setState({ taxonomy: taxonomyState })
-    },
-    */
     handleNodeClick(nid, checked) {
         nid = parseInt(nid)
         if (typeof nid === 'number') {
@@ -89,14 +62,12 @@ var Graph = React.createClass({
         var graphFilter = $('.graph .filter')
         //var bordersOnBothSides = graphFilter.outerWidth() - graphFilter.innerWidth()
         //console.log('bb',bordersOnBothSides)
-        var sceneWidth = $(window).width() - scrollbarWidth() - graphFilter.width() - 20
-        //sceneWidth = 200
-        sceneHeight = 700
-        //console.log('css',parseInt(graphFilter.css("borderLeftWidth"), 10))
-        //console.log($('.graph .filter').width())
-        //console.log('window',$(window).width())
-        //console.log('scroll',scrollbarWidth())
-        //console.log('sceneWidth',sceneWidth)
+        var svgdx = graphFilter.width() + 2
+        var svgdy = $('.navbar-header').height() + $('.graph .info').height() + 14
+        var sceneWidth = $(window).width() - svgdx - scrollbarWidth()
+        //sceneWidth = 400
+        var sceneHeight = $(window).height() - svgdy
+        //sceneHeight = 400
         return (
             <div className="graph">
                 <div className="filter noselect">
@@ -115,6 +86,8 @@ var Graph = React.createClass({
                     sceneHeight={sceneHeight}
                     svgWidth={sceneWidth}
                     svgHeight={sceneHeight}
+                    svgdx={svgdx}
+                    svgdy={svgdy}
                     _handleNodeClick={this.handleNodeClick}
                     _handleNodeTip={this.handleNodeTip}
                     _handleSceneClick={this.handleNodeClick}
@@ -126,40 +99,30 @@ var Graph = React.createClass({
 
 
 var SVGScene = React.createClass({
+    statics: {
+        clicked: false,
+    },
     getInitialState: function() {
         var scale = 1
-        var vx = 0.5
-        var vy = 0.5
+        return {
+            clicked: false,
+            scale: scale,
+            vx: 0.5,
+            vy: 0.5,
+            dx: 0,
+            dy: 0,
+        }
+    },
+    setView(point, scale) {
+        var vx = point[0]
+        var vy = point[1]
         var vxs = vx * this.props.svgWidth*scale
         var vys = vy * this.props.svgHeight*scale
+        //console.log('setView: vxs ',vxs,' vys',vys)
         var dx = vxs - this.props.svgWidth/2
         var dy = vys - this.props.svgHeight/2
-        console.log('dx',dx,' dy',dy)
-        return {
-            scale: scale,
-            vx: vx,
-            vy: vy,
-            dx: dx,
-            dy: dy,
-        }
-    },
-    handleSceneClick(e) {
-        console.log('svgScene click',e.pageX)
-        //var dx = e.pageX - this.props.svgWidth/2
-        //var dy = e.pageY - this.props.svgHeight/2
-        //var vx = e.pageX / this.props.svgWidth*this.state.scale
-        //var vy = e.pageY / this.props.svgHeight*this.state.scale
-        //console.log('vx ',vx,' vy',vy)
-        //var dx = e.pageX - this.props.svgWidth/2
-        //this.setState({dx: dx, dy: dy})
-        console.log('dx ',dx,' dy',dy)
-    },
-    handleScaleClick(e, sign) {
-        var scale = this.state.scale
-        scale = eval(scale + sign + '0.5')
-        if (scale > 0) {
-            this.setState({scale: scale})
-        }
+        console.log('setView: dx ',dx,' dy',dy)
+        this.setState({dx: dx, dy: dy, vx: vx, vy: vy, scale: scale})
     },
     project(_point) {
         var point = {}
@@ -170,6 +133,44 @@ var SVGScene = React.createClass({
         point.x = xs - this.state.dx
         point.y = ys - this.state.dy
         return point
+    },
+    componentDidMount: function() {
+        /*
+        var maxx = this.props.data.maxx
+        console.log('maxx', maxx)
+        this.setView([0,0], 1)
+        */
+    },
+    handleSceneClick(e) {
+        var clickSvgx = e.pageX - this.props.svgdx
+        var clickSvgy = e.pageY - this.props.svgdy
+        //console.log('clickx',clickSvgx,' clicky',clickSvgy)
+        var xs = clickSvgx + this.state.dx
+        var xy = clickSvgy + this.state.dy
+        var vx = xs / (this.props.svgWidth*this.state.scale)
+        var vy = xy / (this.props.svgHeight*this.state.scale)
+        //console.log('vx',vx,' vy',vy)
+        //console.log('thisvx ',this.state.vx,' thisvy',this.state.vy)
+        if (this.constructor.clicked == false) {
+            this.setView([vx,vy], this.state.scale)
+        } else {
+            this.constructor.clicked = false
+        }
+    },
+    handleScaleClick(e, sign) {
+        var scaleStep = 0.2
+        this.constructor.clicked = true
+        var scale = this.state.scale
+        scale = eval(scale + sign + scaleStep)
+        if (scale > 0) {
+            this.setState({scale: scale})
+        }
+        console.log('scale',scale)
+    },
+    clicked(_value) {
+        var value
+        value = (typeof _value === 'undefined') ? false: _value
+        this.constructor.clicked = value
     },
     render: function() {
         var sceneHeight = this.props.sceneWidth/2
@@ -185,26 +186,14 @@ var SVGScene = React.createClass({
 
         // В случае, если массив данных nodes уже проинициализирован, то:
         if (typeof nodes !== "undefined") {
-            console.log('Updating graph...')
             // Создаём массив объектов типа GraphNode
             Object.keys(nodes).forEach(function(key) {
-            //Object.keys(testNodes).forEach(function(key) {
-                //console.log('key',key)
                 // В данном случае, специально, id узла совпадает с порядковым ключом ассоциативного массива объектов
                 nid = key
                 var node = nodes[nid]
-                //var node = testNodes[nid]
-                //console.log(node)
                 var x = node.x*scale+xOffset 
                 var y = node.y*scale+yOffset 
                 var point = this.project([node.x,node.y])
-                //console.log('x',point.x,' y',point.y)
-                /*
-                var checked
-                if ('innodes',typeof this.props.filter.nodes === 'object') {
-                    console.log(nid,'-',this.props.filter.nodes)
-                }
-                */
                 nodeRows.push(<GraphNode
                     key={nid}
                     ref={"theGraphNode"+nid}
@@ -218,6 +207,8 @@ var SVGScene = React.createClass({
                     r={r}
                     width={width}
                     height={height}
+                    _sceneDoubleClick={this.handleSceneClick}
+                    _sceneClicked={this.clicked}
                     _handleNodeClick={this.props._handleNodeClick}
                     _handleNodeTip={this.props._handleNodeTip}
                     //onMouseDown={this.onMouseDown}
@@ -226,12 +217,10 @@ var SVGScene = React.createClass({
 
             // Создаём массив объектов типа GraphEdge
             Object.keys(nodes).forEach(function(key) {
-                //console.log('update edges')
                 var node = nodes[key]
                 var x1 = node.x*scale+xOffset
                 var y1 = node.y*scale+yOffset
                 node.neighbors.forEach(function(nid) {
-                    //console.log('edges:',key,'>',nid)
                     var x2 = nodes[nid].x*scale+xOffset
                     var y2 = nodes[nid].y*scale+yOffset
                     var eid = key+nid
@@ -250,11 +239,13 @@ var SVGScene = React.createClass({
             }.bind(this))
         }
 
+        console.log('Updating graph...')
         return (
             <svg 
                 width={this.props.sceneWidth}
                 height={this.props.sceneHeight}
-                onClick={this.handleSceneClick}
+                //onClick={this.handleSceneClick}
+                onDoubleClick={this.handleSceneClick}
             >
                 {edgeRows}
                 {nodeRows}
@@ -386,13 +377,21 @@ var GraphNode = React.createClass({
             this.props._handleNodeTip(this.props.data, this.props.attributes, this.props.taxonomy.name, this.props.x, this.props.y)
         }
     },
+    onDoubleClick: function() {
+        if (typeof (func = this.props._sceneClicked) === 'function') { func(false) }
+        if (typeof (func = this.props._sceneDoubleClick) === 'function') { func() }
+    },
     onClick: function () {
         var checked = this.state.checked
         checked = checked ? false : true
         this.setState({ checked: checked, })
         // Передача обработки родительскому компоненту
-        if (typeof this.props._handleNodeClick === 'function') {
-            this.props._handleNodeClick(this.props.nid, checked, this.props.data, this.props.attributes)
+        if (typeof (func = this.props._sceneClicked) === 'function') { func() }
+        if (typeof (func = this.props._handleNodeClick) === 'function') { 
+            func(this.props.nid, 
+            checked, 
+            this.props.data, 
+            this.props.attributes) 
         }
     },
     render: function() {
@@ -451,7 +450,7 @@ var GraphNodePerson = React.createClass({
         return (
             <g 
                 fill='green'
-                className={'Person ' + this.props.checked}
+                className={'person ' + this.props.checked}
                 transform={transform}
                 onMouseOver={this.props._onMouseOver}
                 onClick={this.props._onClick}
@@ -794,8 +793,8 @@ var Info = React.createClass({
 var Layout = React.createClass({
     getInitialState: function() {
         return {
-            layouts: ['shell', 'random', 'spring'],
-            value: 'shell',
+            layouts: ['spring', 'shell', 'random'],
+            value: 'spring',
         }
     },
     handleChange(e) {

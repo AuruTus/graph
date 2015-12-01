@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 #import jsonurl
+import math
 import networkx as nx
 from networkx.readwrite import json_graph
 from random import randint
@@ -194,16 +195,19 @@ def to_plane_graph(body):
 
 def get_graph_layout(G, argument):
     switcher = {
-        'random': nx.random_layout(G),
         'spring': nx.spring_layout(G,scale=0.9),
+        'shell': nx.shell_layout(G,scale=0.9),
+        'random': nx.random_layout(G),
     }
     #layout = nx.spectral_layout(G,scale=0.7)
     #layout = nx.graphviz_layout(G,prog='neato')
-    func = switcher.get(argument, nx.shell_layout(G,scale=0.4))
+    func = switcher.get(argument, nx.spring_layout(G,scale=0.4))
     return func
 
 
 def to_main_graph(body, gfilter):
+    # Объявляем словарь, в который будет записана вся необходимая для вывода графа информация
+    data = {}
     # Декодируем json-объект - структуру графа
     H = json.loads(body)
     # Преобразуем структура графа в формате json в объект типа граф библиотеки NetworkX
@@ -230,31 +234,46 @@ def to_main_graph(body, gfilter):
         warnings.warn('Ошибка при обработке json-массива gfilter', UserWarning)
         #raise
     layout = get_graph_layout(G, layoutArgument)
+    #layout = nx.random_layout(G),
     #nodes = G.nodes(data=True)
     nodes = G.nodes()
     #data = {'nodes':[], 'links':[]}
-    data = {'nodes':{}}
-    e = nx.edges(G)
+    data.update({'nodes':{}})
+    #e = nx.edges(G)
     #e = G.edges()
     #links = {'links': e}
     #data.update(links)
-    maxx = 0
-    maxy = 0
+    maxx,maxy,minx,miny = 0,0,0,0
     for nid in layout:
-        #enid = edge['element_id_2'] if nid == edge['element_id_1'] else edge['element_id_1']
         point = layout.get(nid)
         x = point[0]
         y = point[1]
+
+        # Вычисляем максимальные, минимальные и средние значения
+        maxx = x if x > maxx else maxx
+        maxy = y if y > maxy else maxy
+        minx = x if x < minx else minx
+        miny = y if y < miny else miny
+        averagex = maxx - (math.fabs(maxx) + math.fabs(minx)) / 2
+        averagey = maxy - (math.fabs(maxy) + math.fabs(miny)) / 2
+        diffx = math.fabs(maxx) + math.fabs(minx)
+        diffy = math.fabs(maxy) + math.fabs(miny)
+        scale = diffx if diffx > diffy else diffy
+        averageScale = 0.8 / scale
+
         data['nodes'][nid] = {
             'id': nid, 
             'data': G.node[nid]['data'], 
             'degree': G.degree(nid),
-            'x':x,
-            'y':y, 
+            'x':str(x),
+            'y':str(y), 
             'taxonomy': G.node[nid]['taxonomy'],
             'attributes': G.node[nid]['attributes'],
             'neighbors': G.neighbors(nid),
         }
+    data.update({'maxx': str(maxx), 'maxy': str(maxy), 'minx': str(minx), 'miny': str(miny)})
+    data.update({'averagex': averagex, 'averagey': averagey, 'averageScale': averageScale})
+    data.update({'diffx': diffx, 'diffy': diffy})
     data = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
     return data
 

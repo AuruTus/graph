@@ -574,3 +574,14 @@ var TaxonomyFilter = React.createClass({
         })
     },
     */
+
+
+
+        var testNodes = {
+            '1': {'x': 0.00, 'y': 0.00, 'taxonomy': {'name': 'Организация', 'parent_tid': null, 'tid': 30}, "data": "test", "attributes": [],}, 
+            '2': {'x': 0.50, 'y': 0.25, 'taxonomy': {'name': 'Организация', 'parent_tid': null, 'tid': 30}, "data": "test", "attributes": [],}, 
+            '3': {'x': 0.50, 'y': 0.50, 'taxonomy': {'name': 'Организация', 'parent_tid': null, 'tid': 30}, "data": "test", "attributes": [],}, 
+            '4': {'x': 0.75, 'y': 0.75, 'taxonomy': {'name': 'Организация', 'parent_tid': null, 'tid': 30}, "data": "test", "attributes": [],}, 
+            '5': {'x': 1.00, 'y': 1.00, 'taxonomy': {'name': 'Организация', 'parent_tid': null, 'tid': 30}, "data": "test", "attributes": [],}, 
+        }
+
