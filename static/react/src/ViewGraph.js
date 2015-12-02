@@ -151,21 +151,32 @@ var SVGScene = React.createClass({
         var vy = xy / (this.props.svgHeight*this.state.scale)
         //console.log('vx',vx,' vy',vy)
         //console.log('thisvx ',this.state.vx,' thisvy',this.state.vy)
-        if (this.constructor.clicked == false) {
-            this.setView([vx,vy], this.state.scale)
-        } else {
+        if (this.constructor.clicked) {
             this.constructor.clicked = false
+        } else {
+            this.setView([vx,vy], this.state.scale)
         }
     },
     handleScaleClick(e, sign) {
+        console.log('sign',sign)
+        e.preventDefault()
         var scaleStep = 0.2
-        this.constructor.clicked = true
         var scale = this.state.scale
+        console.log('wheel',e)
+
+        if (this.constructor.clicked) {
+            this.constructor.clicked = false
+        } else {
+            if ((sign != '+') || (sign != '-')) {
+                sign = '+'
+            }
+        }
+
         scale = eval(scale + sign + scaleStep)
         if (scale > 0) {
             this.setState({scale: scale})
         }
-        console.log('scale',scale)
+        //console.log('scale',scale)
     },
     clicked(_value) {
         var value
@@ -246,10 +257,14 @@ var SVGScene = React.createClass({
                 height={this.props.sceneHeight}
                 //onClick={this.handleSceneClick}
                 onDoubleClick={this.handleSceneClick}
+                onWheel={this.handleScaleClick}
             >
                 {edgeRows}
                 {nodeRows}
-                <ScaleNav _handleClick={this.handleScaleClick}/>
+                <ScaleNav 
+                    _handleClick={this.handleScaleClick}
+                    _sceneClicked={this.clicked}
+                />
             </svg>
         );
     },
@@ -258,6 +273,7 @@ var SVGScene = React.createClass({
 
 var ScaleNav = React.createClass({
     handleClick(e, sign) {
+        if (typeof (func = this.props._sceneClicked) === 'function') { func() }
         if (typeof (func = this.props._handleClick) === 'function') { func(e, sign) }
     },
     render: function() {

@@ -302,7 +302,7 @@ class MGraph():
         for node in nodes:
             nid = int(node[0])
             # Если ID узла является цифровым значением и не равно нулю:
-            if nid and counter < 50:
+            if nid and counter < 500:
                 counter = counter + 1
                 # Добавляем узел в объект типа граф, предоставленного библиотекой NetworkX
                 # positions - массив должностей, count - кол-во; нужно для симуляции обработки должности
