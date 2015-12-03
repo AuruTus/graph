@@ -12,6 +12,17 @@ from django.db import connections
 from django.http import HttpResponse, HttpResponseRedirect
 
 
+# Функция которая получает на вход словарь где: ключ = int, значение = bool;
+# и возвращает список только тех элементов, где значение True
+def flatten_int_by_true(d):
+    if len(d) > 0:
+        l = []
+        for obj in d:
+            if d[obj]:
+                l.append(int(obj))
+    return l
+
+
 # Производим фильтрацию графа по переданным в списке nodes узлам:
 # возвращаем соседние узлы (если есть), включая переданный;
 # где формат nodes [nid1, nid2, ...]
@@ -185,8 +196,8 @@ def render_content(content):
 
 #
 #
-# Создаем граф с максимально возможным кол-вом узлов и связей исходя из исходный данных - семантической кучи
-class MGraph():
+# Создаем граф из данных "семантической кучи"
+class SGraph():
     # Получение атрибутов информационного объекта вида узел
     def get_node_taxonomy(self, nid):
         sql = "SELECT tax.* FROM element_taxonomy as elt, taxonomy as tax WHERE elt.element_id=%i AND elt.taxonomy_id=tax.id" % (nid)
@@ -273,36 +284,30 @@ class MGraph():
 
 
     # Главная функция создания максимально большого графа 
-    def create(self):
+    def create(self, taxonomy):
         pdev("creating max graph...")
         # Cоздаём пустой NetworkX-граф
         self.G = nx.Graph()
         # Устанавливаем соединение с БД, в которой хранятся семантически связанные данные
         self.cursor = connections['mysql'].cursor()
 
-        # Симуляция обработки должности 
-        """
-        sql = "SELECT DISTINCT el.data FROM element as el, elementclasses as ec \
-            WHERE el.id=ec.element_id AND ec.class_id=2"
-        self.cursor.execute(sql)
-        self.positions = self.cursor.fetchall()
-        """
-        # /Симуляция обработки должности 
+        # Добавляем сортировку по терминам классификатора сущностей
+        taxonomy = flatten_int_by_true(taxonomy)
+        tax = str(taxonomy).strip('[]')
 
-
-        # Формируем sql-запрос к таблице elements, содержащей информационные объекты (далее ИО).
+        # Формируем sql-запрос к таблице elements, содержащей информационные объекты (далее ИО)
         # объекты со значением ent_or_rel=1 -  являются вершинами нашего графа
-        sql = "SELECT el.id FROM element as el WHERE el.is_entity=1"
+        sql = "SELECT * FROM element as e, element_taxonomy as et \
+            WHERE e.is_entity=1 AND e.id=et.element_id AND et.taxonomy_id IN (%s)" % (tax)
         self.cursor.execute(sql) # Выполняем sql-запрос
         nodes = self.cursor.fetchall() # Получаем массив значений результата sql-запроса
 
         # В цикле проходимся по каждой строке результата запроса и добавляем в граф узлы
-        # node[0] - id узла, node[1] - поле data
         counter = 0 # счётчик ограничения узлов нужен только на стадии разработки для экономии ресурсов 
         for node in nodes:
-            nid = int(node[0])
+            nid = int(node[0]) # id узла
             # Если ID узла является цифровым значением и не равно нулю:
-            if nid and counter < 500:
+            if nid and counter < 50:
                 counter = counter + 1
                 # Добавляем узел в объект типа граф, предоставленного библиотекой NetworkX
                 # positions - массив должностей, count - кол-во; нужно для симуляции обработки должности
@@ -313,66 +318,28 @@ class MGraph():
         return self.G
 
 
-# /Создаем граф с максимально возможным кол-вом узлов и связей исходя из данных семантической кучи
+# /Создаем граф из данных "семантической кучи";
 #
 #
 
 
 def create_filtered_graph(gfilter):
-    # Создаем максимально возможный граф из исходных данных - семантической кучи
-    MG = MGraph()
-    G = MG.create()
-
-    try: 
-        gfilter = json.loads(gfilter)
-        print_json(gfilter)
-        filterOptions = gfilter['options']
-        # Исключаем из графа узлы с нулевым весом (без связей)
-        G = GFilterZero(G, filterOptions.get('removeZero'))
-        # Производим фильтрацию узлов графа по переданным в ассоциативном массивe attributes атрибутам узлов;
-        #G = GFilterAttributes(G, gfilter.get('attributes'))
-        # Производим фильтрацию узлов графа по переданному массиву типов ИО
-        G = GFilterTaxonomy(G, gfilter.get('taxonomy'))
-    except:
-        warnings.warn('Ошибка при обработке json-массива gfilter', UserWarning)
-        raise
-    """
-    # Преобразуем в объект json-массив параметров, полученных из url 
     try: 
         gfilter = json.loads(gfilter)
         #print_json(gfilter)
-    except:
-        render_content('Ошибка при обработке json-массива gfilter')
-        raise
 
-    # Обрабатываем массив filterOptions
-    try:
-        filterOptions = gfilter['filterOptions']
-        # Производим фильтрацию полученного графа по выбранным в фильтре опциям
-        G = GFilterZero(G, filterOptions['removeZero'])
-    except:
-        render_content('Ошибка при обработке json-массива filterOptions')
-        raise
+        # Создаем граф из данных "семантической кучи";
+        # производим фильтрацию узлов графа по переданному массиву типов сущностей taxonomy;
+        SG = SGraph()
+        G = SG.create(gfilter.get('taxonomy'))
 
-    # Обрабатываем массив filterAttributes
-    try:
-        filterAttributes = gfilter['filterAttributes']
-        #print_json(filterAttributes)
-        #G = GFilterAttributes(G, filterAttributes)
+        # Исключаем из графа узлы с нулевым весом (без связей)
+        G = GFilterZero(G, gfilter['options'].get('removeZero'))
+        # Производим фильтрацию узлов графа по переданным в ассоциативном массивe attributes атрибутам узлов;
+        #G = GFilterAttributes(G, gfilter.get('attributes'))
     except:
-        render_content('Ошибка при обработке json-массива filterAttributes')
+        warnings.warn('Ошибка при обработке json-массива gfilter', UserWarning)
         raise
-
-    # Обрабатываем массив filterTaxonomy
-    try:
-        filterTaxonomy = gfilter['filterTaxonomy']
-        #print_json(filterTaxonomy)
-        #  Производим фильтрацию по выбранным типам ИО
-        G = GFilterTaxonomy(G, filterTaxonomy)
-    except:
-        render_content('Ошибка при обработке json-массива filterTaxonomy')
-        raise
-    """
 
     # Средствами бибилиотеки NetworkX,
     # экспортируем граф в виде подходящeм для json-сериализации
@@ -410,9 +377,9 @@ class Taxonomy():
         cursor = connections['mysql'].cursor()
         # Получаем массив "детей" термина из семантической кучи
         if tid:
-            sql = "SELECT * FROM taxonomy WHERE facet_id=0 AND parent_id=%i" % (tid)
+            sql = "SELECT * FROM taxonomy WHERE facet_id=1 AND parent_id=%i" % (tid)
         else:
-            sql = "SELECT * FROM taxonomy WHERE facet_id=0 AND parent_id IS NULL"
+            sql = "SELECT * FROM taxonomy WHERE facet_id=1 AND parent_id IS NULL"
         cursor.execute(sql)
         terms = cursor.fetchall()
 

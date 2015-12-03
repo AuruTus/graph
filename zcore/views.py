@@ -212,10 +212,10 @@ def to_main_graph(body, gfilter):
     H = json.loads(body)
     # Преобразуем структура графа в формате json в объект типа граф библиотеки NetworkX
     G = json_graph.node_link_graph(H)
+
     # Если передан массив фильтрующих атрибутов, 
     # декодируем json-объект gfilter - массив параметров, полученных из url 
     # и производим фильтрацию в соответствии с полученными данными:
-    #print('gfilter',gfilter)
     layoutArgument = ''
     try: 
         gfilter = json.loads(gfilter)
@@ -243,7 +243,7 @@ def to_main_graph(body, gfilter):
     #e = G.edges()
     #links = {'links': e}
     #data.update(links)
-    maxx,maxy,minx,miny = 0,0,0,0
+    maxx,maxy,minx,miny,averagex,averagey,averageScale,diffx,diffy = 0,0,0,0,0,0,0,0,0
     for nid in layout:
         point = layout.get(nid)
         x = point[0]
@@ -432,24 +432,47 @@ def json_circular(request, id):
     #response.write(graph.body)
     return response 
 
-# Преобразование графа для вывода по алгоритму spring
-def json_main_graph(request, id, gfilter=None):
+# Преобразование графа для отображения основным способом - в виде графа
+def json_transfers(request, id, gfilter=None):
     graph = get_object_or_404(Graph, pk=id)
-
     response = HttpResponse()
     response['Content-Type'] = "text/javascript; charset=utf-8"
 
-    data = to_main_graph(graph.body, gfilter)
-    #data = to_plane_graph(graph.body)
+    data = {} # Объявляем словарь, в который будет записана вся необходимая для вывода графа информация
+    data.update({'nodes':{}})
+    H = json.loads(graph.body) # Декодируем json-объект - структуру графа
+    G = json_graph.node_link_graph(H) # Преобразуем структуру графа в формате json в объект типа граф библиотеки NetworkX
 
+    G = GFilterTaxonomy(G, {75: True}) # Отбираем узлы, включая их соседей, со значением id термина 75 - Событие: Перемещение
+    nodes = G.nodes(data=True)
+    for node in nodes:
+        print(node)
+        nid = node[0]
+        data['nodes'][nid] = {
+            'id': nid, 
+            'data': G.node[nid]['data'], 
+            """
+            'degree': G.degree(nid),
+            'x':str(x),
+            'y':str(y), 
+            'taxonomy': G.node[nid]['taxonomy'],
+            'attributes': G.node[nid]['attributes'],
+            'neighbors': G.neighbors(nid),
+            """
+        }
+
+    data = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
     response.write(data)
+    return response 
 
-    """
-    H = json.loads(graph.body)
-    G = json_graph.node_link_graph(H)
-    response.write('\n\n\n')
-    response.write(graph.body)
-    """
+
+# Преобразование графа для отображения основным способом - в виде графа
+def json_main_graph(request, id, gfilter=None):
+    graph = get_object_or_404(Graph, pk=id)
+    response = HttpResponse()
+    response['Content-Type'] = "text/javascript; charset=utf-8"
+    data = to_main_graph(graph.body, gfilter)
+    response.write(data)
     return response 
 
 
@@ -775,7 +798,7 @@ def json_attributes(request):
     # "ключ": "значение". Это необходимо для преоразования в json-формат
     attributes = dictfetchall(cursor)
     data = []
-    initValues = [10, 20, 30]
+    initValues = [10, 20, 30, 40, 50, 60, 70]
     for attribute in attributes:
         value = attribute['id']
         if value in initValues:
@@ -805,8 +828,10 @@ def json_attributes(request):
 # для вывода элементов интерфейса с использование библиотеки Cement обязательно наличие ключей:
 # value, display, checked
 def json_taxonomy(request):
+    """
+    устаревший код, требует повторного пересмотра и, возможно, удаления
     cursor = connections['mysql'].cursor()
-    sql = "SELECT id, parent_id, name FROM taxonomy"
+    sql = "SELECT id, parent_id, name FROM taxonomy WHERE facet_id=1"
 
     # Выполняем sql-запрос
     cursor.execute(sql)
@@ -826,6 +851,7 @@ def json_taxonomy(request):
         else:
             checked = False
         data.append({'value': id, 'parent_tid': parent_id, 'display': name, 'checked': checked})
+    """
 
     # Инициализируем объект таксономии и получаем структуру всей таксономии многомерной проекции
     t = Taxonomy()

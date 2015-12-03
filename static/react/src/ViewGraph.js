@@ -632,7 +632,7 @@ var Filter = React.createClass({
                     <RecursiveCheckboxTree
                         ref={'theTaxonomy'}
                         children={this.state.taxonomyData}
-                        display={'Классификатор сущностей:'}
+                        display={'Фильтр по типам сущностей:'}
                     />
                 </div>
                 <Attributes ref='theFilterAttributes' _updateFilterState={this.updateFilter} />

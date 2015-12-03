@@ -32,12 +32,6 @@ var popup = L.popup()
     .openOn(map);
 */
 
-var circle = L.circle([55.73679, 37.72982], 500, {
-    color: 'red',
-    fillColor: '#f03',
-    fillOpacity: 0.5
-}).addTo(map)
-circle.bindPopup("I am a circle.")
 
 var popup = L.popup()
 function onMapClick(e) {
@@ -51,6 +45,7 @@ map.on('click', onMapClick)
 var Map = React.createClass({
     getInitialState: function() {
         return {
+            data: loadDataFromServer('json-transfers'),
             text: "Map",
         }
     },
@@ -61,8 +56,15 @@ var Map = React.createClass({
         this.setState({text: text});
     },
     render: function() {
+        var circle = L.circle([55.73679, 37.72982], 500, {
+            color: 'red',
+            fillColor: '#f03',
+            fillOpacity: 0.5
+        }).addTo(map)
+        circle.bindPopup("I am a circle.")
+
         return (
-            <div className="map">
+            <div className="map-info">
                 {this.state.text}
             </div>
         )

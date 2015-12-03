@@ -135,6 +135,54 @@ var OptionsFilter = React.createClass({
 })
 
 
+// ? добавить обработку ошибки запроса
+var TaxonomyFilter = React.createClass({
+    loadTaxonomyDataFromServer: function() {
+        // url по которому на стороне сервера формируется ассоциативный массив 
+        // в формате json существующих типов информационных объектов 
+        var url = '/json-taxonomy/'
+        var xhr = new XMLHttpRequest()
+        xhr.open('GET', url)
+        xhr.responseType = 'json'
+        xhr.send()
+        // Производим обработку данных, после получения ответа от сервера
+        xhr.onreadystatechange = function() {
+          if(xhr.readyState == 4) { // `DONE`
+            this.setState({taxonomyData: xhr.response})
+          }
+        }.bind(this)
+    },
+    getInitialState: function() {
+        // Получаем данные с сервера в формате json
+        this.loadTaxonomyDataFromServer()
+        return {
+            // Ассоциативный массив данных, полученный с сервера в формате json
+            taxonomyData: [],
+        }
+    },
+    getState: function() {
+        // Получаем состояние чекбоксов всех компонентов таксономии
+        var taxonomyState = eval('this.refs.theTaxonomy').getState()
+        // Передаём обработку родительской функции
+        if (typeof this.props._getState === 'function') {
+            this.props._getState(taxonomyState)
+        }
+        return taxonomyState
+    },
+    render: function() {
+        return (
+            <div className={'RecursiveCheckboxTree'}>
+                <RecursiveCheckboxTree
+                    ref={'theTaxonomy'}
+                    children={this.state.taxonomyData}
+                    display={'Фильтр по типам сущностей:'}
+                />
+            </div>
+        );
+    },
+})
+
+
 React.render( <NewProjectFilter/>, mountNewProject)
 
 

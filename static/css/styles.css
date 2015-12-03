@@ -1,4 +1,5 @@
 /* Заметки для всего проекта:
+Вынести json-сериализацию данных в отдельный файл
 Переименовать названия классов в css - вернуть как было имя-класса.
 Переименовать фильтр Data > NodeData
 Добавить фильтр соседние узлы/полная цепочка для выбранного типа сущности
@@ -209,7 +210,18 @@ input.btn {
 
 
 /* Leaflet */
-#map { height: 380px; }
+.map {}
+    #map { 
+        height: 680px; 
+        margin-left: 350px;
+    }
+    .map-info {
+        border-right: solid 1px gray;
+        min-height: 500px;
+        float: left;
+        width: 350px;
+    }
+    
 /* /Leaflet */
 
 .noselect {
