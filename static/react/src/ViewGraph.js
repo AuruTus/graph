@@ -15,7 +15,6 @@ var Graph = React.createClass({
             if(xhr.readyState == 4) { // `DONE`
                 this.setState({data: xhr.response, gfilter: filter})
                 var data = xhr.response
-                console.log('minx',data.minx)
                 eval('this.refs.theSVGScene').setView([data.averagex,data.averagey], data.averageScale)
             }
         }.bind(this)
@@ -157,13 +156,23 @@ var SVGScene = React.createClass({
             this.setView([vx,vy], this.state.scale)
         }
     },
+    handleWheel(e) {
+        //console.log('wheel',e.deltaY)
+        e.preventDefault()
+        if(e.deltaY < 0) {
+            this.handleSceneClick(e)
+            this.handleScaleClick(e, '+')
+        } else {
+            this.handleScaleClick(e, '-')
+        }
+    },
     handleScaleClick(e, sign) {
         console.log('sign',sign)
         e.preventDefault()
         var scaleStep = 0.2
         var scale = this.state.scale
-        console.log('wheel',e)
 
+        /*
         if (this.constructor.clicked) {
             this.constructor.clicked = false
         } else {
@@ -171,7 +180,9 @@ var SVGScene = React.createClass({
                 sign = '+'
             }
         }
+        */
 
+        this.constructor.clicked = false
         scale = eval(scale + sign + scaleStep)
         if (scale > 0) {
             this.setState({scale: scale})
@@ -257,7 +268,7 @@ var SVGScene = React.createClass({
                 height={this.props.sceneHeight}
                 //onClick={this.handleSceneClick}
                 onDoubleClick={this.handleSceneClick}
-                onWheel={this.handleScaleClick}
+                onWheel={this.handleWheel}
             >
                 {edgeRows}
                 {nodeRows}
@@ -393,11 +404,16 @@ var GraphNode = React.createClass({
             this.props._handleNodeTip(this.props.data, this.props.attributes, this.props.taxonomy.name, this.props.x, this.props.y)
         }
     },
+    /*
     onDoubleClick: function() {
+        alert(location)
+        //location = "http://www.mozilla.org"
         if (typeof (func = this.props._sceneClicked) === 'function') { func(false) }
         if (typeof (func = this.props._sceneDoubleClick) === 'function') { func() }
     },
+    */
     onClick: function () {
+        //alert(location)
         var checked = this.state.checked
         checked = checked ? false : true
         this.setState({ checked: checked, })
@@ -447,6 +463,11 @@ var GraphNodePerson = React.createClass({
         }
     },
     */
+    handleDoubleClick() {
+        //location = "/map/" + this.props.nid
+        if (typeof (func = this.props._onClick) === 'function') { func() }
+        window.open('/map/' + gid +'/'  + this.props.nid, '_blank')
+    },
     render: function() {
         //var transform = "scale(.7,.7) translate("+this.props.cx+","+this.props.cy+")"
         //var transform = "translate("+(this.props.cx-15)+","+(this.props.cy-15)+")"
@@ -470,6 +491,7 @@ var GraphNodePerson = React.createClass({
                 transform={transform}
                 onMouseOver={this.props._onMouseOver}
                 onClick={this.props._onClick}
+                onDoubleClick={this.handleDoubleClick}
                 >
                 <path
                     transform={scale}

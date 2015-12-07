@@ -392,9 +392,9 @@ def view_chord(request, id):
 
 
 # Шаблон отображения данных на карте
-def view_map(request, id):
-    graph = get_object_or_404(Graph, pk=id)
-    context = {'graph': graph}
+def view_map(request, gid, nid):
+    graph = get_object_or_404(Graph, pk=gid)
+    context = {'graph': graph, 'nid': nid}
     return render(request, 'zcore/map.html', context)
 
 
@@ -433,8 +433,8 @@ def json_circular(request, id):
     return response 
 
 # Преобразование графа для отображения основным способом - в виде графа
-def json_transfers(request, id, gfilter=None):
-    graph = get_object_or_404(Graph, pk=id)
+def json_transfers(request, gid, nid, gfilter=None):
+    graph = get_object_or_404(Graph, pk=gid)
     response = HttpResponse()
     response['Content-Type'] = "text/javascript; charset=utf-8"
 
@@ -451,14 +451,12 @@ def json_transfers(request, id, gfilter=None):
         data['nodes'][nid] = {
             'id': nid, 
             'data': G.node[nid]['data'], 
-            """
-            'degree': G.degree(nid),
-            'x':str(x),
-            'y':str(y), 
-            'taxonomy': G.node[nid]['taxonomy'],
-            'attributes': G.node[nid]['attributes'],
-            'neighbors': G.neighbors(nid),
-            """
+            #'degree': G.degree(nid),
+            #'x':str(x),
+            #'y':str(y), 
+            #'taxonomy': G.node[nid]['taxonomy'],
+            #'attributes': G.node[nid]['attributes'],
+            #'neighbors': G.neighbors(nid),
         }
 
     data = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)

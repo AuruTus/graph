@@ -99,17 +99,9 @@ DATABASES = {
     },
     'mysql': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': '20151109',
+        'NAME': '20151117',
         'USER': 'root',
         'PASSWORD': 'Passw0rd',
-        'HOST': '127.0.0.1',
-        'PORT': '3306',
-    },
-    'mysql01': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'db_fcp_vis',
-        'USER': 'root',
-        'PASSWORD': 'passw0rd',
         'HOST': '127.0.0.1',
         'PORT': '3306',
     },
