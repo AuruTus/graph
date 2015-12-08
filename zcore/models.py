@@ -114,7 +114,7 @@ def GFilterTaxonomy(G, ttypes):
 
 
 # Оставляем в графе только те узлы, атрибут data которых совпадает с переданной строкой
-def GFilterData(G, data):
+def GFilterNodeData(G, data):
     data = str(data).lower()
     # Если data содержит текст, производим фильтрацию узлов
     nodes = []
@@ -126,10 +126,13 @@ def GFilterData(G, data):
                 nodes.append(nid)
         nodesList = []
         for nid in nodes:
+            print('nid',nid)
             nodesList.append(nid)
             neighbors = nx.all_neighbors(G, nid)
             for neighbor in neighbors:
+                print('тушп',neighbor)
                 nodesList.append(neighbor)
+        print('nl',nodesList)
         G = G.subgraph(nodesList)
 
         """
@@ -194,16 +197,39 @@ def render_content(content):
     return response 
 
 
+# Определяем список id терминов таксономии, входящих (детей) в термин Территория
+def get_taxonomy_territory_list(parent_id=45, l=None):
+    if not l:
+        l = [parent_id]
+    #get_taxonomy_territory_list.l.append(parent_id)
+    cursor = connections['mysql'].cursor()
+    sql = "SELECT id, parent_id FROM taxonomy WHERE parent_id=%i" % (parent_id)
+    cursor.execute(sql)
+    terms = cursor.fetchall()
+    for term in terms:
+        print('tid',term[0])
+        print('parent_id',term[1])
+        l.append(term[0])
+        #if term[1]:
+            #get_taxonomy_territory_list(term[1])
+    
+    return l
+
+
 #
 #
 # Создаем граф из данных "семантической кучи"
 class SGraph():
     # Получение атрибутов информационного объекта вида узел
-    def get_node_taxonomy(self, nid):
+    def get_node_taxonomy(self, nid, nodeData):
         sql = "SELECT tax.* FROM element_taxonomy as elt, taxonomy as tax WHERE elt.element_id=%i AND elt.taxonomy_id=tax.id" % (nid)
         self.cursor.execute(sql)
         term = self.cursor.fetchone()
         data = {'tid':term[0],'parent_tid':term[1],'name':term[3]}
+        #print('geotag',term[0])
+        if term[0] in self.taxTerritory:
+            # https://geocode-maps.yandex.ru/1.x/?format=json&geocode=
+            data.update({'geotag': nodeData})
 
         return data
 
@@ -237,12 +263,13 @@ class SGraph():
         sql = "SELECT el.data  FROM element as el WHERE el.id=%i" % (nid)
         self.cursor.execute(sql)
         row = self.cursor.fetchone()
+        # Получаем значение поля data, убираем лишние пробелы
         nodeData = ' '.join(str(row[0]).split())
 
         # Для каждого узла с помощью отдельной функции получаем словарь атрибутов
         nodeAttributes = self.get_node_attributes(nid)
         # Для каждого узла с помощью отдельной функции получаем тип узла
-        nodeTaxonomy = self.get_node_taxonomy(nid)
+        nodeTaxonomy = self.get_node_taxonomy(nid, nodeData)
         
         # Симуляция обработки данных о должности персоны
         if nodeTaxonomy['tid'] == 1 and self.positions:
@@ -284,12 +311,16 @@ class SGraph():
 
 
     # Главная функция создания максимально большого графа 
-    def create(self, taxonomy):
+    def create(self, stopper, taxonomy):
         pdev("creating max graph...")
         # Cоздаём пустой NetworkX-граф
         self.G = nx.Graph()
         # Устанавливаем соединение с БД, в которой хранятся семантически связанные данные
         self.cursor = connections['mysql'].cursor()
+
+        # Получаем список id терминов таксономии, входящих (детей) в термин Территория
+        #print('territoryTaxonomy',get_taxonomy_territory_list())
+        self.taxTerritory = get_taxonomy_territory_list()
 
         # Добавляем сортировку по терминам классификатора сущностей
         taxonomy = flatten_int_by_true(taxonomy)
@@ -307,7 +338,8 @@ class SGraph():
         for node in nodes:
             nid = int(node[0]) # id узла
             # Если ID узла является цифровым значением и не равно нулю:
-            if nid and counter < 50:
+            #if nid and counter < stopper:
+            if nid and counter < 500:
                 counter = counter + 1
                 # Добавляем узел в объект типа граф, предоставленного библиотекой NetworkX
                 # positions - массив должностей, count - кол-во; нужно для симуляции обработки должности
@@ -326,12 +358,12 @@ class SGraph():
 def create_filtered_graph(gfilter):
     try: 
         gfilter = json.loads(gfilter)
-        #print_json(gfilter)
+        print_json(gfilter)
 
         # Создаем граф из данных "семантической кучи";
         # производим фильтрацию узлов графа по переданному массиву типов сущностей taxonomy;
         SG = SGraph()
-        G = SG.create(gfilter.get('taxonomy'))
+        G = SG.create(gfilter['options'].get('stopper'), gfilter.get('taxonomy'))
 
         # Исключаем из графа узлы с нулевым весом (без связей)
         G = GFilterZero(G, gfilter['options'].get('removeZero'))
@@ -347,7 +379,7 @@ def create_filtered_graph(gfilter):
 
     # отладочная информация
     jsonContent = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
-    #print(jsonContent)
+    print(jsonContent)
 
     # Создаём экземпляр класса Graph, для хранения структуры графа в базе данных
     graph = Graph() 

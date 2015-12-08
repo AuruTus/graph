@@ -19,7 +19,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from .models import Graph, Node, Taxonomy, create_filtered_graph, render_content, print_json, pdev
-from .models import GFilterNodes, GFilterAttributes, GFilterZero, GFilterTaxonomy, GFilterData
+from .models import GFilterNodes, GFilterAttributes, GFilterZero, GFilterTaxonomy, GFilterNodeData
 
 HTMLPREFIX = '<!DOCTYPE html><meta charset="utf-8"><body>'
 HTMLSUFFIX = '</body>'
@@ -227,7 +227,7 @@ def to_main_graph(body, gfilter):
         # Производим фильтрацию узлов графа по переданному массиву типов ИО
         G = GFilterTaxonomy(G, gfilter.get('taxonomy'))
         # Оставляем в графе только те узлы, атрибут data которых совпадает с переданной строкой
-        G = GFilterData(G, gfilter.get('data'))
+        G = GFilterNodeData(G, gfilter.get('data'))
         # Получаем значение выбранного способа компоновки (layout)
         layoutArgument = gfilter.get('layout')
     except:
@@ -243,7 +243,8 @@ def to_main_graph(body, gfilter):
     #e = G.edges()
     #links = {'links': e}
     #data.update(links)
-    maxx,maxy,minx,miny,averagex,averagey,averageScale,diffx,diffy = 0,0,0,0,0,0,0,0,0
+    maxx,maxy,minx,miny,averagex,averagey,diffx,diffy = 0,0,0,0,0,0,0,0
+    averageScale,scale = 1,1
     for nid in layout:
         point = layout.get(nid)
         x = point[0]
@@ -259,7 +260,8 @@ def to_main_graph(body, gfilter):
         diffx = math.fabs(maxx) + math.fabs(minx)
         diffy = math.fabs(maxy) + math.fabs(miny)
         scale = diffx if diffx > diffy else diffy
-        averageScale = 0.8 / scale
+        if scale != 0:
+            averageScale = 0.8 / scale
 
         data['nodes'][nid] = {
             'id': nid, 

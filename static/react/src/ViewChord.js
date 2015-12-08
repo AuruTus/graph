@@ -14,6 +14,9 @@ var ChordFilter = React.createClass({
     render: function() {
         return (
             <form onSubmit={this.handleSubmit} ref="ChordFilterForm">
+                <div>
+                <NodeData />
+                </div>
                 <input type="submit" className="btn btn-warning" value="Отфильтровать" />
             </form>
         )
@@ -21,12 +24,21 @@ var ChordFilter = React.createClass({
 })
 
 
+var NodeData = React.createClass({
+    getInitialState: function() {
+        return {value: ''};
+    },
+    handleChange: function(event) {
+        this.setState({value: event.target.value})
+    },
+    render: function() {
+        var value = this.state.value;
+        return <input type="text" value={value} onChange={this.handleChange} />;
+    },
+})
 
 
-React.render(
-    <ChordFilter />,
-    document.getElementById('chord-filter')
-);
+//React.render( <ChordFilter />, document.getElementById('chord-filter'));
 
 
 /* 

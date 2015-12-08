@@ -106,6 +106,20 @@ var AttributesFilter = React.createClass({
 })
 
 
+var Stopper = React.createClass({
+    getInitialState: function() {
+        return {value: '50'};
+    },
+    handleChange: function(event) {
+        this.setState({value: event.target.value})
+    },
+    render: function() {
+        var value = this.state.value;
+        return <input type="text" value={value} onChange={this.handleChange} />;
+    },
+})
+
+
 var OptionsFilter = React.createClass({
     getInitialState: function() {
         return {
@@ -125,11 +139,14 @@ var OptionsFilter = React.createClass({
     },
     render: function() {
         return (
-            <CMCheckboxGroup
-                name='options'
-                properties={this.state.properties}
-                onChange={this.handleChange}
-            />
+            <div>
+                <CMCheckboxGroup
+                    name='options'
+                    properties={this.state.properties}
+                    onChange={this.handleChange}
+                />
+                <div><Stopper /></div>
+            </div>
         );
     },
 })
