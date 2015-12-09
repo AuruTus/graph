@@ -45,7 +45,7 @@ map.on('click', onMapClick)
 var Map = React.createClass({
     getInitialState: function() {
         return {
-            data: loadDataFromServer('json-transfers'),
+            data: loadDataFromServer('/json-transfers'),
             text: "Map",
         }
     },

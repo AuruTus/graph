@@ -6,6 +6,7 @@ from random import randint
 import numpy as np
 #from numpy import array
 import warnings
+import requests
 
 from django.db import models
 from django.db import connections
@@ -23,18 +24,27 @@ def flatten_int_by_true(d):
     return l
 
 
+def GIncludeNeighbors(FG, BG, depth=1):
+    if depth == 0:
+        return FG
+    else:
+        depth = depth - 1
+        nodes = []
+        for nid in FG.nodes():
+            nodes.append(nid) # Добавляем узел в отфильтрованный массив узлов
+            neighbors = nx.all_neighbors(BG, nid) # Для каждого из узлов графа получаем массив его соседей
+            for neighbor in neighbors:
+                nodes.append(neighbor) # Добавляем каждого соседа в отфильтрованный массив узлов
+        return GIncludeNeighbors(BG.subgraph(nodes), BG, depth) # Получаем рекурсивно объединённый, включающий соседние узлы, подграф
+
+
 # Производим фильтрацию графа по переданным в списке nodes узлам:
-# возвращаем соседние узлы (если есть), включая переданный;
-# где формат nodes [nid1, nid2, ...]
 def GFilterNodes(G, nodes):
     # Если список nodes содержит данные, производим фильтрацию узлов
     if nodes and len(nodes) > 0:
         nodesList = []
         for nid in nodes:
             nodesList.append(nid)
-            neighbors = nx.all_neighbors(G, nid)
-            for neighbor in neighbors:
-                nodesList.append(neighbor)
         G = G.subgraph(nodesList)
 
     return G
@@ -89,53 +99,38 @@ def GFilterAttributes(G, attributes):
 
 
 # Производим фильтрацию узлов графа по переданному массиву типов ИО
-def GFilterTaxonomy(G, ttypes):
-    # Если массив types содержит данные, производим фильтрацию узлов
+def GFilterTaxonomy(FG, BG, ttypes):
+    # Если массив ttypes содержит данные, производим фильтрацию узлов
     if len(ttypes) > 0:
         # Преобразуем ассоциативный массив в обычный с учётом значения true
-        ttypesFlatten = []
+        taxonomyTids = [] # Список id терминов таксономии
         for ttype in ttypes:
             if ttypes[ttype]:
-                ttypesFlatten.append(int(ttype))
+                taxonomyTids.append(int(ttype))
+        nodes = []
+        for node in FG.nodes(data=True): # Получаем массив узлов графа вместе с атрибутами [узлов]
+            nid = int(node[0]) # id узла
+            tid = node[1]['taxonomy']['tid'] # id термина таксономии узла
+            if tid in taxonomyTids:
+                nodes.append(nid)
+        FG = BG.subgraph(nodes)
 
-        nodes = G.nodes(data=True)
-        for node in nodes:
-            nid = int(node[0])
-            # проходимся по списку атрибутов каждого узла
-            # В случае отсутствия типа узла в переданном массиве типов фильтра
-            if node[1]['taxonomy']['tid'] not in ttypesFlatten:
-                try:
-                    G.remove_node(nid)
-                except:
-                    pdev('Узел с id ' + str(nid) + ' не найден')
-                    pass
-
-    return G
+    return FG
 
 
 # Оставляем в графе только те узлы, атрибут data которых совпадает с переданной строкой
-def GFilterNodeData(FG, GG, data):
-    data = str(data).lower()
-    # Если data содержит текст, производим фильтрацию узлов
+def GFilterNodeData(FG, BG, data):
+    #zdata = json_graph.node_link_data(GG); jsonContent = json.dumps(zdata, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False); print(jsonContent)
+    data = str(data).lower() # Преобразуем полученный текст в нижний регистр
     nodes = []
-    print('nodedata',data)
-    if len(data) > 0:
+    #print('nodedata',data)
+    if len(data) > 0: # Если data содержит текст, производим фильтрацию узлов
         for node in FG.nodes(data=True):
             nid = int(node[0])
             zstr = node[1]['data'].lower()
             if data in zstr:
                 nodes.append(nid)
-        nodesList = []
-        for nid in nodes:
-            print('nid',nid)
-            nodesList.append(nid)
-            neighbors = nx.all_neighbors(GG, nid)
-            print('n',neighbors)
-            for neighbor in neighbors:
-                print('тушп',neighbor)
-                nodesList.append(neighbor)
-        print('nl',nodesList)
-        FG = GG.subgraph(nodesList)
+        FG = BG.subgraph(nodes)
 
     return FG
     
@@ -194,13 +189,24 @@ def get_taxonomy_territory_list(parent_id=45, l=None):
     cursor.execute(sql)
     terms = cursor.fetchall()
     for term in terms:
-        print('tid',term[0])
-        print('parent_id',term[1])
+        #print('tid',term[0])
+        #print('parent_id',term[1])
         l.append(term[0])
         #if term[1]:
             #get_taxonomy_territory_list(term[1])
     
     return l
+
+
+def find_values(id, json_repr):
+    results = []
+    def _decode_dict(a_dict):
+        try: results.append(a_dict[id])
+        except KeyError: pass
+        return a_dict
+
+    json.loads(json_repr, object_hook=_decode_dict)  # return value ignored
+    return results
 
 
 #
@@ -215,8 +221,16 @@ class SGraph():
         data = {'tid':term[0],'parent_tid':term[1],'name':term[3]}
         #print('geotag',term[0])
         if term[0] in self.taxTerritory:
-            # https://geocode-maps.yandex.ru/1.x/?format=json&geocode=
-            data.update({'geotag': nodeData})
+            #r = requests.get('https://geocode-maps.yandex.ru/1.x/?format=json&geocode=' + nodeData)
+	    #print(find_values('Point', resp))
+	    #json_repr = '{"P1": "ss", "Id": 1234, "P2": {"P1": "cccc"}, "P3": [{"P1": "aaa"}]}'
+	    #print(find_values('P1', json_repr))
+            #resp = r.json()['response']
+            try:
+                pos = resp.get('GeoObjectCollection').get('featureMember')[0].get('GeoObject').get('Point').get('pos')
+                data.update({'geotag': pos})
+            except:
+                data.update({'geotag': nodeData})
 
         return data
 
@@ -325,8 +339,7 @@ class SGraph():
         for node in nodes:
             nid = int(node[0]) # id узла
             # Если ID узла является цифровым значением и не равно нулю:
-            #if nid and counter < stopper:
-            if nid and counter < 10:
+            if nid and counter < stopper:
                 counter = counter + 1
                 # Добавляем узел в объект типа граф, предоставленного библиотекой NetworkX
                 # positions - массив должностей, count - кол-во; нужно для симуляции обработки должности
@@ -350,7 +363,7 @@ def create_filtered_graph(gfilter):
         # Создаем граф из данных "семантической кучи";
         # производим фильтрацию узлов графа по переданному массиву типов сущностей taxonomy;
         SG = SGraph()
-        G = SG.create(gfilter['options'].get('stopper'), gfilter.get('taxonomy'))
+        G = SG.create(int(gfilter.get('stopper')), gfilter.get('taxonomy'))
 
         # Исключаем из графа узлы с нулевым весом (без связей)
         G = GFilterZero(G, gfilter['options'].get('removeZero'))
@@ -365,8 +378,7 @@ def create_filtered_graph(gfilter):
     data = json_graph.node_link_data(G)
 
     # отладочная информация
-    jsonContent = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
-    print(jsonContent)
+    #jsonContent = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False); print(jsonContent)
 
     # Создаём экземпляр класса Graph, для хранения структуры графа в базе данных
     graph = Graph() 

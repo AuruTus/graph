@@ -12,6 +12,7 @@ var NewProjectFilter = React.createClass({
             filterAttributes: this.state.attributes ,
             options: this.state.options,
             taxonomy: this.getTaxonomyFilterState(),
+            stopper: eval('this.refs.theStopper').state.value,
         } 
         // Преобразовываем массив json-данных gfilter для передачи через url 
         gfilter = encodeURIComponent(JSON.stringify(gfilter))
@@ -47,9 +48,10 @@ var NewProjectFilter = React.createClass({
         /* <AttributesFilter updateAttributesFilter={this.updateAttributesFilter} /> */
         return (
             <div>
-                <form onSubmit={this.handleSubmit} ref="forceGraphFilterForm">
+                <form onSubmit={this.handleSubmit} ref="forceGraphFilterForm" className='form-inline'>
                     <TaxonomyFilter ref="theTaxonomyFilter" />
                     <OptionsFilter updateOptions={this.updateOptions} />
+                    <Stopper ref='theStopper' />
                     <input type="submit" className="btn btn-warning" value="Создать" />
                 </form>
             </div>
@@ -115,7 +117,9 @@ var Stopper = React.createClass({
     },
     render: function() {
         var value = this.state.value;
-        return <input type="text" value={value} onChange={this.handleChange} />;
+        return (
+            <input type="text" value={value} onChange={this.handleChange} className='form-control col-sm-2' />
+        )
     },
 })
 
@@ -139,14 +143,7 @@ var OptionsFilter = React.createClass({
     },
     render: function() {
         return (
-            <div>
-                <CMCheckboxGroup
-                    name='options'
-                    properties={this.state.properties}
-                    onChange={this.handleChange}
-                />
-                <div><Stopper /></div>
-            </div>
+            <CMCheckboxGroup name='options' properties={this.state.properties} onChange={this.handleChange} />
         );
     },
 })

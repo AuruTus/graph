@@ -19,7 +19,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from .models import Graph, Node, Taxonomy, create_filtered_graph, render_content, print_json, pdev
-from .models import GFilterNodes, GFilterAttributes, GFilterZero, GFilterTaxonomy, GFilterNodeData
+from .models import GFilterNodes, GFilterAttributes, GFilterZero, GFilterTaxonomy, GFilterNodeData, GIncludeNeighbors
 
 HTMLPREFIX = '<!DOCTYPE html><meta charset="utf-8"><body>'
 HTMLSUFFIX = '</body>'
@@ -211,27 +211,27 @@ def to_main_graph(body, gfilter):
     # Декодируем json-объект - структуру графа
     H = json.loads(body)
     # Преобразуем структура графа в формате json в объект типа граф библиотеки NetworkX
-    G = json_graph.node_link_graph(H)
+    BG = json_graph.node_link_graph(H)
     # Инициализируем граф для последовательной фильтрации
-    FG = G
+    FG = json_graph.node_link_graph(H)
 
     # Если передан массив фильтрующих атрибутов, 
     # декодируем json-объект gfilter - массив параметров, полученных из url 
     # и производим фильтрацию в соответствии с полученными данными:
     layoutArgument = ''
     try: 
-        gfilter = json.loads(gfilter)
-        print_json(gfilter)
-        # Производим фильтрацию графа по переданным в списке nodes узлам
-        #FG = GFilterNodes(FG, gfilter.get('nodes'))
-        # Производим фильтрацию графа по атрибутам узла
-        #G = GFilterAttributes(G, gfilter.get('attributes'))
-        # Производим фильтрацию узлов графа по переданному массиву типов ИО
-        #FG = GFilterTaxonomy(FG, gfilter.get('taxonomy'))
-        # Оставляем в графе только те узлы, атрибут data которых совпадает с переданной строкой
-        FG = GFilterNodeData(FG, FG, gfilter.get('data'))
-        # Получаем значение выбранного способа компоновки (layout)
-        layoutArgument = gfilter.get('layout')
+        gfilter = json.loads(gfilter) # Получаем ассоциативный массив данных фильтра в формате json 
+        print_json(gfilter) # отладочная информация
+        #print('FGin',FG.nodes())
+        FG = GFilterNodeData(FG, BG, gfilter.get('data')) # Оставляем в графе только те узлы, атрибут data которых совпадает с переданной строкой
+        FG = GFilterTaxonomy(FG, BG, gfilter.get('taxonomy')) # Производим фильтрацию узлов графа по переданному массиву терминов таксономии
+        #print('FG1',FG.nodes())
+        #G = GFilterAttributes(FG, gfilter.get('attributes')) # Производим фильтрацию графа по атрибутам узла
+        FG = GFilterNodes(FG, gfilter.get('nodes')) # Производим фильтрацию графа по переданным в списке nodes узлам
+        FG = GIncludeNeighbors(FG, BG, int(gfilter.get('depth'))) # Включаем в граф соседей для текущих узлов
+        #print('FG2',FG.nodes())
+        layoutArgument = gfilter.get('layout') # Получаем значение выбранного способа компоновки (layout)
+        #print('FGout',FG.nodes())
     except:
         warnings.warn('Ошибка при обработке json-массива gfilter', UserWarning)
         #raise

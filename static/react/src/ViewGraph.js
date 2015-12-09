@@ -467,6 +467,7 @@ var GraphNodePerson = React.createClass({
         //location = "/map/" + this.props.nid
         if (typeof (func = this.props._onClick) === 'function') { func() }
         window.open('/map/' + gid +'/'  + this.props.nid, '_blank')
+        //window.open('/json-transfers/' + gid +'/'  + this.props.nid, '_blank')
     },
     render: function() {
         //var transform = "scale(.7,.7) translate("+this.props.cx+","+this.props.cy+")"
@@ -622,23 +623,15 @@ var Filter = React.createClass({
         // Передаём обработку родительской функции
         if (typeof this.props._handleSubmit === 'function') {
             var filter = {}
-            // Добавляем к состоянию фильтра значение способа компоновки
-            //console.log('filter',this.constructor.filter.layout)
-            filter.layout = this.constructor.filter.layout
-            // Добавляем к состоянию фильтра значение словаря options
-            filter.options = {zero: 'no'}
-            // Добавляем к состоянию фильтра значение массива nodes
-            filter.nodes = this.state.nodes
-            // Добавляем к состоянию фильтра чекбоксов всех компонентов таксономии
-            filter.taxonomy = eval('this.refs.theTaxonomy').getState()
-            // Добавляем к состоянию фильтра значение поля NodeData input 
-            filter.data = eval('this.refs.theFilterData').state.value
-            // Добавляем к состоянию фильтра значение фильтра аттрибутов
-            filter.attributes = eval('this.refs.theFilterAttributes').constructor.filter
-            // Передаём обработку родительскому компоненту
-            if (typeof (func = this.props._handleSubmit) === 'function') { func(filter) }
-            // Обнуляем массив выделенных узлов
-            this.state.nodes = []
+            filter.layout = this.constructor.filter.layout // Добавляем к состоянию фильтра значение способа компоновки
+            filter.options = {zero: 'no'} // Добавляем к состоянию фильтра значение словаря options
+            filter.nodes = this.state.nodes // Добавляем к состоянию фильтра значение массива nodes
+            filter.taxonomy = eval('this.refs.theTaxonomy').getState() // Добавляем к состоянию фильтра чекбоксов всех компонентов таксономии
+            filter.data = eval('this.refs.theFilterData').state.value // Добавляем к состоянию фильтра значение поля NodeData input 
+            filter.depth = eval('this.refs.theDepth').state.value // Добавляем к состоянию фильтра значение поля NodeData input 
+            //filter.attributes = eval('this.refs.theFilterAttributes').constructor.filter // Добавляем к состоянию фильтра значение фильтра аттрибутов
+            if (typeof (func = this.props._handleSubmit) === 'function') { func(filter) } // Передаём обработку родительскому компоненту
+            this.state.nodes = [] // Обнуляем массив выделенных узлов
         }
     },
     render: function() {
@@ -654,11 +647,14 @@ var Filter = React.createClass({
                     <RecursiveCheckboxTree
                         ref={'theTaxonomy'}
                         children={this.state.taxonomyData}
-                        display={'Фильтр по типам сущностей:'}
+                        display={'Отображать выбранные типы сущностей, включая их соседей:'}
                     />
                 </div>
+                <Depth ref='theDepth' />
+                {/*
                 <Attributes ref='theFilterAttributes' _updateFilterState={this.updateFilter} />
                 <Position />
+                */}
                 <input type="submit" className="btn btn-warning" value="Отфильтровать" />
             </form>
         );
@@ -751,6 +747,24 @@ var AttributesLabel = React.createClass({
 })
 
 
+var Depth = React.createClass({
+    getInitialState: function() {
+        return {value: '2'}
+    },
+    handleChange: function(event) {
+		this.setState({value: event.target.value});
+	},
+    render: function() {
+        return (
+            <label className='data'>
+                Глубина поиска соседних узлов
+                <input type="text" value={this.state.value} onChange={this.handleChange} />
+            </label>
+        )
+    },
+})
+
+
 var NodeData = React.createClass({
     getInitialState: function() {
         return {value: ''}
@@ -761,12 +775,8 @@ var NodeData = React.createClass({
     render: function() {
         return (
             <label className='data'>
-                Фильтрация по атрибуту data
-                <input 
-					type="text"
-					value={this.state.value}
-					onChange={this.handleChange}
-				/>
+                Фильтрация узлов по полю data
+                <input type="text" value={this.state.value} onChange={this.handleChange} />
             </label>
         )
     },
