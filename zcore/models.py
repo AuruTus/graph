@@ -326,7 +326,7 @@ class SGraph():
             nid = int(node[0]) # id узла
             # Если ID узла является цифровым значением и не равно нулю:
             #if nid and counter < stopper:
-            if nid and counter < 500:
+            if nid and counter < 10:
                 counter = counter + 1
                 # Добавляем узел в объект типа граф, предоставленного библиотекой NetworkX
                 # positions - массив должностей, count - кол-во; нужно для симуляции обработки должности
