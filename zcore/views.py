@@ -212,6 +212,8 @@ def to_main_graph(body, gfilter):
     H = json.loads(body)
     # Преобразуем структура графа в формате json в объект типа граф библиотеки NetworkX
     G = json_graph.node_link_graph(H)
+    # Инициализируем граф для последовательной фильтрации
+    FG = G
 
     # Если передан массив фильтрующих атрибутов, 
     # декодируем json-объект gfilter - массив параметров, полученных из url 
@@ -221,22 +223,22 @@ def to_main_graph(body, gfilter):
         gfilter = json.loads(gfilter)
         print_json(gfilter)
         # Производим фильтрацию графа по переданным в списке nodes узлам
-        G = GFilterNodes(G, gfilter.get('nodes'))
+        #FG = GFilterNodes(FG, gfilter.get('nodes'))
         # Производим фильтрацию графа по атрибутам узла
         #G = GFilterAttributes(G, gfilter.get('attributes'))
         # Производим фильтрацию узлов графа по переданному массиву типов ИО
-        G = GFilterTaxonomy(G, gfilter.get('taxonomy'))
+        #FG = GFilterTaxonomy(FG, gfilter.get('taxonomy'))
         # Оставляем в графе только те узлы, атрибут data которых совпадает с переданной строкой
-        G = GFilterNodeData(G, gfilter.get('data'))
+        FG = GFilterNodeData(FG, FG, gfilter.get('data'))
         # Получаем значение выбранного способа компоновки (layout)
         layoutArgument = gfilter.get('layout')
     except:
         warnings.warn('Ошибка при обработке json-массива gfilter', UserWarning)
         #raise
-    layout = get_graph_layout(G, layoutArgument)
+    layout = get_graph_layout(FG, layoutArgument)
     #layout = nx.random_layout(G),
     #nodes = G.nodes(data=True)
-    nodes = G.nodes()
+    nodes = FG.nodes()
     #data = {'nodes':[], 'links':[]}
     data.update({'nodes':{}})
     #e = nx.edges(G)
@@ -265,13 +267,13 @@ def to_main_graph(body, gfilter):
 
         data['nodes'][nid] = {
             'id': nid, 
-            'data': G.node[nid]['data'], 
-            'degree': G.degree(nid),
+            'data': FG.node[nid]['data'], 
+            'degree': FG.degree(nid),
             'x':str(x),
             'y':str(y), 
-            'taxonomy': G.node[nid]['taxonomy'],
-            'attributes': G.node[nid]['attributes'],
-            'neighbors': G.neighbors(nid),
+            'taxonomy': FG.node[nid]['taxonomy'],
+            'attributes': FG.node[nid]['attributes'],
+            'neighbors': FG.neighbors(nid),
         }
     data.update({'maxx': str(maxx), 'maxy': str(maxy), 'minx': str(minx), 'miny': str(miny)})
     data.update({'averagex': averagex, 'averagey': averagey, 'averageScale': averageScale})

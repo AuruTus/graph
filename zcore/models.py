@@ -114,12 +114,13 @@ def GFilterTaxonomy(G, ttypes):
 
 
 # Оставляем в графе только те узлы, атрибут data которых совпадает с переданной строкой
-def GFilterNodeData(G, data):
+def GFilterNodeData(FG, GG, data):
     data = str(data).lower()
     # Если data содержит текст, производим фильтрацию узлов
     nodes = []
+    print('nodedata',data)
     if len(data) > 0:
-        for node in G.nodes(data=True):
+        for node in FG.nodes(data=True):
             nid = int(node[0])
             zstr = node[1]['data'].lower()
             if data in zstr:
@@ -128,29 +129,15 @@ def GFilterNodeData(G, data):
         for nid in nodes:
             print('nid',nid)
             nodesList.append(nid)
-            neighbors = nx.all_neighbors(G, nid)
+            neighbors = nx.all_neighbors(GG, nid)
+            print('n',neighbors)
             for neighbor in neighbors:
                 print('тушп',neighbor)
                 nodesList.append(neighbor)
         print('nl',nodesList)
-        G = G.subgraph(nodesList)
+        FG = GG.subgraph(nodesList)
 
-        """
-        nodesList = []
-        for node in G.nodes(data=True):
-            nid = int(node[0])
-            zstr = node[1]['data'].lower()
-            if data in zstr:
-                nodesList.append(nid)
-            else:
-                neighbors = G.neighbors(nid)
-                print(nodesList,'-',neighbors)
-                #for n in nodesList:
-                    #if n not in neighbors: 
-                G.remove_node(nid)
-        """
-
-    return G
+    return FG
     
 
 def pdev(str):
