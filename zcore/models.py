@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+import math
 import networkx as nx
 from networkx.readwrite import json_graph
 from random import randint
@@ -11,7 +12,6 @@ import requests
 from django.db import models
 from django.db import connections
 from django.http import HttpResponse, HttpResponseRedirect
-
 
 # Функция которая получает на вход словарь где: ключ = int, значение = bool;
 # и возвращает список только тех элементов, где значение True
@@ -125,15 +125,154 @@ def GFilterNodeData(FG, BG, data):
     nodes = []
     #print('nodedata',data)
     if len(data) > 0: # Если data содержит текст, производим фильтрацию узлов
+        data = data.split('+')
         for node in FG.nodes(data=True):
             nid = int(node[0])
             zstr = node[1]['data'].lower()
-            if data in zstr:
-                nodes.append(nid)
+            for chank in data:
+                if chank in zstr:
+                    nodes.append(nid)
         FG = BG.subgraph(nodes)
 
     return FG
     
+
+def GJoinPersons(FG):
+    d = {}
+    count = 0
+    for node in FG.nodes(data=True):
+        print(node)
+        nid = int(node[0])
+        attributes = node[1]['attributes']
+        for attr in attributes:
+            if attr['id'] == 30:
+                surname = attr['value']
+                if surname != '':
+                    nids = d.get(surname)
+                    if nids == None:
+                        nids = []
+                    nids.append(nid) 
+                    d[surname] = nids
+    for surname in d:
+        nodes = d[surname]
+        FG = GMergeNodes(FG, nodes)
+
+    return FG
+
+
+def GMergeNodes(FG,nodes):
+    #print(nodes)
+    #print(FG[nodes[0]])
+    return FG
+
+"""
+def merge_nodes(G,nodes, new_node, attr_dict=None, **attr):
+    Merges the selected `nodes` of the graph G into one `new_node`,
+    meaning that all the edges that pointed to or from one of these
+    `nodes` will point to or from the `new_node`.
+    attr_dict and **attr are defined as in `G.add_node`.
+    G.add_node(new_node, attr_dict, **attr) # Add the 'merged' node
+    for n1,n2,data in G.edges(data=True):
+    # For all edges related to one of the nodes to merge,
+    # make an edge going to or coming from the `new gene`.
+    if n1 in nodes:
+        G.add_edge(new_node,n2,data)
+    elif n2 in nodes:
+        G.add_edge(n1,new_node,data)
+    for n in nodes: # remove the merged nodes
+        G.remove_node(n)
+"""
+
+
+def get_graph_layout(G, argument):
+    switcher = {
+        'spring': nx.spring_layout(G,scale=0.9),
+        'shell': nx.shell_layout(G,scale=0.9),
+        'random': nx.random_layout(G),
+    }
+    #layout = nx.spectral_layout(G,scale=0.7)
+    #layout = nx.graphviz_layout(G,prog='neato')
+    func = switcher.get(argument, nx.spring_layout(G,scale=0.4))
+    return func
+
+
+def to_main_graph(body, gfilter=None):
+    # Объявляем словарь, в который будет записана вся необходимая для вывода графа информация
+    data = {}
+    # Декодируем json-объект - структуру графа
+    H = json.loads(body)
+    # Преобразуем структура графа в формате json в объект типа граф библиотеки NetworkX
+    BG = json_graph.node_link_graph(H)
+    # Инициализируем граф для последовательной фильтрации
+    FG = json_graph.node_link_graph(H)
+
+    # Если передан массив фильтрующих атрибутов, 
+    # декодируем json-объект gfilter - массив параметров, полученных из url 
+    # и производим фильтрацию в соответствии с полученными данными:
+    layoutArgument = ''
+    try: 
+        gfilter = json.loads(gfilter) # Получаем ассоциативный массив данных фильтра в формате json 
+        print_json(gfilter) # отладочная информация
+        #print('FGin',FG.nodes())
+        FG = GFilterNodeData(FG, BG, gfilter.get('data')) # Оставляем в графе только те узлы, атрибут data которых совпадает с переданной строкой
+        FG = GFilterTaxonomy(FG, BG, gfilter.get('taxonomy')) # Производим фильтрацию узлов графа по переданному массиву терминов таксономии
+        #print('FG1',FG.nodes())
+        #G = GFilterAttributes(FG, gfilter.get('attributes')) # Производим фильтрацию графа по атрибутам узла
+        FG = GFilterNodes(FG, gfilter.get('nodes')) # Производим фильтрацию графа по переданным в списке nodes узлам
+        FG = GIncludeNeighbors(FG, BG, int(gfilter.get('depth'))) # Включаем в граф соседей для текущих узлов
+        FG = GJoinPersons(FG)
+        #print('FG2',FG.nodes())
+        layoutArgument = gfilter.get('layout') # Получаем значение выбранного способа компоновки (layout)
+        #print('FGout',FG.nodes())
+    except:
+        warnings.warn('Ошибка при обработке json-массива gfilter', UserWarning)
+        #raise
+    layout = get_graph_layout(FG, layoutArgument)
+    #layout = nx.random_layout(G),
+    #nodes = G.nodes(data=True)
+    nodes = FG.nodes()
+    #data = {'nodes':[], 'links':[]}
+    data.update({'nodes':{}})
+    #e = nx.edges(G)
+    #e = G.edges()
+    #links = {'links': e}
+    #data.update(links)
+    maxx,maxy,minx,miny,averagex,averagey,diffx,diffy = 0,0,0,0,0,0,0,0
+    averageScale,scale = 1,1
+    for nid in layout:
+        point = layout.get(nid)
+        x = point[0]
+        y = point[1]
+
+        # Вычисляем максимальные, минимальные и средние значения
+        maxx = x if x > maxx else maxx
+        maxy = y if y > maxy else maxy
+        minx = x if x < minx else minx
+        miny = y if y < miny else miny
+        averagex = maxx - (math.fabs(maxx) + math.fabs(minx)) / 2
+        averagey = maxy - (math.fabs(maxy) + math.fabs(miny)) / 2
+        diffx = math.fabs(maxx) + math.fabs(minx)
+        diffy = math.fabs(maxy) + math.fabs(miny)
+        scale = diffx if diffx > diffy else diffy
+        if scale != 0:
+            averageScale = 0.8 / scale
+
+        data['nodes'][nid] = {
+            'id': nid, 
+            'data': FG.node[nid]['data'], 
+            'degree': FG.degree(nid),
+            'x':str(x),
+            'y':str(y), 
+            'taxonomy': FG.node[nid]['taxonomy'],
+            'attributes': FG.node[nid]['attributes'],
+            'neighbors': FG.neighbors(nid),
+        }
+    data.update({'maxx': str(maxx), 'maxy': str(maxy), 'minx': str(minx), 'miny': str(miny)})
+    data.update({'averagex': averagex, 'averagey': averagey, 'averageScale': averageScale})
+    data.update({'diffx': diffx, 'diffy': diffy})
+    data = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
+    return data
+
 
 def pdev(str):
     print('\n',str,'\n')
@@ -142,6 +281,7 @@ def pdev(str):
 
 class Graph(models.Model):
     title = models.CharField(max_length=200, default='граф')
+    layout_spring = models.TextField()
     body = models.TextField()
 
     def __str__(self):
@@ -367,34 +507,22 @@ def create_filtered_graph(gfilter):
 
         # Исключаем из графа узлы с нулевым весом (без связей)
         G = GFilterZero(G, gfilter['options'].get('removeZero'))
-        # Производим фильтрацию узлов графа по переданным в ассоциативном массивe attributes атрибутам узлов;
-        #G = GFilterAttributes(G, gfilter.get('attributes'))
+        #G = GFilterAttributes(G, gfilter.get('attributes')) # Производим фильтрацию узлов графа по переданным в ассоциативном массивe attributes атрибутам узлов;
     except:
         warnings.warn('Ошибка при обработке json-массива gfilter', UserWarning)
         raise
 
-    # Средствами бибилиотеки NetworkX,
-    # экспортируем граф в виде подходящeм для json-сериализации
-    data = json_graph.node_link_data(G)
+    data = json_graph.node_link_data(G) # Средствами бибилиотеки NetworkX, экспортируем граф в виде подходящeм для json-сериализации
+    graph = Graph() # Создаём экземпляр класса Graph, для хранения структуры графа в базе данных
+    numberOfNodes = G.number_of_nodes() # Получаем кол-во узлов графа
+    numberOfEdges = G.number_of_edges() # Получаем кол-во дуг графа
+    graph.title = "Проекция: узлов " + str(numberOfNodes) + "; дуг " + str(numberOfEdges) # Определяем заголовок графа
+    graph.body = json.dumps(data, ensure_ascii=False) # Преобразуем данные в json-формат
+    graph.layout_spring = to_main_graph(graph.body) # получаем массив компоновки по-умолчанию (типа spring)
+    graph.save() # Сохраняем граф в собственную базу данных
 
-    # отладочная информация
-    #jsonContent = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False); print(jsonContent)
-
-    # Создаём экземпляр класса Graph, для хранения структуры графа в базе данных
-    graph = Graph() 
-    # Получаем кол-во узлов графа
-    numberOfNodes = G.number_of_nodes()
-    # Получаем кол-во дуг графа
-    numberOfEdges = G.number_of_edges()
-
+    #jsonContent = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False); print(jsonContent) # отладочная информация
     pdev('yзлов %i, дуг %i' % (numberOfNodes, numberOfEdges)) # отладка: выводим кол-во узлов и дуг
-
-    # Определяем заголовок графа
-    graph.title = "Многомерная проекция 'семантической кучи' по заданному фильтру: узлов " + str(numberOfNodes) + "; дуг " + str(numberOfEdges)
-    # Преобразуем данные в json-формат
-    graph.body = json.dumps(data, ensure_ascii=False)
-    # Сохраняем граф в собственную базу данных
-    graph.save() 
 
     return graph.body
 

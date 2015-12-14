@@ -25,6 +25,8 @@ var NewProjectFilter = React.createClass({
           if(this.readyState == this.HEADERS_RECEIVED) {
             //console.log(this.getAllResponseHeaders());
             //location.reload()
+            //location = '/'
+            alert('Граф создан')
           }
         }
 
