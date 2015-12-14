@@ -141,7 +141,6 @@ def GJoinPersons(FG):
     d = {}
     count = 0
     for node in FG.nodes(data=True):
-        print(node)
         nid = int(node[0])
         attributes = node[1]['attributes']
         for attr in attributes:
@@ -157,31 +156,24 @@ def GJoinPersons(FG):
         nodes = d[surname]
         FG = GMergeNodes(FG, nodes)
 
+    print('graph:\n',FG.nodes(data=True),'\n')
     return FG
 
 
 def GMergeNodes(FG,nodes):
-    #print(nodes)
-    #print(FG[nodes[0]])
-    return FG
-
-"""
-def merge_nodes(G,nodes, new_node, attr_dict=None, **attr):
-    Merges the selected `nodes` of the graph G into one `new_node`,
-    meaning that all the edges that pointed to or from one of these
-    `nodes` will point to or from the `new_node`.
-    attr_dict and **attr are defined as in `G.add_node`.
-    G.add_node(new_node, attr_dict, **attr) # Add the 'merged' node
-    for n1,n2,data in G.edges(data=True):
-    # For all edges related to one of the nodes to merge,
-    # make an edge going to or coming from the `new gene`.
-    if n1 in nodes:
-        G.add_edge(new_node,n2,data)
-    elif n2 in nodes:
-        G.add_edge(n1,new_node,data)
+    new_node = int('10'+str(nodes[0]))
+    data = FG.node[nodes[0]]
+    data.update({'mergedNodes': nodes})
+    data.update({'mergedCount': len(nodes)})
+    FG.add_node(new_node, data)
+    for n1,n2,data in FG.edges(data=True):
+        if n1 in nodes:
+            FG.add_edge(new_node,n2,data)
+        elif n2 in nodes:
+            FG.add_edge(n1,new_node,data)
     for n in nodes: # remove the merged nodes
-        G.remove_node(n)
-"""
+        FG.remove_node(n)
+    return FG
 
 
 def get_graph_layout(G, argument):
@@ -220,7 +212,7 @@ def to_main_graph(body, gfilter=None):
         #G = GFilterAttributes(FG, gfilter.get('attributes')) # Производим фильтрацию графа по атрибутам узла
         FG = GFilterNodes(FG, gfilter.get('nodes')) # Производим фильтрацию графа по переданным в списке nodes узлам
         FG = GIncludeNeighbors(FG, BG, int(gfilter.get('depth'))) # Включаем в граф соседей для текущих узлов
-        FG = GJoinPersons(FG)
+        FG = GJoinPersons(FG) # Объединяем узлы типа Персона по значению атрибута Фамилия
         #print('FG2',FG.nodes())
         layoutArgument = gfilter.get('layout') # Получаем значение выбранного способа компоновки (layout)
         #print('FGout',FG.nodes())
