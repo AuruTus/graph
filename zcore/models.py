@@ -137,26 +137,27 @@ def GFilterNodeData(FG, BG, data):
     return FG
     
 
-def GJoinPersons(FG):
-    d = {}
-    count = 0
-    for node in FG.nodes(data=True):
-        nid = int(node[0])
-        attributes = node[1]['attributes']
-        for attr in attributes:
-            if attr['id'] == 30:
-                surname = attr['value']
-                if surname != '':
-                    nids = d.get(surname)
-                    if nids == None:
-                        nids = []
-                    nids.append(nid) 
-                    d[surname] = nids
-    for surname in d:
-        nodes = d[surname]
-        FG = GMergeNodes(FG, nodes)
+def GJoinPersons(FG, joinPersons):
+    if joinPersons:
+        d = {}
+        count = 0
+        for node in FG.nodes(data=True):
+            nid = int(node[0])
+            attributes = node[1]['attributes']
+            for attr in attributes:
+                if attr['id'] == 30:
+                    surname = attr['value']
+                    if surname != '':
+                        nids = d.get(surname)
+                        if nids == None:
+                            nids = []
+                        nids.append(nid) 
+                        d[surname] = nids
+        for surname in d:
+            nodes = d[surname]
+            FG = GMergeNodes(FG, nodes)
 
-    print('graph:\n',FG.nodes(data=True),'\n')
+        #print('graph:\n',FG.nodes(data=True),'\n')
     return FG
 
 
@@ -189,14 +190,10 @@ def get_graph_layout(G, argument):
 
 
 def to_main_graph(body, gfilter=None):
-    # Объявляем словарь, в который будет записана вся необходимая для вывода графа информация
-    data = {}
-    # Декодируем json-объект - структуру графа
-    H = json.loads(body)
-    # Преобразуем структура графа в формате json в объект типа граф библиотеки NetworkX
-    BG = json_graph.node_link_graph(H)
-    # Инициализируем граф для последовательной фильтрации
-    FG = json_graph.node_link_graph(H)
+    data = {} # Объявляем словарь, в который будет записана вся необходимая для вывода графа информация
+    H = json.loads(body) # Декодируем json-объект - структуру графа
+    BG = json_graph.node_link_graph(H) # Преобразуем структура графа в формате json в объект типа граф библиотеки NetworkX
+    FG = json_graph.node_link_graph(H) # Инициализируем граф для последовательной фильтрации
 
     # Если передан массив фильтрующих атрибутов, 
     # декодируем json-объект gfilter - массив параметров, полученных из url 
@@ -212,7 +209,7 @@ def to_main_graph(body, gfilter=None):
         #G = GFilterAttributes(FG, gfilter.get('attributes')) # Производим фильтрацию графа по атрибутам узла
         FG = GFilterNodes(FG, gfilter.get('nodes')) # Производим фильтрацию графа по переданным в списке nodes узлам
         FG = GIncludeNeighbors(FG, BG, int(gfilter.get('depth'))) # Включаем в граф соседей для текущих узлов
-        FG = GJoinPersons(FG) # Объединяем узлы типа Персона по значению атрибута Фамилия
+        FG = GJoinPersons(FG, gfilter.get('joinPersons')) # Объединяем узлы типа Персона по значению атрибута Фамилия
         #print('FG2',FG.nodes())
         layoutArgument = gfilter.get('layout') # Получаем значение выбранного способа компоновки (layout)
         #print('FGout',FG.nodes())
@@ -353,11 +350,11 @@ class SGraph():
         data = {'tid':term[0],'parent_tid':term[1],'name':term[3]}
         #print('geotag',term[0])
         if term[0] in self.taxTerritory:
-            #r = requests.get('https://geocode-maps.yandex.ru/1.x/?format=json&geocode=' + nodeData)
-	    #print(find_values('Point', resp))
-	    #json_repr = '{"P1": "ss", "Id": 1234, "P2": {"P1": "cccc"}, "P3": [{"P1": "aaa"}]}'
-	    #print(find_values('P1', json_repr))
-            #resp = r.json()['response']
+            r = requests.get('https://geocode-maps.yandex.ru/1.x/?format=json&geocode=' + nodeData)
+            resp = r.json()['response']
+            #print(find_values('Point', resp))
+            #json_repr = '{"P1": "ss", "Id": 1234, "P2": {"P1": "cccc"}, "P3": [{"P1": "aaa"}]}'
+            #print(find_values('P1', json_repr))
             try:
                 pos = resp.get('GeoObjectCollection').get('featureMember')[0].get('GeoObject').get('Point').get('pos')
                 data.update({'geotag': pos})

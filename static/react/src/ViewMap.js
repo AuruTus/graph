@@ -43,9 +43,22 @@ function onMapClick(e) {
 map.on('click', onMapClick)
 
 var Map = React.createClass({
+    loadData() {
+        var url = '/json-transfers/' + gid + '/' + 227805 // Формируем адрес, по которому будет производится REST-запрос
+        var xhr = new XMLHttpRequest() // Инициализируем объект XMLHttpReques, позволяющий отправлять асинхронные запросы веб-серверу и получать ответ без перезагрузки страницы
+        xhr.open('GET', url)
+        xhr.responseType = 'json'
+        xhr.send()
+        // Производим обработку данных, после получения ответа от сервера
+        xhr.onreadystatechange = function() {
+            if(xhr.readyState == 4) { // `DONE`
+                return xhr.response
+            }
+        }
+    },
     getInitialState: function() {
         return {
-            data: loadDataFromServer('/json-transfers'),
+            data: this.loadData(),
             text: "Map",
         }
     },

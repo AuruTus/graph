@@ -31,7 +31,7 @@ var HeapInfo = React.createClass({
 
 
 React.render(
-    <HeapInfo  url="/zcore/heap-info/" />, 
+    <HeapInfo  url="/json-heap-info/" />, 
     document.getElementById('heap-info')
 )
 

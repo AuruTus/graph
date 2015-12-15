@@ -464,8 +464,9 @@ var GraphNodePerson = React.createClass({
     },
     */
     handleDoubleClick() {
+        console.log('nid',this.props.nid)
         //location = "/map/" + this.props.nid
-        if (typeof (func = this.props._onClick) === 'function') { func() }
+        //if (typeof (func = this.props._onClick) === 'function') { func() }
         window.open('/map/' + gid +'/'  + this.props.nid, '_blank')
         //window.open('/json-transfers/' + gid +'/'  + this.props.nid, '_blank')
     },
@@ -616,14 +617,15 @@ var Filter = React.createClass({
     },
     updateFilter(key, value) {
         this.constructor.filter[key] = value 
-        //console.log('f',this.constructor.filter)
+        console.log('f',this.constructor.filter)
     },
     handleSubmit: function(e) {
         e.preventDefault()
         // Передаём обработку родительской функции
         if (typeof this.props._handleSubmit === 'function') {
-            var filter = {}
-            filter.layout = this.constructor.filter.layout // Добавляем к состоянию фильтра значение способа компоновки
+            //var filter = {}
+            var filter = this.constructor.filter
+            //filter.layout = this.constructor.filter.layout // Добавляем к состоянию фильтра значение способа компоновки
             filter.options = {zero: 'no'} // Добавляем к состоянию фильтра значение словаря options
             filter.nodes = this.state.nodes // Добавляем к состоянию фильтра значение массива nodes
             filter.taxonomy = eval('this.refs.theTaxonomy').getState() // Добавляем к состоянию фильтра чекбоксов всех компонентов таксономии
@@ -640,9 +642,8 @@ var Filter = React.createClass({
             <form onSubmit={this.handleSubmit} ref="forceGraphFilterForm" className='taxonomy'>
                 <Layout _updateFilter={this.updateFilter} _submit={this.handleSubmit} />
                 <input type="submit" className="btn btn-warning" value="Отфильтровать" />
-                <NodeData 
-                    ref={'theFilterData'}
-                />
+                <JoinPersons ref='theJoinPersons' _updateFilter={this.updateFilter} />
+                <NodeData ref={'theFilterData'} />
                 <div className={'RecursiveCheckboxTree'}>
                     <RecursiveCheckboxTree
                         ref={'theTaxonomy'}
@@ -761,6 +762,48 @@ var Depth = React.createClass({
                 <input type="text" value={this.state.value} onChange={this.handleChange} />
             </label>
         )
+    },
+})
+
+
+var JoinPersons = React.createClass({
+    getInitialState: function() {
+        var isChecked = false
+        if (typeof (func = this.props._updateFilter) === 'function') { func('joinPersons', isChecked) }
+        return {isChecked: isChecked}
+    },
+    handleChange: function(event) {
+        var isChecked = !this.state.isChecked
+        this.setState({isChecked: isChecked});
+        if (typeof (func = this.props._updateFilter) === 'function') { func('joinPersons', isChecked) }
+    },
+    render: function() {
+        return (
+            <label className='data'>
+                <input type="checkbox" checked={this.state.isChecked} onChange={this.handleChange} />
+                Объединять персоны по фамилии
+            </label>
+        )
+    },
+})
+
+
+//class CheckboxWithLabel extends React.Component {
+var roinPersons = React.createClass({
+    getInitialState: function() {
+        this.state = {isChecked: false};
+        this.onChange = this.onChange.bind(this)
+    },
+    onChange() { 
+        this.setState({isChecked: !this.state.isChecked})
+    },
+    render: function() {
+        return ( 
+            <label>
+                <input type="checkbox" checked={this.state.isChecked} onChange={this.onChange} /> 
+            {this.state.isChecked ? this.props.labelOn : this.props.labelOff} 
+            </label>
+        ) 
     },
 })
 

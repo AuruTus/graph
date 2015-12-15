@@ -2,10 +2,12 @@
 from django.conf.urls import include, url
 from django.contrib import admin
 
+from zcore.views import HeapInfo
+
 
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
-    url(r'^zcore/', include('zcore.urls', namespace='zcore')),
+    #url(r'^zcore/', include('zcore.urls', namespace='zcore')),
     url(r'^syscheck/', include('syscheck.urls', namespace='syscheck')),
 ]
 
@@ -22,15 +24,16 @@ urlpatterns += [
     url(r'^new-project/$', 'zcore.views.view_new_project', name='viewNewProject'),
     url(r'^graph/(?P<id>[-\w]+)/$', 'zcore.views.view_graph', name='viewGraph'),
     url(r'^map/(?P<gid>[-\w]+)/(?P<nid>[-\w]+)/$', 'zcore.views.view_map', name='viewMap'),
+    url(r'^create-project/(?P<graphFilter>.*)/$', 'zcore.views.create_project'),
     # /view-cтраницы
     #
     #
 
-    url(r'^create-project/(?P<graphFilter>.*)/$', 'zcore.views.create_project'),
 
     #
     #
     # json-данные
+    url(r'^json-heap-info/$', HeapInfo.as_view(), name='heapInfo'),
     url(r'^json-force-react/(?P<id>[-\w]+)/(?P<gfilter>.*)/$', 'zcore.views.json_force_react', name='jsonForceReact'),
     #url(r'^json-force-react/(?P<id>[-\w]+)/(?P<graphFilter>.*)/$', 'zcore.views.json_force_react', name='jsonForceReact'),
     url(r'^json-force-d3/(?P<id>[-\w]+)/(?P<graphFilter>.*)/(?P<nodesList>.*)/(?P<color>.*)/$', 'zcore.views.json_force_d3', name='jsonForced3'),
