@@ -18,7 +18,7 @@ from django.db import connections
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from .models import Graph, Node, Taxonomy, create_filtered_graph, render_content, print_json, pdev, to_main_graph
+from .models import StorageGraph, Node, Taxonomy, create_filtered_graph, render_content, print_json, pdev, to_main_graph
 from .models import GFilterNodes, GFilterAttributes, GFilterZero, GFilterTaxonomy, GFilterNodeData, GIncludeNeighbors
 
 HTMLPREFIX = '<!DOCTYPE html><meta charset="utf-8"><body>'

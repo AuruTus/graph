@@ -1,3 +1,6 @@
+/* цвета, которые нельзя передать SVG export'ом */
+var color01 = "#000080"
+
 var Graph = React.createClass({
     loadDataFromServer: function(filter) {
         // Преобразовываем массив json-данных gfilter для передачи через url 
@@ -513,6 +516,22 @@ var GraphNodeCircle = React.createClass({
     },
         */
     render: function() {
+        console.log('data',this.props.data)
+        //var transform = "translate("+(this.props.cx-12)+","+(this.props.cy-15)+")"
+        //transform={transform}
+        var text = []
+        var scale = ''
+        if (this.props.degree > 2) {
+            this.color = color01
+            //var scale = "scale(1.5,1.5)"
+            text.push(
+                <text 
+                    x={this.props.cx}
+                    y={this.props.cy+15}
+                >
+                    {this.props.data}
+                </text>)
+        }
         return (
             <g
                 className={'Circle ' + this.props.checked}
@@ -521,11 +540,13 @@ var GraphNodeCircle = React.createClass({
                 //onMouseDown={this.onMouseDown}
             >
             <circle 
+                fill={this.color}
                 cx={this.props.cx}
                 cy={this.props.cy}
                 r={this.props.r}
-                //transform={scale}
+                transform={scale}
             />
+            {text}
             </g>
         )
     }

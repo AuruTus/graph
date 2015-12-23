@@ -24,6 +24,7 @@ def flatten_int_by_true(d):
     return l
 
 
+# Выборка соседей всех узлов графа FG с заданной глубиной
 def GIncludeNeighbors(FG, BG, depth=1):
     if depth == 0:
         return FG
@@ -137,6 +138,7 @@ def GFilterNodeData(FG, BG, data):
     return FG
     
 
+# Агрегирование узлов графа различного тип по определенным параметрам
 def GJoinPersons(FG, joinPersons):
     if joinPersons:
         d = {}
@@ -161,6 +163,7 @@ def GJoinPersons(FG, joinPersons):
     return FG
 
 
+# Объединение узлов графа, id которых переданны в списке nodes, в один новый узел. Переданные узлы при этом удаляются из графа.
 def GMergeNodes(FG,nodes):
     new_node = int('10'+str(nodes[0]))
     data = FG.node[nodes[0]]
@@ -268,7 +271,7 @@ def pdev(str):
     return True
 
 
-class Graph(models.Model):
+class StorageGraph(models.Model):
     title = models.CharField(max_length=200, default='граф')
     layout_spring = models.TextField()
     body = models.TextField()
