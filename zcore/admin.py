@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.contrib import admin
 
-from .models import Graph
+from .models import StorageGraph
 
-admin.site.register(Graph)
+admin.site.register(StorageGraph)

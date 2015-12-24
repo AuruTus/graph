@@ -13,6 +13,31 @@ from django.db import models
 from django.db import connections
 from django.http import HttpResponse, HttpResponseRedirect
 
+from .zgraph import *
+
+#
+#
+# общие функции
+
+
+# Преобразование вложенных списков в одномерный массив
+def flatlist(list_of_lists):
+    flattened = []
+    for sublist in list_of_lists:
+        for val in sublist:
+                flattened.append(val)
+    return flattened
+
+
+# Обработка вывода сообщения об ошибке
+def returnErrorMessage(message):
+    response = HttpResponse()
+    response['Content-Type'] = "text/javascript; charset=utf-8"
+    print(message)
+    response.write(message)
+    return response 
+
+
 # Функция которая получает на вход словарь где: ключ = int, значение = bool;
 # и возвращает список только тех элементов, где значение True
 def flatten_int_by_true(d):
@@ -24,162 +49,36 @@ def flatten_int_by_true(d):
     return l
 
 
-# Выборка соседей всех узлов графа FG с заданной глубиной
-def GIncludeNeighbors(FG, BG, depth=1):
-    if depth == 0:
-        return FG
-    else:
-        depth = depth - 1
-        nodes = []
-        for nid in FG.nodes():
-            nodes.append(nid) # Добавляем узел в отфильтрованный массив узлов
-            neighbors = nx.all_neighbors(BG, nid) # Для каждого из узлов графа получаем массив его соседей
-            for neighbor in neighbors:
-                nodes.append(neighbor) # Добавляем каждого соседа в отфильтрованный массив узлов
-        return GIncludeNeighbors(BG.subgraph(nodes), BG, depth) # Получаем рекурсивно объединённый, включающий соседние узлы, подграф
+# Функция для вывода отладочной информации
+def pdev(str):
+    print('\n',str,'\n')
+    return True
 
 
-# Производим фильтрацию графа по переданным в списке nodes узлам:
-def GFilterNodes(G, nodes):
-    # Если список nodes содержит данные, производим фильтрацию узлов
-    if nodes and len(nodes) > 0:
-        nodesList = []
-        for nid in nodes:
-            nodesList.append(nid)
-        G = G.subgraph(nodesList)
-
-    return G
+# Форматирование данных в формате json при выводе
+def print_json(data):
+    print(json.dumps(data, indent=4, sort_keys=True, ensure_ascii=False))
 
 
-# Исключаем из графа узлы с нулевым весом (без связей)
-def GFilterZero(G, check):
-    removeZero = False
-    # Если check имеет тип bool и значение True, производим фильтрацию узлов
-    if isinstance(check, (bool)) and check == True:
-        removeZero = True
-    # Если check имеет строковый тип и значение 'true', производим фильтрацию узлов
-    elif len(str(check)) > 0 and str(check) == 'true':
-        removeZero = True
-    if removeZero:    
-        for nid in G.nodes():
-            if G.degree(nid) < 1:
-                G.remove_node(nid)
-
-    return G
-    
-
-# Производим фильтрацию узлов графа по переданным в ассоциативном массивe attributes атрибутам узлов;
-# где формат атрибутов {'attribute1': True, 'attribute2': False, ...}
-def GFilterAttributes(G, attributes):
-    # Если список attributes содержит данные, производим фильтрацию узлов
-    if len(attributes) > 0:
-        # Преобразуем ассоциативный массив в обычный с учётом значения true
-        attributesFlatten = []
-        for attr in attributes:
-            if attributes[attr]:
-                attributesFlatten.append(str(attr))
-
-        nodes = G.nodes(data=True)
-        for node in nodes:
-            nid = int(node[0])
-            #print(nid,'>',G.node[nid])
-            # проходимся по списку атрибутов каждого узла
-            #print('attributes: ',node[1]['attributes'])
-            for attr in node[1]['attributes']:
-                print('\n\n',nid,'>',str(attr['id']),'>',attributesFlatten)
-                # В случае отсутствия соответствия, удаляем узел из графа
-                if str(attr['id']) not in attributesFlatten:
-                    try:
-                        G.remove_node(nid)
-                        print('remove: ',node[1]['data'])
-                    except:
-                        #pdev('Узел с id ' + str(nid) + ' не найден')
-                        pass
-
-    return G
+# Вывод сформированных данных для отладочных целей 
+def render_content(content):
+    response = HttpResponse()
+    response['Content-Type'] = "text/javascript; charset=utf-8"
+    print(content)
+    response.write(content)
+    return response 
 
 
-# Производим фильтрацию узлов графа по переданному массиву типов ИО
-def GFilterTaxonomy(FG, BG, ttypes):
-    # Если массив ttypes содержит данные, производим фильтрацию узлов
-    if len(ttypes) > 0:
-        # Преобразуем ассоциативный массив в обычный с учётом значения true
-        taxonomyTids = [] # Список id терминов таксономии
-        for ttype in ttypes:
-            if ttypes[ttype]:
-                taxonomyTids.append(int(ttype))
-        nodes = []
-        for node in FG.nodes(data=True): # Получаем массив узлов графа вместе с атрибутами [узлов]
-            nid = int(node[0]) # id узла
-            tid = node[1]['taxonomy']['tid'] # id термина таксономии узла
-            if tid in taxonomyTids:
-                nodes.append(nid)
-        FG = BG.subgraph(nodes)
-
-    return FG
+# /общие функции
+#
+#
 
 
-# Оставляем в графе только те узлы, атрибут data которых совпадает с переданной строкой
-def GFilterNodeData(FG, BG, data):
-    #zdata = json_graph.node_link_data(GG); jsonContent = json.dumps(zdata, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False); print(jsonContent)
-    data = str(data).lower() # Преобразуем полученный текст в нижний регистр
-    nodes = []
-    #print('nodedata',data)
-    if len(data) > 0: # Если data содержит текст, производим фильтрацию узлов
-        data = data.split('+')
-        for node in FG.nodes(data=True):
-            nid = int(node[0])
-            zstr = node[1]['data'].lower()
-            for chank in data:
-                if chank in zstr:
-                    nodes.append(nid)
-        FG = BG.subgraph(nodes)
+#
+#
+# serializers.py
 
-    return FG
-    
-
-# Агрегирование узлов графа различного тип по определенным параметрам
-def GJoinPersons(FG, joinPersons):
-    if joinPersons:
-        d = {}
-        count = 0
-        for node in FG.nodes(data=True):
-            nid = int(node[0])
-            attributes = node[1]['attributes']
-            for attr in attributes:
-                if attr['id'] == 30:
-                    surname = attr['value']
-                    if surname != '':
-                        nids = d.get(surname)
-                        if nids == None:
-                            nids = []
-                        nids.append(nid) 
-                        d[surname] = nids
-        for surname in d:
-            nodes = d[surname]
-            FG = GMergeNodes(FG, nodes)
-
-        #print('graph:\n',FG.nodes(data=True),'\n')
-    return FG
-
-
-# Объединение узлов графа, id которых переданны в списке nodes, в один новый узел. Переданные узлы при этом удаляются из графа.
-def GMergeNodes(FG,nodes):
-    new_node = int('10'+str(nodes[0]))
-    data = FG.node[nodes[0]]
-    data.update({'mergedNodes': nodes})
-    data.update({'mergedCount': len(nodes)})
-    FG.add_node(new_node, data)
-    for n1,n2,data in FG.edges(data=True):
-        if n1 in nodes:
-            FG.add_edge(new_node,n2,data)
-        elif n2 in nodes:
-            FG.add_edge(n1,new_node,data)
-    for n in nodes: # remove the merged nodes
-        FG.remove_node(n)
-    return FG
-
-
+# Получение способа компоновки средствами библиотеки NetworkX; способ может меняться на основе параметра, выбранного пользователем
 def get_graph_layout(G, argument):
     switcher = {
         'spring': nx.spring_layout(G,scale=0.9),
@@ -192,6 +91,7 @@ def get_graph_layout(G, argument):
     return func
 
 
+# Формирование модели данных для их дальнейшей визуализации в виде графа: обработка и фильтрация графа; формирование и добавление данных, не рассчитываемых на этапе создания способа компоновки, но необходимых для визуализации в нашем конкретном случае.
 def to_main_graph(body, gfilter=None):
     data = {} # Объявляем словарь, в который будет записана вся необходимая для вывода графа информация
     H = json.loads(body) # Декодируем json-объект - структуру графа
@@ -265,11 +165,9 @@ def to_main_graph(body, gfilter=None):
     data = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
     return data
 
-
-def pdev(str):
-    print('\n',str,'\n')
-    return True
-
+# /serializers.py
+#
+#
 
 class StorageGraph(models.Model):
     title = models.CharField(max_length=200, default='граф')
@@ -297,21 +195,11 @@ def dictfetchall(cursor):
     ]
 
 
-# Отформатированный вывод данных в формате json
-def print_json(data):
-    print(json.dumps(data, indent=4, sort_keys=True, ensure_ascii=False))
+#
+#
+# zdb.py 
 
-
-# Вывод сформированных данных для отладочных целей 
-def render_content(content):
-    response = HttpResponse()
-    response['Content-Type'] = "text/javascript; charset=utf-8"
-    print(content)
-    response.write(content)
-    return response 
-
-
-# Определяем список id терминов таксономии, входящих (детей) в термин Территория
+# Определение списока id терминов таксономии, входящих (детей) в термин Территория
 def get_taxonomy_territory_list(parent_id=45, l=None):
     if not l:
         l = [parent_id]
@@ -343,9 +231,9 @@ def find_values(id, json_repr):
 
 #
 #
-# Создаем граф из данных "семантической кучи"
+# Создание графа из массива связанных данных, содержащихся в СУБД, на основе массива параметров сформированного пользователем
 class SGraph():
-    # Получение атрибутов информационного объекта вида узел
+    # Получение таксономии информационного объекта вида узел
     def get_node_taxonomy(self, nid, nodeData):
         sql = "SELECT tax.* FROM element_taxonomy as elt, taxonomy as tax WHERE elt.element_id=%i AND elt.taxonomy_id=tax.id" % (nid)
         self.cursor.execute(sql)
@@ -387,7 +275,7 @@ class SGraph():
         return ''
 
 
-    # Добавляем узел в граф при создании многомерной проекции "семантической кучи"
+    # Добавление узла в граф при создании многомерной проекции "семантической кучи"
     def add_node(self, nid):
         # Для предотвращения случайного дублирования одного и того же узла с одинаковым id, но 
         # с разным типом данных - int и str, производим преобразование типов
@@ -421,7 +309,7 @@ class SGraph():
         return nid
 
 
-    # Добавляем дуги к указанному узлу
+    # Добавление дуги к указанному узлу
     def add_node_with_edges(self, nid):
         sql = "SELECT el.id, el.element_id_1, el.element_id_2, el.data \
             FROM element as el \
@@ -499,13 +387,13 @@ def create_filtered_graph(gfilter):
 
         # Исключаем из графа узлы с нулевым весом (без связей)
         G = GFilterZero(G, gfilter['options'].get('removeZero'))
-        #G = GFilterAttributes(G, gfilter.get('attributes')) # Производим фильтрацию узлов графа по переданным в ассоциативном массивe attributes атрибутам узлов;
+        #G = GFilterAttributes(G, gfilter.get('attributes')) # Фильтрация узлов графа по переданным в ассоциативном массивe attributes атрибутам узлов;
     except:
         warnings.warn('Ошибка при обработке json-массива gfilter', UserWarning)
         raise
 
     data = json_graph.node_link_data(G) # Средствами бибилиотеки NetworkX, экспортируем граф в виде подходящeм для json-сериализации
-    graph = Graph() # Создаём экземпляр класса Graph, для хранения структуры графа в базе данных
+    graph = StorageGraph() # Создаём экземпляр класса Graph, для хранения структуры графа в базе данных
     numberOfNodes = G.number_of_nodes() # Получаем кол-во узлов графа
     numberOfEdges = G.number_of_edges() # Получаем кол-во дуг графа
     graph.title = "Проекция: узлов " + str(numberOfNodes) + "; дуг " + str(numberOfEdges) # Определяем заголовок графа
@@ -542,6 +430,10 @@ class Taxonomy():
         return data
 
 
+#
+#
+
+# /zdb.py 
 #
 #
 

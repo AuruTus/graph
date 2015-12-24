@@ -20,11 +20,13 @@ from rest_framework.response import Response
 
 from .models import StorageGraph, Node, Taxonomy, create_filtered_graph, render_content, print_json, pdev, to_main_graph
 from .models import GFilterNodes, GFilterAttributes, GFilterZero, GFilterTaxonomy, GFilterNodeData, GIncludeNeighbors
+from .zgraph import *
 
 HTMLPREFIX = '<!DOCTYPE html><meta charset="utf-8"><body>'
 HTMLSUFFIX = '</body>'
 
 
+# Преобразование входного массива данных в формат JSON c использованием объекта django.http.HttpResponse 
 def responseJSON(data):
     try:
         # Преобразуем переданные данные в формат json
@@ -52,24 +54,6 @@ countries = "Австрия, Андорра, Албания, Беларусь, �
 trash = countries.split(', ')
 
 
-# Обработка вывода сообщения об ошибке
-def returnErrorMessage(message):
-    response = HttpResponse()
-    response['Content-Type'] = "text/javascript; charset=utf-8"
-    print(message)
-    response.write(message)
-    return response 
-
-
-# Преобразование вложенных списков в одномерный массив
-def flatlist(list_of_lists):
-    flattened = []
-    for sublist in list_of_lists:
-        for val in sublist:
-                flattened.append(val)
-    return flattened
-
-
 # Преобразование данных, полученных путем sql-запроса и представленных в виде словаря, 
 # в формат ключ: значение 
 def dictfetchall(cursor):
@@ -79,15 +63,7 @@ def dictfetchall(cursor):
         for row in cursor.fetchall()
     ]
 
-# Подготока данных и вызов рендеринга шаблона вывода index.html
-def index(request):
-    graphs = Graph.objects.order_by('-pk')    
-    graph = Graph()
-    context = {'graph': graph, 'graphs': graphs}
-    return render(request, 'zcore/index.html', context)
-
-
-# Для тестовых целей: создание Петерсон-графа
+# Для отладки: создание Петерсон-графа
 def make_petersen(request):
     P = nx.petersen_graph()
     graph = Graph()
@@ -108,7 +84,7 @@ def make_petersen(request):
     return HttpResponseRedirect('/')
 
 
-# Для тестовых целей: создание древовидного графа
+# Для отладки: создание древовидного графа
 def make_balanced_tree(request):
     n,m = 3,5
     G = nx.balanced_tree(n,m)
@@ -122,7 +98,7 @@ def make_balanced_tree(request):
     return HttpResponseRedirect('/zcore/')
 
 
-# Для тестовых целей: создание разнообразных графов средствами библиотеки NetworkX
+# Для отладки: создание разнообразных графов средствами библиотеки NetworkX
 def make_random(request):
     #maxn,maxe = 3, 4
     maxn,maxe = 20, 40
@@ -152,17 +128,7 @@ def make_random(request):
     return HttpResponseRedirect('/')
 
 
-# Создание нового проекта
-def create_project(request, graphFilter):
-    # Создание графа - многомерной проекции "семантической кучи" - с заданными атрибутами узлов
-    data = create_filtered_graph(graphFilter)
-
-    #content = {'content': data}
-    #return render(request, 'content.html', content)
-    return HttpResponseRedirect('/') # Переадресуем на главную страницу
-    #return True
-
-
+# Для отладки: формирование модели данных для визуализации методом кругового распределения узлов
 def to_circular(body):
     H = json.loads(body)
     G = json_graph.node_link_graph(H)
@@ -187,12 +153,14 @@ def to_circular(body):
     return data
 
 
+# Для отладки: вывод поля body без преобразований
 def to_plane_graph(body):
     H = json.loads(body)
     data = json.dumps(H, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
     return data
 
 
+# Для отладки: формирование модели данных для их дальнейшей визуализации методом force-direct средствами библиотеки d3js 
 def to_force(body, graphFilter, removeStandalone=True):
     #attributes_filter = ['last_name', 'first_name']
     H = json.loads(body)
@@ -249,6 +217,7 @@ def to_force(body, graphFilter, removeStandalone=True):
     return result
 
 
+# Формирование модели данных для их дальнейшей визуализации в виде круговой диаграммы
 def to_chord(body):
     H = json.loads(body)
     msize = len(H['nodes'])
@@ -285,54 +254,7 @@ def to_chord(body):
     return data
 
 
-def view_force_react(request, id, graphFilter):
-    graph = get_object_or_404(Graph, pk=id)
-    #print(graphFilter)
-    #jsonurl.query_string(graphFilter)
-    context = {'filter': graphFilter, 'graph': graph}
-    return render(request, 'zcore/force-react.html', context)
-
-
-def view_force_d3(request, id, graphFilter, nodesList, color):
-    graph = get_object_or_404(Graph, pk=id)
-    context = {'graph': graph, 'filter': graphFilter, 'nodes': nodesList, 'color': color}
-    return render(request, 'zcore/force-d3.html', context)
-
-
-# Шаблон отображения графа в виде круговой диаграммы
-def view_chord(request, id):
-    graph = get_object_or_404(Graph, pk=id)
-    context = {'graph': graph}
-    return render(request, 'zcore/chord.html', context)
-
-
-# Шаблон отображения данных на карте
-def view_map(request, gid, nid):
-    graph = get_object_or_404(Graph, pk=gid)
-    context = {'graph': graph, 'nid': nid}
-    return render(request, 'zcore/map.html', context)
-
-
-# Шаблон отображения создания нового проекта
-def view_new_project(request):
-    context = ''
-    return render(request, 'zcore/new-project.html', context)
-
-
-# Шаблон отображения данных в виде графа - основной вид
-def view_graph(request, id):
-    graph = get_object_or_404(Graph, pk=id)
-    context = {'graph': graph}
-    return render(request, 'zcore/graph.html', context)
-
-
-# Шаблон отображения графа в виде временной гистограммы
-def view_timeline(request, id):
-    graph = get_object_or_404(Graph, pk=id)
-    context = {'graph': graph}
-    return render(request, 'zcore/timeline.html', context)
-
-
+# Вспомогательная фу-я для визуализации методом многомерного тренда
 def GFilterTransfers(G):
     # Если check=true, производим фильтрацию узлов
     nodes = G.nodes(data=True)
@@ -365,6 +287,7 @@ def GFilterTransfers(G):
     return G
 
 
+# Получение общей информации об исходных связанных данных 
 class HeapInfo(APIView):
 
     def get(self, request):
@@ -387,32 +310,9 @@ class HeapInfo(APIView):
 #
 # json-data Данные в формате json
 
-# Преобразование графа для отображения основным способом - в виде графа
-def json_main_graph(request, id, gfilter=None):
-    graph = get_object_or_404(Graph, pk=id)
-    response = HttpResponse()
-    response['Content-Type'] = "text/javascript; charset=utf-8"
-    if gfilter and gfilter != 'undefined':
-        data = to_main_graph(graph.body, gfilter)
-    else:
-        data = graph.layout_spring
-    response.write(data)
-    return response 
-
-
-# Преобразование графа для вывода по алгоритму circular
-def json_circular(request, id):
-    graph = get_object_or_404(Graph, pk=id)
-    response = HttpResponse()
-    response['Content-Type'] = "text/javascript; charset=utf-8"
-    circular = to_circular(graph.body)
-    response.write(circular)
-    return response 
-
-
-# Преобразование графа для отображения перемещений
+# Формирование модели данных для их дальнейшей визуализации на географической карте с использованием библиотеки Leaflet.js
 def json_transfers(request, gid, nid, gfilter=None):
-    graph = get_object_or_404(Graph, pk=gid)
+    graph = get_object_or_404(StorageGraph, pk=gid)
     response = HttpResponse()
     response['Content-Type'] = "text/javascript; charset=utf-8"
 
@@ -444,9 +344,9 @@ def json_transfers(request, gid, nid, gfilter=None):
     return response 
 
 
-# Для тестирования: визуализация графа по алгоритму force-direct
+# Для отладки: визуализация графа по алгоритму force-direct с использованием библиотеки d3js
 def json_force_d3(request, id, graphFilter, nodesList, color):
-    graph = get_object_or_404(Graph, pk=id)
+    graph = get_object_or_404(StorageGraph, pk=id)
 
     props = graphFilter.split(';')
     print(props)
@@ -527,7 +427,7 @@ def json_force_d3(request, id, graphFilter, nodesList, color):
     return response 
 
 
-# Визуализация графа по алгоритму force-direct
+# Для отладки: визуализация графа по алгоритму force-direct
 def json_force_react(request, id, gfilter):
     try: 
         # Преобразуем в объект json-массив параметров, полученных из url 
@@ -537,7 +437,7 @@ def json_force_react(request, id, gfilter):
         returnErrorMessage('Неправильный json-массив graphFilter')
         raise
 
-    graph = get_object_or_404(Graph, pk=id)
+    graph = get_object_or_404(StorageGraph, pk=id)
     graphData = json.loads(graph.body)
     G = json_graph.node_link_graph(graphData)
 
@@ -593,7 +493,7 @@ def json_chord(request, id, gfilter):
         print_json(gfilter)
     except: returnErrorMessage('Неправильный json-массив gfilter')
 
-    graph = get_object_or_404(Graph, pk=id)
+    graph = get_object_or_404(StorageGraph, pk=id)
     graphData = json.loads(graph.body)
 
     #
@@ -662,7 +562,7 @@ def json_chord(request, id, gfilter):
     return response 
 
 
-# Визуализация графа с выявлением многомерного тренда
+# Формирование модели данных для их дальнейшей визуализации в виде многомерного тренда на примере отображения кол-ва перемещений как за выбранный месяц, так и за выбранный период
 def json_timeline(request, id, gfilter):
     try: 
         # Преобразуем в объект json-массив параметров, полученных из url 
@@ -670,7 +570,7 @@ def json_timeline(request, id, gfilter):
         print_json(gfilter)
     except: returnErrorMessage('Неправильный json-массив gfilter')
 
-    graph = get_object_or_404(Graph, pk=id)
+    graph = get_object_or_404(StorageGraph, pk=id)
     graphData = json.loads(graph.body)
 
     #
@@ -723,7 +623,136 @@ def json_timeline(request, id, gfilter):
     return response 
 
 
-# Получаем словарь атрибутов в формате json
+#
+#
+# Связывание http-запросов с соответствующими им программными функциями
+
+#  Привязка к шаблону отображения главной страницы index.html
+def index(request):
+    graphs = StorageGraph.objects.order_by('-pk')    
+    graph = StorageGraph()
+    context = {'graph': graph, 'graphs': graphs}
+    return render(request, 'zcore/index.html', context)
+
+
+# Привязка к шаблону отображения создания нового проекта
+def create_project(request, graphFilter):
+    # Создание графа - многомерной проекции "семантической кучи" - с заданными атрибутами узлов
+    data = create_filtered_graph(graphFilter)
+
+    #content = {'content': data}
+    #return render(request, 'content.html', content)
+    return HttpResponseRedirect('/') # Переадресуем на главную страницу
+    #return True
+
+
+# Привязка к шаблону отображения графа в виде круговой диаграммы
+def view_chord(request, id):
+    graph = get_object_or_404(StorageGraph, pk=id)
+    context = {'graph': graph}
+    return render(request, 'zcore/chord.html', context)
+
+
+# Привязка к шаблону отображения данных на карте
+def view_map(request, gid, nid):
+    graph = get_object_or_404(StorageGraph, pk=gid)
+    context = {'graph': graph, 'nid': nid}
+    return render(request, 'zcore/map.html', context)
+
+
+# Привязка к шаблону отображения создания нового проекта
+def view_new_project(request):
+    context = ''
+    return render(request, 'zcore/new-project.html', context)
+
+
+# Привязка к шаблону отображения данных в виде графа - основной вид
+def view_graph(request, id):
+    graph = get_object_or_404(StorageGraph, pk=id)
+    context = {'graph': graph}
+    return render(request, 'zcore/graph.html', context)
+
+
+# Привязка к шаблону отображения графа в виде временной гистограммы
+def view_timeline(request, id):
+    graph = get_object_or_404(StorageGraph, pk=id)
+    context = {'graph': graph}
+    return render(request, 'zcore/timeline.html', context)
+
+
+# Для отладки: привязка к шаблону отображения графа методом force
+def view_force_react(request, id, graphFilter):
+    graph = get_object_or_404(StorageGraph, pk=id)
+    #print(graphFilter)
+    #jsonurl.query_string(graphFilter)
+    context = {'filter': graphFilter, 'graph': graph}
+    return render(request, 'zcore/force-react.html', context)
+
+
+# Привязка к шаблону отображения графа методом force средствами библиотеки D3js
+def view_force_d3(request, id, graphFilter, nodesList, color):
+    graph = get_object_or_404(StorageGraph, pk=id)
+    context = {'graph': graph, 'filter': graphFilter, 'nodes': nodesList, 'color': color}
+    return render(request, 'zcore/force-d3.html', context)
+
+
+# привязки http-запросов:
+
+# Преобразование графа для отображения основным способом - в виде графа
+def json_main_graph(request, id, gfilter=None):
+    graph = get_object_or_404(StorageGraph, pk=id)
+    response = HttpResponse()
+    response['Content-Type'] = "text/javascript; charset=utf-8"
+    if gfilter and gfilter != 'undefined':
+        data = to_main_graph(graph.body, gfilter)
+    else:
+        data = graph.layout_spring
+    response.write(data)
+    return response 
+
+
+# Преобразование графа для вывода по алгоритму circular
+def json_circular(request, id):
+    graph = get_object_or_404(StorageGraph, pk=id)
+    response = HttpResponse()
+    response['Content-Type'] = "text/javascript; charset=utf-8"
+    circular = to_circular(graph.body)
+    response.write(circular)
+    return response 
+
+
+# Получаем словарь типов информационных объектов в древовидной форме с учётом вложенности в формате json
+# для вывода элементов интерфейса с использование библиотеки Cement обязательно наличие ключей:
+# value, display, checked
+def json_taxonomy(request):
+    # Инициализируем объект таксономии и получаем структуру всей таксономии многомерной проекции
+    t = Taxonomy()
+    data = t.get_taxonomy()
+
+    # Преобразуем данные в json-формат
+    content = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
+
+    # Создаём объект response для динамического создания html-страницы
+    response = HttpResponse() 
+
+    # Объявляем основные мета-данные html-страницы
+    response['Content-Type'] = "text/javascript; charset=utf-8" 
+
+    # Записываем в объкт response полученную структуру графа в json-формате
+    #response.write(HTMLPREFIX+content+HTMLSUFFIX) 
+    response.write(content)
+
+    # возвращаем все необходимые фреймворку Django данные для окончательной генерации html-страницы
+    return response 
+    #return HttpResponse("Here's the text of the Web page.")
+
+
+# /Связывание http-запросов с соответствующими им программными функциями
+#
+#
+
+
+# Получение словарь атрибутов информационных объектов в формате json
 def json_attributes(request):
     cursor = connections['mysql'].cursor()
     sql = "SELECT id, name FROM property"
@@ -759,56 +788,5 @@ def json_attributes(request):
 
     # возвращаем все необходимые фреймворку Django данные для окончательной генерации html-страницы
     return response 
-
-
-# Получаем словарь типов информационных объектов в древовидной форме с учётом вложенности в формате json
-# для вывода элементов интерфейса с использование библиотеки Cement обязательно наличие ключей:
-# value, display, checked
-def json_taxonomy(request):
-    """
-    устаревший код, требует повторного пересмотра и, возможно, удаления
-    cursor = connections['mysql'].cursor()
-    sql = "SELECT id, parent_id, name FROM taxonomy WHERE facet_id=1"
-
-    # Выполняем sql-запрос
-    cursor.execute(sql)
-
-    # Получаем массив значений результата sql-запроса в виде словаря:
-    # "ключ": "значение". Это необходимо для преоразования в json-формат
-    attributes = dictfetchall(cursor)
-    data = []
-    initValues = [1,2,6]
-    for attribute in attributes:
-        id = int(attribute['id'])
-        name = attribute['name']
-        parent_id = attribute['parent_id']
-
-        if id in initValues:
-            checked = True
-        else:
-            checked = False
-        data.append({'value': id, 'parent_tid': parent_id, 'display': name, 'checked': checked})
-    """
-
-    # Инициализируем объект таксономии и получаем структуру всей таксономии многомерной проекции
-    t = Taxonomy()
-    data = t.get_taxonomy()
-
-    # Преобразуем данные в json-формат
-    content = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
-
-    # Создаём объект response для динамического создания html-страницы
-    response = HttpResponse() 
-
-    # Объявляем основные мета-данные html-страницы
-    response['Content-Type'] = "text/javascript; charset=utf-8" 
-
-    # Записываем в объкт response полученную структуру графа в json-формате
-    #response.write(HTMLPREFIX+content+HTMLSUFFIX) 
-    response.write(content)
-
-    # возвращаем все необходимые фреймворку Django данные для окончательной генерации html-страницы
-    return response 
-    #return HttpResponse("Here's the text of the Web page.")
 
 

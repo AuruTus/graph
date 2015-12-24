@@ -1,6 +1,7 @@
 /* цвета, которые нельзя передать SVG export'ом */
 var color01 = "#000080"
 
+// Главный компонент для визуализации в виде графа
 var Graph = React.createClass({
     loadDataFromServer: function(filter) {
         // Преобразовываем массив json-данных gfilter для передачи через url 
