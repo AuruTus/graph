@@ -97,7 +97,7 @@ DATABASES = {
         'HOST': '127.0.0.1',
         'PORT': '5432',
     },
-    'rysql': {
+    'mysql': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': '20151117',
         'USER': 'root',
@@ -105,7 +105,7 @@ DATABASES = {
         'HOST': '127.0.0.1',
         'PORT': '3306',
     },
-    'mysql': {
+    'rysql': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'vnd20151216',
         'USER': 'root',

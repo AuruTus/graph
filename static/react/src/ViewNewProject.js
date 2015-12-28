@@ -53,7 +53,6 @@ var NewProjectFilter = React.createClass({
                 <form onSubmit={this.handleSubmit} ref="forceGraphFilterForm" className='form-inline'>
                     <TaxonomyFilter ref="theTaxonomyFilter" />
                     <OptionsFilter updateOptions={this.updateOptions} />
-                    <Stopper ref='theStopper' />
                     <input type="submit" className="btn btn-warning" value="Создать" />
                 </form>
             </div>
