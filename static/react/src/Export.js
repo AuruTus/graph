@@ -18,7 +18,7 @@
         var href = image.getAttributeNS("http://www.w3.org/1999/xlink", "href");
         if (href) {
           if (isExternal(href.value)) {
-            console.warn("Cannot render embedded images linking to external hosts: "+href.value);
+            console.warn("Невозможно отрендерить изображения находящиеся на другом сервере: "+href.value);
             return;
           }
         }
@@ -38,7 +38,7 @@
           }
         }
         img.onerror = function() {
-          console.log("Could not load "+href);
+          console.log("Невозможно загрузить "+href);
           left--;
           if (left == 0) {
             callback();
@@ -55,7 +55,7 @@
       try {
         var rules = sheets[i].cssRules;
       } catch (e) {
-        console.warn("Stylesheet could not be loaded: "+sheets[i].href);
+        console.warn("Невозможно загрузить таблицу стилей: "+sheets[i].href);
         continue;
       }
 
@@ -67,7 +67,7 @@
             try {
               match = el.querySelector(rule.selectorText);
             } catch(err) {
-              console.warn('Invalid CSS selector "' + rule.selectorText + '"', err);
+              console.warn('Недопустимый селектор CSS "' + rule.selectorText + '"', err);
             }
             if (match) {
               var selector = selectorRemap ? selectorRemap(rule.selectorText) : rule.selectorText;
@@ -122,7 +122,7 @@
         svg.appendChild(clone)
         clone = svg;
       } else {
-        console.error('Attempted to render non-SVG element', el);
+        console.error('Попытка отрендерить не SVG-элемент', el);
         return;
       }
 
@@ -174,7 +174,7 @@
           png = canvas.toDataURL('image/png');
         } catch (e) {
           if (e instanceof SecurityError) {
-            console.error("Rendered SVG images cannot be downloaded in this browser.");
+            console.error("Отрендеренные изображения в формате svg не могут быть распознаны данным броузером.");
             return;
           } else {
             throw e;
