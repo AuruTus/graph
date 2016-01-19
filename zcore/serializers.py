@@ -5,6 +5,7 @@ import networkx as nx
 from networkx.readwrite import json_graph
 from random import randint
 import numpy as np
+from numpy import array, float32
 import warnings
 import requests
 
@@ -13,26 +14,43 @@ from django.db import connections
 from django.http import HttpResponse, HttpResponseRedirect
 from django.forms import widgets
 from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404, render
+
 from rest_framework import serializers
 
 from .zgraph import *
+from .models import *
+from .zcommon import *
+from .zdb import db_heap_info, db_json_attributes, Taxonomy
 
 
 # Получение способа компоновки средствами библиотеки NetworkX; способ может меняться на основе параметра, выбранного пользователем
-def get_graph_layout(G, argument):
-    switcher = {
-        'spring': nx.spring_layout(G,scale=0.9),
-        'shell': nx.shell_layout(G,scale=0.9),
-        'random': nx.random_layout(G),
-    }
-    #layout = nx.spectral_layout(G,scale=0.7)
-    #layout = nx.graphviz_layout(G,prog='neato')
-    func = switcher.get(argument, nx.spring_layout(G,scale=0.4))
-    return func
+def get_graph_layout(G, gid, argument):
+    layout = Layout.objects.filter(storage_graph_id=gid, title=argument)
+    #print('the layout','\n',layout)
+    if layout:
+        body = eval(layout[0].body)
+        #body = json.loads(body)
+        #print('the layout','\n',layout[0].body)
+        #body = json.loads(json.dumps(layout[0].body))
+    else:
+        switcher = {
+            'spring': nx.spring_layout(G,scale=0.9),
+            'shell': nx.shell_layout(G,scale=0.9),
+            'random': nx.random_layout(G),
+        }
+        #layout = nx.spectral_layout(G,scale=0.7)
+        #layout = nx.graphviz_layout(G,prog='neato')
+        body = switcher.get(argument, nx.spring_layout(G,scale=0.4))
+        #print('no layout','\n',body)
+        sg = StorageGraph.objects.get(pk=gid)
+        l = Layout(title=argument, storage_graph_id=sg, body=body)
+        l.save()
+    return body
 
 
 # Формирование модели данных для их дальнейшей визуализации в виде графа: обработка и фильтрация графа; формирование и добавление данных, не рассчитываемых на этапе создания способа компоновки, но необходимых для визуализации в нашем конкретном случае.
-def to_main_graph(body, gfilter=None):
+def to_main_graph(body, gid, gfilter=None):
     data = {} # Объявляем словарь, в который будет записана вся необходимая для вывода графа информация
     H = json.loads(body) # Декодируем json-объект - структуру графа
     BG = json_graph.node_link_graph(H) # Преобразуем структура графа в формате json в объект типа граф библиотеки NetworkX
@@ -44,7 +62,7 @@ def to_main_graph(body, gfilter=None):
     layoutArgument = ''
     try: 
         gfilter = json.loads(gfilter) # Получаем ассоциативный массив данных фильтра в формате json 
-        print_json(gfilter) # отладочная информация
+        #print_json(gfilter) # отладочная информация
         #print('FGin',FG.nodes())
         FG = GFilterNodeData(FG, BG, gfilter.get('data')) # Оставляем в графе только те узлы, атрибут data которых совпадает с переданной строкой
         FG = GFilterTaxonomy(FG, BG, gfilter.get('taxonomy')) # Производим фильтрацию узлов графа по переданному массиву терминов таксономии
@@ -59,7 +77,7 @@ def to_main_graph(body, gfilter=None):
     except:
         warnings.warn('Ошибка при обработке json-массива gfilter', UserWarning)
         #raise
-    layout = get_graph_layout(FG, layoutArgument)
+    layout = get_graph_layout(FG, gid, layoutArgument)
     #layout = nx.random_layout(G),
     #nodes = G.nodes(data=True)
     nodes = FG.nodes()
@@ -682,5 +700,80 @@ def json_timeline(request, id, gfilter):
     response['Content-Type'] = "text/javascript; charset=utf-8"
     response.write(content)
     return response 
+
+
+# Обработка http запроса:
+# Преобразование графа для вывода по алгоритму circular
+def json_circular(request, id):
+    graph = get_object_or_404(StorageGraph, pk=id)
+    response = HttpResponse()
+    response['Content-Type'] = "text/javascript; charset=utf-8"
+    circular = to_circular(graph.body)
+    response.write(circular)
+    return response 
+
+
+# Обработка http запроса:
+# Преобразование графа для отображения основным способом - в виде графа
+def json_main_graph(request, id, gfilter=None):
+    graph = get_object_or_404(StorageGraph, pk=id)
+    response = HttpResponse()
+    response['Content-Type'] = "text/javascript; charset=utf-8"
+    data = to_main_graph(graph.body, id, gfilter)
+    response.write(data)
+    return response 
+
+
+# Обработка http запроса:
+# Получение общей информации об исходных связанных данных 
+def heap_info(request):
+    data = db_heap_info()
+
+    return responseJSON(data)
+
+
+# Обработка http запроса:
+# Получение словаря атрибутов информационных объектов в формате json
+def json_attributes(request):
+    attributes = db_json_attributes()
+    data = []
+    initValues = [10, 20, 30, 40, 50, 60, 70]
+    for attribute in attributes:
+        value = attribute['id']
+        if value in initValues:
+            checked = True
+        else:
+            checked = False
+        display = attribute['name']
+        data.append({'value': value, 'display': display, 'checked': checked})
+    content = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False) # Преобразуем данные в json-формат
+    response = HttpResponse() # Создаём объект response для динамического создания html-страницы
+    response['Content-Type'] = "text/javascript; charset=utf-8" # Объявляем основные мета-данные html-страницы
+    response.write(content) # Записываем в объкт response полученную структуру графа в json-формате
+
+    return response # возвращаем все необходимые фреймворку Django данные для окончательной генерации html-страницы
+
+
+# Обработка http запроса:
+# Получаем словарь типов информационных объектов в древовидной форме с учётом вложенности в формате json
+# для вывода элементов интерфейса с использование библиотеки Cement обязательно наличие ключей:
+# value, display, checked
+def json_taxonomy(request):
+    t = Taxonomy() # Инициализируем объект таксономии и получаем структуру всей таксономии многомерной проекции
+    data = t.get_taxonomy()
+    content = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False) # Преобразуем данные в json-формат
+    response = HttpResponse() # Создаём объект response для динамического создания html-страницы
+    response['Content-Type'] = "text/javascript; charset=utf-8" # Объявляем основные мета-данные html-страницы
+    response.write(content) # Записываем в объкт response полученную структуру графа в json-формате response.write(HTMLPREFIX+content+HTMLSUFFIX) 
+    return response # возвращаем все необходимые фреймворку Django данные для окончательной генерации html-страницы
+
+
+"""
+class Layout(serializers.ModelSerializer):
+    class Meta:
+        model = Layout
+        fields = ('pk', 'title', 'body')
+        order_by = 'pk'
+"""
 
 

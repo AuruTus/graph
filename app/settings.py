@@ -102,7 +102,7 @@ DATABASES = {
         'NAME': '20151117',
         'USER': 'root',
         'PASSWORD': 'Passw0rd',
-        'HOST': '127.0.0.1',
+        'HOST': '10.216.171.5',
         'PORT': '3306',
     },
     'rysql': {
@@ -137,6 +137,9 @@ STATIC_URL = '/static/'
 
 # Каталог статических файлов проекта
 #STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
+# Абсолютный путь к каталогу со статическими файлами для обработки ссылок к ним
+URL_STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'static'),

@@ -63,24 +63,23 @@ var Graph = React.createClass({
     },
     render: function() {
         var graphFilter = $('.graph .filter')
+        var info = $('.graph .info')
         //var bordersOnBothSides = graphFilter.outerWidth() - graphFilter.innerWidth()
         //console.log('bb',bordersOnBothSides)
-        var svgdx = graphFilter.width() + 2
-        var svgdy = $('.navbar-header').height() + $('.graph .info').height() + 14
+        var svgdx = graphFilter.width() + 60 + info.width()
+        var svgdy = $('.navbar-header').height() + 8
         var sceneWidth = $(window).width() - svgdx - scrollbarWidth()
         //sceneWidth = 400
         var sceneHeight = $(window).height() - svgdy
         //sceneHeight = 400
         return (
             <div className="graph">
-                <div className="filter noselect">
-                    <Filter
-                        ref='theFilter'
-                        _handleSubmit={this.handleSubmit}
-                        //updateTaxonomy={this.updateTaxonomy}
-                    />
-                </div>
-                <Info ref={'theInfo'} width={sceneWidth}/>
+                <Filter
+                    ref='theFilter'
+                    _handleSubmit={this.handleSubmit}
+                    //updateTaxonomy={this.updateTaxonomy}
+                    sceneHeight={sceneHeight}
+                />
                 <SVGScene 
                     ref='theSVGScene'
                     data={this.state.data}
@@ -94,6 +93,9 @@ var Graph = React.createClass({
                     _handleNodeClick={this.handleNodeClick}
                     _handleNodeTip={this.handleNodeTip}
                     _handleSceneClick={this.handleNodeClick}
+                />
+                <Info ref={'theInfo'} 
+                    sceneHeight={sceneHeight}
                 />
             </div>
         );
@@ -124,7 +126,7 @@ var SVGScene = React.createClass({
         //console.log('setView: vxs ',vxs,' vys',vys)
         var dx = vxs - this.props.svgWidth/2
         var dy = vys - this.props.svgHeight/2
-        console.log('setView: dx ',dx,' dy',dy)
+        //console.log('setView: dx ',dx,' dy',dy)
         this.setState({dx: dx, dy: dy, vx: vx, vy: vy, scale: scale})
     },
     project(_point) {
@@ -161,14 +163,24 @@ var SVGScene = React.createClass({
         }
     },
     handleWheel(e) {
-        //console.log('wheel',e.deltaY)
-        e.preventDefault()
+        e.preventDefault() 
         if(e.deltaY < 0) {
-            this.handleSceneClick(e)
-            this.handleScaleClick(e, '+')
+            //this.handleSceneClick(e)
+            this.handleWheelClick(e, '+')
         } else {
-            this.handleScaleClick(e, '-')
+            this.handleWheelClick(e, '-')
         }
+    },
+    handleWheelClick(e, sign) {
+        e.preventDefault()
+        var scaleStep = 0.2
+        var scale = this.state.scale
+        this.constructor.clicked = false
+        scale = eval(scale + sign + scaleStep)
+        if (scale > 0) {
+            this.setState({scale: scale})
+        }
+        //console.log('scale',scale)
     },
     handleScaleClick(e, sign) {
         console.log('sign',sign)
@@ -273,6 +285,7 @@ var SVGScene = React.createClass({
                 //onClick={this.handleSceneClick}
                 onDoubleClick={this.handleSceneClick}
                 onWheel={this.handleWheel}
+                //className='col-md-6'
             >
                 {edgeRows}
                 {nodeRows}
@@ -517,7 +530,7 @@ var GraphNodeCircle = React.createClass({
     },
         */
     render: function() {
-        console.log('data',this.props.data)
+        //console.log('data',this.props.data)
         //var transform = "translate("+(this.props.cx-12)+","+(this.props.cy-15)+")"
         //transform={transform}
         var text = []
@@ -661,25 +674,30 @@ var Filter = React.createClass({
     render: function() {
         console.log('Rendering filter...')
         return (
-            <form onSubmit={this.handleSubmit} ref="forceGraphFilterForm" className='taxonomy'>
-                <Layout _updateFilter={this.updateFilter} _submit={this.handleSubmit} />
-                <input type="submit" className="btn btn-warning" value="Отфильтровать" />
-                <JoinPersons ref='theJoinPersons' _updateFilter={this.updateFilter} />
-                <NodeData ref={'theFilterData'} />
-                <div className={'RecursiveCheckboxTree'}>
-                    <RecursiveCheckboxTree
-                        ref={'theTaxonomy'}
-                        children={this.state.taxonomyData}
-                        display={'Отображать выбранные типы сущностей, включая их соседей:'}
-                    />
-                </div>
-                <Depth ref='theDepth' />
-                {/*
-                <Attributes ref='theFilterAttributes' _updateFilterState={this.updateFilter} />
-                <Position />
-                */}
-                <input type="submit" className="btn btn-warning" value="Отфильтровать" />
-            </form>
+            <div 
+                className="filter noselect"
+                style={{"height" : this.props.sceneHeight,}}
+                >
+                <form onSubmit={this.handleSubmit} ref="forceGraphFilterForm" className='taxonomy'>
+                    <Layout _updateFilter={this.updateFilter} _submit={this.handleSubmit} />
+                    <input type="submit" className="btn btn-warning" value="Отфильтровать" />
+                    <JoinPersons ref='theJoinPersons' _updateFilter={this.updateFilter} />
+                    <NodeData ref={'theFilterData'} />
+                    <div className={'RecursiveCheckboxTree'}>
+                        <RecursiveCheckboxTree
+                            ref={'theTaxonomy'}
+                            children={this.state.taxonomyData}
+                            display={'Отображать выбранные типы сущностей, включая их соседей:'}
+                        />
+                    </div>
+                    <Depth ref='theDepth' />
+                    {/*
+                    <Attributes ref='theFilterAttributes' _updateFilterState={this.updateFilter} />
+                    <Position />
+                    */}
+                    <input type="submit" className="btn btn-warning" value="Отфильтровать" />
+                </form>
+            </div>
         );
     },
 })
@@ -895,7 +913,10 @@ var Info = React.createClass({
     },
     render: function() {
         return (
-            <div className="info">
+            <div 
+                className="info"
+                style={{"height" : this.props.sceneHeight,}}
+                >
                 {this.state.text}
             </div>
         )

@@ -1,0 +1,8 @@
+.*.swp
+.*.swo
+app/__pycache__/
+static/react/build/
+syscheck/__pycache__/
+zcore/__pycache__/
+db.sqlite3
+

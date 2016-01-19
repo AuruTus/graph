@@ -12,7 +12,29 @@ from django.db import models
 from django.db import connections
 from django.http import HttpResponse, HttpResponseRedirect
 
+from rest_framework.views import APIView
+
 from .zcommon import *
+
+
+# Класс для работы с таксономией
+class Taxonomy():
+    def get_taxonomy(self, tid=None):
+        data = []
+        cursor = connections['mysql'].cursor()
+        # Получаем массив "детей" термина из семантической кучи
+        if tid:
+            sql = "SELECT * FROM taxonomy WHERE facet_id=1 AND parent_id=%i" % (tid)
+        else:
+            sql = "SELECT * FROM taxonomy WHERE facet_id=1 AND parent_id IS NULL"
+        cursor.execute(sql)
+        terms = cursor.fetchall()
+        for term in terms:
+            parent_tid = term[1]
+            children = self.get_taxonomy(term[0])
+            data.append({'tid': term[0], 'parent_tid': parent_tid, 'value': term[0], 'display': term[3], 'children': children, 'checked': True})
+
+        return data
 
 
 # Определение списока id терминов таксономии, входящих (детей) в термин Территория
@@ -214,7 +236,7 @@ def create_filtered_graph(gfilter):
     numberOfEdges = G.number_of_edges() # Получаем кол-во дуг графа
     graph.title = "Проекция: узлов " + str(numberOfNodes) + "; дуг " + str(numberOfEdges) # Определяем заголовок графа
     graph.body = json.dumps(data, ensure_ascii=False) # Преобразуем данные в json-формат
-    graph.layout_spring = to_main_graph(graph.body) # получаем массив компоновки по-умолчанию (типа spring)
+    #graph.layout_spring = to_main_graph(graph.body) # получаем массив компоновки по-умолчанию (типа spring)
     graph.save() # Сохраняем граф в собственную базу данных
 
     #jsonContent = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False); print(jsonContent) # отладочная информация
@@ -223,26 +245,30 @@ def create_filtered_graph(gfilter):
     return graph.body
 
 
-#
-#
-# Класс для работы с таксономией
-class Taxonomy():
-    def get_taxonomy(self, tid=None):
-        data = []
-        cursor = connections['mysql'].cursor()
-        # Получаем массив "детей" термина из семантической кучи
-        if tid:
-            sql = "SELECT * FROM taxonomy WHERE facet_id=1 AND parent_id=%i" % (tid)
-        else:
-            sql = "SELECT * FROM taxonomy WHERE facet_id=1 AND parent_id IS NULL"
-        cursor.execute(sql)
-        terms = cursor.fetchall()
+# Обработка http запроса:
+# Получение общей информации об исходных связанных данных 
+def db_heap_info():
+    cursor = connections['mysql'].cursor() # Устанавливаем соединения с базой данных 'mysql'
+    sql = "SELECT count(id) as nodes FROM element WHERE is_entity=1"
+    cursor.execute(sql) # Выполняем sql-запрос
+    nodes = cursor.fetchall()[0][0]
+    sql = "SELECT count(id) as edges FROM element WHERE is_entity=0"
+    cursor.execute(sql) # Выполняем sql-запрос
+    edges = cursor.fetchall()[0][0]
+    objects = nodes + edges
+    data = {'objects': objects, 'nodes': nodes, 'edges': edges}
 
-        for term in terms:
-            parent_tid = term[1]
-            children = self.get_taxonomy(term[0])
-            data.append({'tid': term[0], 'parent_tid': parent_tid, 'value': term[0], 'display': term[3], 'children': children, 'checked': True})
+    return data
 
-        return data
+
+# Обработка http запроса:
+# Получение словаря атрибутов информационных объектов в формате json
+def db_json_attributes():
+    cursor = connections['mysql'].cursor() # Устанавливаем соединения с базой данных 'mysql'
+    sql = "SELECT id, name FROM property"
+    cursor.execute(sql) # Выполняем sql-запрос
+    attributes = dictfetchall(cursor) # Получаем массив значений результата sql-запроса в виде словаря: "ключ": "значение". Это необходимо для преоразования в json-формат
+
+    return attributes
 
 

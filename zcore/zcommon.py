@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import json
-import math
 
 from django.http import HttpResponse, HttpResponseRedirect
 
