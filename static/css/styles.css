@@ -107,15 +107,17 @@ svg .node {
 }
     .graph .filter {
         //border: solid gray 2px;
+        padding: 15px;
+        width: 300px;
+
         overflow-x: hidden;
+        float: left;
         //overflow-y: scroll;
         //display: block;
         //position: absolute;
-        float: left;
-        width: 300px;
-        padding: 15px;
         //min-width: 300px;
         //height: 400px;
+
         background-color: lightgray;
     }
         .graph .filter ul {
@@ -125,10 +127,14 @@ svg .node {
         .graph .filter .data {
             padding: 0 15px;
         }
-    .graph svg {
+    .graph .scene {
+        margin: 1px 301px 1px 301px;
+        border: solid 1px gray;
         //padding: 15px;
-        //border: solid 1px gray;
-        //margin: 2px 352px 0 359px;
+        //width: 300px;
+
+        display: block;
+        overflow: hidden;
     }
         line,
         .graph line {
@@ -170,13 +176,14 @@ svg .node {
     .graph .info {
         //margin: 2px 0 0 2px;
         padding: 15px;
+        width: 300px;
         //min-width: 300px;
         //min-width: 500px;
         //height: 70px;
-        float: right;
-        width: 300px;
-        background-color: lightgray;
         height: 600px;
+        float: right;
+
+        background-color: lightgray;
     }
 .attributes-filter {
 }

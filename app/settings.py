@@ -102,7 +102,8 @@ DATABASES = {
         'NAME': '20151117',
         'USER': 'root',
         'PASSWORD': 'Passw0rd',
-        'HOST': '10.216.171.5',
+        #'HOST': '10.216.171.5',
+        'HOST': '127.0.0.1',
         'PORT': '3306',
     },
     'rysql': {
