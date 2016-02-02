@@ -145,7 +145,7 @@ svg .node {
             //fill: #264294;
             fill: green;
         }
-        .graph .Circle {
+        .graph .circle {
             stroke: #C2D6E6;
             fill: #4682B4;
         }
@@ -159,7 +159,7 @@ svg .node {
             -ms-user-select: none;
             user-select: none;
         }
-        .graph svg .Circle.true,
+        .graph svg .circle.true,
         .graph svg .person.true {
             fill: orange;
         }

@@ -15,6 +15,8 @@ from django.http import HttpResponse, HttpResponseRedirect
 from rest_framework.views import APIView
 
 from .zcommon import *
+from .zgraph import *
+from .models import *
 
 
 # Класс для работы с таксономией

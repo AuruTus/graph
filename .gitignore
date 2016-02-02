@@ -5,4 +5,6 @@ static/react/build/
 syscheck/__pycache__/
 zcore/__pycache__/
 db.sqlite3
+static/node_modules/
+static/package.json
 

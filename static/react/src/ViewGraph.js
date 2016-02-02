@@ -114,8 +114,8 @@ var ProxyScene = React.createClass({
                 var node = _nodes[key]
                 nodes[key] = {
                     nid: key,
-                    x: node.x*100,
-                    y: node.y*100,
+                    x: node.x*1000,
+                    y: node.y*1000,
                     r: randint(5,15),
                 }
             })
