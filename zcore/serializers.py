@@ -73,6 +73,7 @@ def to_main_graph(body, gid, gfilter=None):
         FG = GJoinPersons(FG, gfilter.get('joinPersons')) # Объединяем узлы типа Персона по значению атрибута Фамилия
         #print('FG2',FG.nodes())
         layoutArgument = gfilter.get('layout') # Получаем значение выбранного способа компоновки (layout)
+        print('...',layoutArgument)
         #print('FGout',FG.nodes())
     except:
         warnings.warn('Ошибка при обработке json-массива gfilter', UserWarning)
@@ -719,6 +720,7 @@ def json_main_graph(request, id, gfilter=None):
     graph = get_object_or_404(StorageGraph, pk=id)
     response = HttpResponse()
     response['Content-Type'] = "text/javascript; charset=utf-8"
+    print('FILTER',gfilter)
     data = to_main_graph(graph.body, id, gfilter)
     response.write(data)
     return response 
