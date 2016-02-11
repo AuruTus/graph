@@ -5,4 +5,14 @@ static/react/build/
 syscheck/__pycache__/
 zcore/__pycache__/
 db.sqlite3
-
+.gitignore~
+app/*.py~
+node_modules/
+package.json
+static/*.js~
+templates/*.html~
+templates/zcore/*.html~
+zcore/migrations/__pycache__
+zcore/*.py~
+static/css/*.css~
+static/react/src/*.js~
