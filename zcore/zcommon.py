@@ -50,7 +50,8 @@ def pdev(str):
 
 # Форматирование данных в формате json при выводе
 def print_json(data):
-    print(json.dumps(data, indent=4, sort_keys=True, ensure_ascii=False))
+    #print(json.dumps(data, indent=4, sort_keys=True, ensure_ascii=False))
+    print(json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)) # Преобразуем данные в json-формат
 
 
 # Вывод сформированных данных для отладочных целей 

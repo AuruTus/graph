@@ -126,6 +126,34 @@ def GFilterNodeData(FG, BG, data):
 
     return FG
     
+# Агрегирование узлов по атрибуту data
+def GJoinByNodeData(FG, joinPersons):
+    if joinPersons:
+        d = {}
+        count = 0
+        for node in FG.nodes(data=True):
+            print("NODE",node)
+
+            nid = int(node[0])
+            attributes = node[1]['attributes']
+            tid = node[1]['taxonomy']['tid']
+            data = node[1]['data']
+
+            if tid == 10:
+                if data != '':
+                    print("DATA", data)
+                    nids = d.get(data)
+                    if nids == None:
+                        nids = []
+                    nids.append(nid) 
+                    d[data] = nids
+        for data in d:
+            nodes = d[data]
+            FG = GMergeNodes(FG, nodes)
+
+        #print('graph:\n',FG.nodes(data=True),'\n')
+    return FG
+
 
 # Агрегирование узлов графа различного тип по определенным параметрам
 def GJoinPersons(FG, joinPersons):
@@ -139,6 +167,7 @@ def GJoinPersons(FG, joinPersons):
                 if attr['id'] == 30:
                     surname = attr['value']
                     if surname != '':
+                        print("SURNAME",surname)
                         nids = d.get(surname)
                         if nids == None:
                             nids = []

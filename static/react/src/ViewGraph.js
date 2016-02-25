@@ -20,7 +20,7 @@ var Graph = React.createClass({
             if(xhr.readyState == 4) { // `DONE`
                 this.setState({data: xhr.response, gfilter: filter})
                 var data = xhr.response
-                //eval('this.refs.theSVGScene').setView([data.averagex,data.averagey], data.averageScale)
+                eval('this.refs.theSVGScene').setView([data.averagex,data.averagey], data.averageScale)
             }
         }.bind(this)
     },
@@ -82,7 +82,8 @@ var Graph = React.createClass({
                     sceneHeight={sceneHeight}
                 />
                 <SVGScene 
-                    ref='theProxyScene'
+                    //ref='theProxyScene'
+                    ref='theSVGScene'
                     data={this.state.data}
                     filter={this.state.gfilter}
                     sceneWidth={sceneWidth}

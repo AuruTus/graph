@@ -18,6 +18,7 @@ from django.shortcuts import get_object_or_404, render
 
 from rest_framework import serializers
 
+from app.settings import LAYOUT
 from .zgraph import *
 from .models import *
 from .zcommon import *
@@ -25,65 +26,73 @@ from .zdb import db_heap_info, db_json_attributes, Taxonomy
 
 
 # Получение способа компоновки средствами библиотеки NetworkX; способ может меняться на основе параметра, выбранного пользователем
-def get_graph_layout(G, gid, argument):
+def get_graph_layout(G, gid, argument, load=False):
+    layouts = {
+        'spring': nx.spring_layout(G,scale=0.9),
+        'shell': nx.shell_layout(G,scale=0.9),
+        'random': nx.random_layout(G),
+        'spectral': nx.spectral_layout(G,scale=0.7),
+    }
+    # Если переданный тип компоновки не встречается в известных, присваиваем значение способа компоновки по-умолчанию
+    if argument not in layouts.keys():
+        argument = LAYOUT
+    """
     layout = Layout.objects.filter(storage_graph_id=gid, title=argument)
-    #print('the layout','\n',layout)
-    if layout:
+    if load and layout:
+        print("Считываю компоновку из БД...")
         body = eval(layout[0].body)
-        #body = json.loads(body)
-        #print('the layout','\n',layout[0].body)
-        #body = json.loads(json.dumps(layout[0].body))
     else:
-        switcher = {
-            'spring': nx.spring_layout(G,scale=0.9),
-            'shell': nx.shell_layout(G,scale=0.9),
-            'random': nx.random_layout(G),
-        }
-        #layout = nx.spectral_layout(G,scale=0.7)
+        print("Генерирую способ компоновки...")
+        body = layouts[argument]
         #layout = nx.graphviz_layout(G,prog='neato')
-        body = switcher.get(argument, nx.spring_layout(G,scale=0.4))
-        #print('no layout','\n',body)
-        sg = StorageGraph.objects.get(pk=gid)
-        l = Layout(title=argument, storage_graph_id=sg, body=body)
-        l.save()
+        if load:
+            sg = StorageGraph.objects.get(pk=gid)
+            l = Layout(title=argument, storage_graph_id=sg, body=body)
+            l.save()
+    """
+    body = layouts[argument]
     return body
 
 
 # Формирование модели данных для их дальнейшей визуализации в виде графа: обработка и фильтрация графа; формирование и добавление данных, не рассчитываемых на этапе создания способа компоновки, но необходимых для визуализации в нашем конкретном случае.
 def to_main_graph(body, gid, gfilter=None):
+    print("GFILTER",gfilter)
     data = {} # Объявляем словарь, в который будет записана вся необходимая для вывода графа информация
+    data.update({'nodes':{}})
+    layoutArgument = 'pring' # Объявляем способ компоновки по-умолчанию
     H = json.loads(body) # Декодируем json-объект - структуру графа
-    BG = json_graph.node_link_graph(H) # Преобразуем структура графа в формате json в объект типа граф библиотеки NetworkX
-    FG = json_graph.node_link_graph(H) # Инициализируем граф для последовательной фильтрации
+    BG = json_graph.node_link_graph(H) # Получаем базовый граф: преобразуем структурy графа в формате json в объект типа граф библиотеки NetworkX
+    #print('Base Graph',BG.nodes(data=True))
+    #print('\nBase Graph',BG[1],'\n')
+    FG = json_graph.node_link_graph(H) # Получаем граф для последовательной фильтрации на основе базового графа
 
     # Если передан массив фильтрующих атрибутов, 
     # декодируем json-объект gfilter - массив параметров, полученных из url 
     # и производим фильтрацию в соответствии с полученными данными:
-    layoutArgument = ''
     try: 
         gfilter = json.loads(gfilter) # Получаем ассоциативный массив данных фильтра в формате json 
-        #print_json(gfilter) # отладочная информация
         #print('FGin',FG.nodes())
         FG = GFilterNodeData(FG, BG, gfilter.get('data')) # Оставляем в графе только те узлы, атрибут data которых совпадает с переданной строкой
         FG = GFilterTaxonomy(FG, BG, gfilter.get('taxonomy')) # Производим фильтрацию узлов графа по переданному массиву терминов таксономии
         #print('FG1',FG.nodes())
         #G = GFilterAttributes(FG, gfilter.get('attributes')) # Производим фильтрацию графа по атрибутам узла
-        FG = GFilterNodes(FG, gfilter.get('nodes')) # Производим фильтрацию графа по переданным в списке nodes узлам
+        #FG = GFilterNodes(FG, gfilter.get('nodes')) # Производим фильтрацию графа по переданным в списке nodes узлам
+        print('FG2',FG.nodes())
+        #FG = GJoinPersons(FG, gfilter.get('joinPersons')) # Объединяем узлы типа Персона по значению атрибута Фамилия
+        FG = GJoinByNodeData(FG, gfilter.get('joinPersons')) # Объединяем узлы по значению атрибута data
+        print('FG joined',FG.nodes())
+
         FG = GIncludeNeighbors(FG, BG, int(gfilter.get('depth'))) # Включаем в граф соседей для текущих узлов
-        FG = GJoinPersons(FG, gfilter.get('joinPersons')) # Объединяем узлы типа Персона по значению атрибута Фамилия
-        #print('FG2',FG.nodes())
-        layoutArgument = gfilter.get('layout') # Получаем значение выбранного способа компоновки (layout)
-        print('...',layoutArgument)
         #print('FGout',FG.nodes())
+        layoutArgument = gfilter.get('layout') # Получаем массив данных для выбранного способа компоновки (layout)
+        layout = get_graph_layout(FG, gid, layoutArgument)
     except:
-        warnings.warn('Ошибка при обработке json-массива gfilter', UserWarning)
-        #raise
-    layout = get_graph_layout(FG, gid, layoutArgument)
-    #layout = nx.random_layout(G),
+        layout = get_graph_layout(FG, gid, layoutArgument, True)
+        #warnings.warn('Ошибка при обработке json-массива gfilter', UserWarning)
+        pass
+    #print("LAYOUT",layout)
     #nodes = G.nodes(data=True)
-    nodes = FG.nodes()
-    #data = {'nodes':[], 'links':[]}
-    data.update({'nodes':{}})
+    #nodes = FG.nodes()
     #e = nx.edges(G)
     #e = G.edges()
     #links = {'links': e}
@@ -108,6 +117,7 @@ def to_main_graph(body, gid, gfilter=None):
         if scale != 0:
             averageScale = 0.8 / scale
 
+        #print("DATA",FG.node[nid]['data'])
         data['nodes'][nid] = {
             'id': nid, 
             'data': FG.node[nid]['data'], 
@@ -720,7 +730,6 @@ def json_main_graph(request, id, gfilter=None):
     graph = get_object_or_404(StorageGraph, pk=id)
     response = HttpResponse()
     response['Content-Type'] = "text/javascript; charset=utf-8"
-    print('FILTER',gfilter)
     data = to_main_graph(graph.body, id, gfilter)
     response.write(data)
     return response 
