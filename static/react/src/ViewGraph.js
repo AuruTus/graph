@@ -59,8 +59,8 @@ var Graph = React.createClass({
                 text = text + attr.value + '; '
             }
         })
-        text = text + 'x: ' + x + ' y: ' + y + '; '
-        //eval('this.refs.theInfo').updateState(text)
+        //text = text + 'x: ' + x + ' y: ' + y + '; '
+        eval('this.refs.theInfo').updateState(text)
     },
     render: function() {
         var graphFilter = $('.graph .filter')
@@ -96,11 +96,11 @@ var Graph = React.createClass({
                     _handleNodeTip={this.handleNodeTip}
                     _handleSceneClick={this.handleNodeClick}
                 />
-            </div>
-        );
                 <Info ref={'theInfo'} 
                     sceneHeight={sceneHeight}
                 />
+            </div>
+        )
     },
 })
 

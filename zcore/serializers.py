@@ -27,29 +27,33 @@ from .zdb import db_heap_info, db_json_attributes, Taxonomy
 
 # Получение способа компоновки средствами библиотеки NetworkX; способ может меняться на основе параметра, выбранного пользователем
 def get_graph_layout(G, gid, argument, load=False):
+    print("ARGUMENT",argument)
     layouts = {
         'spring': nx.spring_layout(G,scale=0.9),
         'shell': nx.shell_layout(G,scale=0.9),
         'random': nx.random_layout(G),
         'spectral': nx.spectral_layout(G,scale=0.7),
     }
+    """
+    if argument == 'undefined':
+        argument = LAYOUT
+        layout = Layout.objects.filter(storage_graph_id=gid, title=argument)
+        if layout:
+            print("Считываю компоновку из БД...")
+            body = eval(layout[0].body)
+        else:
+            print("Генерирую способ компоновки...")
+            body = layouts[argument]
+            #layout = nx.graphviz_layout(G,prog='neato')
+            if load:
+                sg = StorageGraph.objects.get(pk=gid)
+                l = Layout(title=argument, storage_graph_id=sg, body=body)
+                l.save()
+    else:
+    """
     # Если переданный тип компоновки не встречается в известных, присваиваем значение способа компоновки по-умолчанию
     if argument not in layouts.keys():
         argument = LAYOUT
-    """
-    layout = Layout.objects.filter(storage_graph_id=gid, title=argument)
-    if load and layout:
-        print("Считываю компоновку из БД...")
-        body = eval(layout[0].body)
-    else:
-        print("Генерирую способ компоновки...")
-        body = layouts[argument]
-        #layout = nx.graphviz_layout(G,prog='neato')
-        if load:
-            sg = StorageGraph.objects.get(pk=gid)
-            l = Layout(title=argument, storage_graph_id=sg, body=body)
-            l.save()
-    """
     body = layouts[argument]
     return body
 
@@ -59,7 +63,7 @@ def to_main_graph(body, gid, gfilter=None):
     print("GFILTER",gfilter)
     data = {} # Объявляем словарь, в который будет записана вся необходимая для вывода графа информация
     data.update({'nodes':{}})
-    layoutArgument = 'pring' # Объявляем способ компоновки по-умолчанию
+    #layoutArgument = '' # Объявляем способ компоновки по-умолчанию
     H = json.loads(body) # Декодируем json-объект - структуру графа
     BG = json_graph.node_link_graph(H) # Получаем базовый граф: преобразуем структурy графа в формате json в объект типа граф библиотеки NetworkX
     #print('Base Graph',BG.nodes(data=True))
@@ -77,28 +81,33 @@ def to_main_graph(body, gid, gfilter=None):
         #print('FG1',FG.nodes())
         #G = GFilterAttributes(FG, gfilter.get('attributes')) # Производим фильтрацию графа по атрибутам узла
         #FG = GFilterNodes(FG, gfilter.get('nodes')) # Производим фильтрацию графа по переданным в списке nodes узлам
-        print('FG2',FG.nodes())
-        #FG = GJoinPersons(FG, gfilter.get('joinPersons')) # Объединяем узлы типа Персона по значению атрибута Фамилия
-        FG = GJoinByNodeData(FG, gfilter.get('joinPersons')) # Объединяем узлы по значению атрибута data
-        print('FG joined',FG.nodes())
-
+        #print('FG2',FG.nodes())
+        for nid in FG.nodes(): print('neighbors',nid,'>', FG.neighbors(nid))
+        FG = GJoinPersons(FG, gfilter.get('joinPersons')) # Объединяем узлы типа Персона по значению атрибута Фамилия
+        #FG = GJoinByNodeData(FG, gfilter.get('joinPersons')) # Объединяем узлы по значению атрибута data
+        print("JOINED")
+        #print('FG joined',FG.nodes())
+        for nid in FG.nodes(): 
+            pass
+            #print(FG.node[nid])
+            #print('neighbors',nid,'>', FG.neighbors(nid))
         FG = GIncludeNeighbors(FG, BG, int(gfilter.get('depth'))) # Включаем в граф соседей для текущих узлов
+        print("INCLUDED")
+        print('FG included',FG.nodes())
         #print('FGout',FG.nodes())
         layoutArgument = gfilter.get('layout') # Получаем массив данных для выбранного способа компоновки (layout)
         layout = get_graph_layout(FG, gid, layoutArgument)
     except:
-        layout = get_graph_layout(FG, gid, layoutArgument, True)
-        #warnings.warn('Ошибка при обработке json-массива gfilter', UserWarning)
+        print("EXCEPT")
+        layout = get_graph_layout(FG, gid, 'undefined', True)
+        warnings.warn('Ошибка при обработке json-массива gfilter', UserWarning)
         pass
+    print("FILTERED")
+    for nid in FG.nodes(): print('neighbors',nid,'>', FG.neighbors(nid))
     #print("LAYOUT",layout)
-    #nodes = G.nodes(data=True)
-    #nodes = FG.nodes()
-    #e = nx.edges(G)
-    #e = G.edges()
-    #links = {'links': e}
-    #data.update(links)
     maxx,maxy,minx,miny,averagex,averagey,diffx,diffy = 0,0,0,0,0,0,0,0
     averageScale,scale = 1,1
+    #print('FG2',FG.nodes())
     for nid in layout:
         point = layout.get(nid)
         x = point[0]
@@ -128,6 +137,7 @@ def to_main_graph(body, gid, gfilter=None):
             'attributes': FG.node[nid]['attributes'],
             'neighbors': FG.neighbors(nid),
         }
+        #print('neighbors',nid,'>', FG.neighbors(nid))
     data.update({'maxx': str(maxx), 'maxy': str(maxy), 'minx': str(minx), 'miny': str(miny)})
     data.update({'averagex': averagex, 'averagey': averagey, 'averageScale': averageScale})
     data.update({'diffx': diffx, 'diffy': diffy})

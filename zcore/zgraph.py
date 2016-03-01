@@ -19,13 +19,22 @@ def GIncludeNeighbors(FG, BG, depth=1):
         return FG
     else:
         depth = depth - 1
+        neighbors = []
         nodes = []
+        print('FG include',FG.nodes())
         for nid in FG.nodes():
+            print('include',FG.node[nid]['mergedNodes'])
             nodes.append(nid) # Добавляем узел в отфильтрованный массив узлов
-            neighbors = nx.all_neighbors(BG, nid) # Для каждого из узлов графа получаем массив его соседей
+            try: 
+                neighbors = nx.all_neighbors(BG, nid) # Для каждого из узлов графа получаем массив его соседей
+            except: 
+                pass
+                print("Соседних узлов не найдено")
             for neighbor in neighbors:
                 nodes.append(neighbor) # Добавляем каждого соседа в отфильтрованный массив узлов
-        return GIncludeNeighbors(BG.subgraph(nodes), BG, depth) # Получаем рекурсивно объединённый, включающий соседние узлы, подграф
+         
+        subGraph = GIncludeNeighbors(BG.subgraph(nodes), BG, depth) # Получаем рекурсивно объединённый, включающий соседние узлы, подграф
+        return subGraph
 
 
 # Производим фильтрацию графа по переданным в списке nodes узлам:
@@ -157,6 +166,7 @@ def GJoinByNodeData(FG, joinPersons):
 
 # Агрегирование узлов графа различного тип по определенным параметрам
 def GJoinPersons(FG, joinPersons):
+    print('JOIN edges',FG.edges())
     if joinPersons:
         d = {}
         count = 0
@@ -175,9 +185,14 @@ def GJoinPersons(FG, joinPersons):
                         d[surname] = nids
         for surname in d:
             nodes = d[surname]
+            #print('FG2',FG.nodes(data=True))
+            #print('JOIN edges',FG.edges())
+            #print("EDGES",FG.neighbors(nid),
             FG = GMergeNodes(FG, nodes)
 
         #print('graph:\n',FG.nodes(data=True),'\n')
+        #print('FG2',FG.edges(data=True))
+        print("DONE JOINING")
     return FG
 
 
@@ -194,7 +209,9 @@ def GMergeNodes(FG,nodes):
         elif n2 in nodes:
             FG.add_edge(n1,new_node,data)
     for n in nodes: # remove the merged nodes
+        print("MERGED EDGES",FG.neighbors(n))
         FG.remove_node(n)
+        print("DONE")
     return FG
 
 

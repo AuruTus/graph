@@ -161,12 +161,9 @@ class SGraph():
         # и сопутствующие данные к новым узлам графа
         for edge in edges:
             enid = edge['element_id_2'] if nid == edge['element_id_1'] else edge['element_id_1']
-            # Для каждой дуги с помощью отдельной функции получаем словарь атрибутов.
-            edgeAttributes = self.get_edge_attributes(edge['id'])
-            # Добавляем дугу в граф для указанного узла и её атрибуты
-            self.G.add_edge(nid, enid, id=edge['id'], data=edge['data'], attributes=edgeAttributes)
-            # Добавляем в граф отсутствующий узел
-            self.add_node(enid)
+            edgeAttributes = self.get_edge_attributes(edge['id']) # Для каждой дуги с помощью отдельной функции получаем словарь атрибутов.
+            self.G.add_edge(nid, enid, id=edge['id'], data=edge['data'], attributes=edgeAttributes) # Добавляем дугу в граф для указанного узла и её атрибуты
+            self.add_node(enid) # Добавляем в граф отсутствующий узел
 
         return True
 
@@ -219,18 +216,17 @@ def create_filtered_graph(gfilter):
     try: 
         gfilter = json.loads(gfilter)
         print_json(gfilter)
-
-        # Создаем граф из данных "семантической кучи";
-        # производим фильтрацию узлов графа по переданному массиву типов сущностей taxonomy;
-        SG = SGraph()
-        G = SG.create(int(gfilter.get('stopper')), gfilter.get('taxonomy'))
-
-        # Исключаем из графа узлы с нулевым весом (без связей)
-        G = GFilterZero(G, gfilter['options'].get('removeZero'))
-        #G = GFilterAttributes(G, gfilter.get('attributes')) # Фильтрация узлов графа по переданным в ассоциативном массивe attributes атрибутам узлов;
     except:
         warnings.warn('Ошибка при обработке json-массива gfilter', UserWarning)
         raise
+    # Создаем граф из данных "семантической кучи";
+    # производим фильтрацию узлов графа по переданному массиву типов сущностей taxonomy;
+    SG = SGraph()
+    G = SG.create(int(gfilter.get('stopper')), gfilter.get('taxonomy'))
+
+    # Исключаем из графа узлы с нулевым весом (без связей)
+    G = GFilterZero(G, gfilter['options'].get('removeZero'))
+    #G = GFilterAttributes(G, gfilter.get('attributes')) # Фильтрация узлов графа по переданным в ассоциативном массивe attributes атрибутам узлов;
 
     data = json_graph.node_link_data(G) # Средствами бибилиотеки NetworkX, экспортируем граф в виде подходящeм для json-сериализации
     graph = StorageGraph() # Создаём экземпляр класса Graph, для хранения структуры графа в базе данных

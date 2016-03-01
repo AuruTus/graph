@@ -5,3 +5,4 @@ from .models import *
 
 admin.site.register(StorageGraph)
 admin.site.register(Layout)
+admin.site.register(Taxonomy)
