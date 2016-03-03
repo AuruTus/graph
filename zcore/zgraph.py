@@ -14,26 +14,59 @@ from django.http import HttpResponse, HttpResponseRedirect
 
 
 # Выборка соседей всех узлов графа FG с заданной глубиной
-def GIncludeNeighbors(FG, BG, depth=1):
+def GIncludeNeighbors(FG, BG, MG, depth=1, noSkip=True):
+    print('---- GIncludeNeighbors ----')
+    #for nid in MG.nodes(): print('MGraph: ',nid,'>', MG.neighbors(nid))
+    print('MG in',MG.nodes())
+    print("DEPTH",depth)
     if depth == 0:
         return FG
     else:
         depth = depth - 1
         neighbors = []
         nodes = []
-        print('FG include',FG.nodes())
-        for nid in FG.nodes():
-            print('include',FG.node[nid]['mergedNodes'])
+        print('     FG befor include',FG.nodes())
+        nodesToCheck = FG.nodes()
+        for nid in nodesToCheck:
+            print("     NID",nid)
             nodes.append(nid) # Добавляем узел в отфильтрованный массив узлов
-            try: 
+            if FG.node[nid].get('mergedNodes'):
+                node = FG.node[nid]
+                #print("MNODE",node)
+                merged = node.get('mergedNodes')
+                MG.add_node(nid,node)
+                #MG.add_node(nid); print('    test added')
+                #print('     MNODE',MG.node[eval(nid)]))
+                #print('    merged:',merged)
+                # Обрабатываем массив нод, которые являются исходными для агрегированной ноды 
+                for mid in merged:
+                    neighbors = nx.all_neighbors(BG, mid)
+                    for neighbor in neighbors:
+                        #MG.add_node(nid,BG.node[neighbor])
+                        #print("     nbr",BG.node[neighbor])
+                        print("     IN GRAPH",neighbor in MG)
+                        if not neighbor in MG:
+                            #print("     NEIGHBOR",neighbor)
+                            MG.add_node(neighbor,BG.node[neighbor])
+                            MG.add_edge(nid,neighbor)
+                        else:
+                            pass
+                            #print("     -",MG.node[neighbor])
+                        #nodes.append(neighbor)
+                    #for nid in MG.nodes(): print('Complete MGraph: ',nid,'>', MG.neighbors(nid))
+                UG = nx.union((BG.subgraph(nodes)), MG)
+                subGraph = GIncludeNeighbors(UG, BG, MG, depth, False) # Получаем рекурсивно объединённый, включающий соседние узлы, подграф
+            else:
+                #try: 
                 neighbors = nx.all_neighbors(BG, nid) # Для каждого из узлов графа получаем массив его соседей
-            except: 
-                pass
-                print("Соседних узлов не найдено")
-            for neighbor in neighbors:
-                nodes.append(neighbor) # Добавляем каждого соседа в отфильтрованный массив узлов
+                #except: print("Соседних узлов не найдено")
+                for neighbor in neighbors:
+                    nodes.append(neighbor) # Добавляем каждого соседа в отфильтрованный массив узлов
+                subGraph = GIncludeNeighbors(BG.subgraph(nodes), BG, MG, depth) # Получаем рекурсивно объединённый, включающий соседние узлы, подграф
          
-        subGraph = GIncludeNeighbors(BG.subgraph(nodes), BG, depth) # Получаем рекурсивно объединённый, включающий соседние узлы, подграф
+        #for nid in MG.nodes(): print('out MGraph: ',nid,'>', MG.neighbors(nid))
+        #print('MG out',MG.nodes())
+        print('---- /GIncludeNeighbors ----')
         return subGraph
 
 
@@ -166,7 +199,7 @@ def GJoinByNodeData(FG, joinPersons):
 
 # Агрегирование узлов графа различного тип по определенным параметрам
 def GJoinPersons(FG, joinPersons):
-    print('JOIN edges',FG.edges())
+    #print('JOIN edges',FG.edges())
     if joinPersons:
         d = {}
         count = 0
@@ -177,7 +210,7 @@ def GJoinPersons(FG, joinPersons):
                 if attr['id'] == 30:
                     surname = attr['value']
                     if surname != '':
-                        print("SURNAME",surname)
+                        #print("SURNAME",surname)
                         nids = d.get(surname)
                         if nids == None:
                             nids = []
@@ -192,7 +225,7 @@ def GJoinPersons(FG, joinPersons):
 
         #print('graph:\n',FG.nodes(data=True),'\n')
         #print('FG2',FG.edges(data=True))
-        print("DONE JOINING")
+        #print("DONE JOINING")
     return FG
 
 
@@ -209,9 +242,9 @@ def GMergeNodes(FG,nodes):
         elif n2 in nodes:
             FG.add_edge(n1,new_node,data)
     for n in nodes: # remove the merged nodes
-        print("MERGED EDGES",FG.neighbors(n))
+        #print("MERGED EDGES",FG.neighbors(n))
         FG.remove_node(n)
-        print("DONE")
+        #print("DONE")
     return FG
 
 

@@ -50,7 +50,7 @@ var Graph = React.createClass({
             filter.setState({nodes: nodes})
         }
     },
-    handleNodeTip(data, attributes, name, x, y) {
+    handleNodeTip(data, attributes, name, x, y, nid) {
         var text = data + '; '
         text = text + 'тип - ' + name + '; '
         attributes.forEach(function(attr) {
@@ -60,6 +60,7 @@ var Graph = React.createClass({
             }
         })
         //text = text + 'x: ' + x + ' y: ' + y + '; '
+        text += ' nid: ' + nid
         eval('this.refs.theInfo').updateState(text)
     },
     render: function() {
@@ -299,7 +300,7 @@ var AttributesLabel = React.createClass({
 
 var Depth = React.createClass({
     getInitialState: function() {
-        return {value: '2'}
+        return {value: '1'}
     },
     handleChange: function(event) {
 		this.setState({value: event.target.value});
@@ -784,7 +785,7 @@ var GraphNode = React.createClass({
     onMouseOver: function () {
         // Передача обработки родительскому компоненту
         if (typeof this.props._handleNodeTip === 'function') {
-            this.props._handleNodeTip(this.props.data, this.props.attributes, this.props.taxonomy.name, this.props.x, this.props.y)
+            this.props._handleNodeTip(this.props.data, this.props.attributes, this.props.taxonomy.name, this.props.x, this.props.y, this.props.nid)
         }
     },
     /*
