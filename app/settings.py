@@ -89,14 +89,6 @@ DATABASES = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     },
-    'postgresql': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'graph',
-        'USER': 'zs',
-        'PASSWORD': '',
-        'HOST': '127.0.0.1',
-        'PORT': '5432',
-    },
     'mysql': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': '20151117',
@@ -115,6 +107,16 @@ DATABASES = {
         'PORT': '3306',
     },
 }
+"""
+'postgresql': {
+    'ENGINE': 'django.db.backends.postgresql_psycopg2',
+    'NAME': 'graph',
+    'USER': 'zs',
+    'PASSWORD': '',
+    'HOST': '127.0.0.1',
+    'PORT': '5432',
+},
+"""
 
 
 # Internationalization

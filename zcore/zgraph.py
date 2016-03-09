@@ -17,20 +17,21 @@ from django.http import HttpResponse, HttpResponseRedirect
 def GIncludeNeighbors(FG, BG, MG, depth=1, noSkip=True):
     print('---- GIncludeNeighbors ----')
     #for nid in MG.nodes(): print('MGraph: ',nid,'>', MG.neighbors(nid))
-    print('MG in',MG.nodes())
-    print("DEPTH",depth)
+    #print('MG in',MG.nodes())
+    #print("DEPTH",depth)
     if depth == 0:
         return FG
     else:
         depth = depth - 1
         neighbors = []
         nodes = []
-        print('     FG befor include',FG.nodes())
+        #print('     FG befor include',FG.nodes())
         nodesToCheck = FG.nodes()
         for nid in nodesToCheck:
-            print("     NID",nid)
+            #print("     NID",nid)
             nodes.append(nid) # Добавляем узел в отфильтрованный массив узлов
-            if FG.node[nid].get('mergedNodes'):
+            #if FG.node[nid].get('mergedNodes'):
+            if None:
                 node = FG.node[nid]
                 #print("MNODE",node)
                 merged = node.get('mergedNodes')
@@ -44,7 +45,7 @@ def GIncludeNeighbors(FG, BG, MG, depth=1, noSkip=True):
                     for neighbor in neighbors:
                         #MG.add_node(nid,BG.node[neighbor])
                         #print("     nbr",BG.node[neighbor])
-                        print("     IN GRAPH",neighbor in MG)
+                        #print("     IN GRAPH",neighbor in MG)
                         if not neighbor in MG:
                             #print("     NEIGHBOR",neighbor)
                             MG.add_node(neighbor,BG.node[neighbor])
@@ -55,7 +56,9 @@ def GIncludeNeighbors(FG, BG, MG, depth=1, noSkip=True):
                         #nodes.append(neighbor)
                     #for nid in MG.nodes(): print('Complete MGraph: ',nid,'>', MG.neighbors(nid))
                 UG = nx.union((BG.subgraph(nodes)), MG)
-                subGraph = GIncludeNeighbors(UG, BG, MG, depth, False) # Получаем рекурсивно объединённый, включающий соседние узлы, подграф
+                #subGraph = GIncludeNeighbors(UG, BG, MG, depth, False) # Получаем рекурсивно объединённый, включающий соседние узлы, подграф
+                #subGraph = GIncludeNeighborsOnce(UG, BG)
+                subGraph = UG
             else:
                 #try: 
                 neighbors = nx.all_neighbors(BG, nid) # Для каждого из узлов графа получаем массив его соседей
@@ -66,9 +69,18 @@ def GIncludeNeighbors(FG, BG, MG, depth=1, noSkip=True):
          
         #for nid in MG.nodes(): print('out MGraph: ',nid,'>', MG.neighbors(nid))
         #print('MG out',MG.nodes())
+        for rid in subGraph.nodes(): print('d',depth,'nid',rid,':',subGraph.node[rid]['data'],'neighbors>', subGraph.neighbors(rid))
         print('---- /GIncludeNeighbors ----')
         return subGraph
 
+def GIncludeNeighborsOnce(FG, BG):
+    neighbors = []
+    nodes = []
+    for nid in FG.nodes():
+        neighbors = nx.all_neighbors(BG, nid) # Для каждого из узлов графа получаем массив его соседей
+        for neighbor in neighbors:
+            nodes.append(neighbor) # Добавляем каждого соседа в отфильтрованный массив узлов
+        subGraph = BG.subgraph(nodes)
 
 # Производим фильтрацию графа по переданным в списке nodes узлам:
 def GFilterNodes(G, nodes):

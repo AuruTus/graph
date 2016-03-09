@@ -192,6 +192,7 @@ var Filter = React.createClass({
                     <Layout _updateFilter={this.updateFilter} _submit={this.handleSubmit} />
                     <input type="submit" className="btn btn-warning" value="Отфильтровать" />
                     <JoinPersons ref='theJoinPersons' _updateFilter={this.updateFilter} />
+                    <Depth ref='theDepth' />
                     <NodeData ref={'theFilterData'} />
                     <div className={'RecursiveCheckboxTree'}>
                         <RecursiveCheckboxTree
@@ -200,7 +201,6 @@ var Filter = React.createClass({
                             display={'Отображать выбранные типы сущностей, включая их соседей:'}
                         />
                     </div>
-                    <Depth ref='theDepth' />
                     {/*
                     <Attributes ref='theFilterAttributes' _updateFilterState={this.updateFilter} />
                     <Position />

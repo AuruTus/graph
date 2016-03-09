@@ -99,7 +99,7 @@ def to_main_graph(body, gid, gfilter=None):
         #warnings.warn('Ошибка при обработке json-массива gfilter', UserWarning)
         pass
     print("FILTERED")
-    for nid in FG.nodes(): print('neighbors',nid,'>', FG.neighbors(nid))
+    #for nid in FG.nodes(): print('neighbors',nid,'>', FG.neighbors(nid))
     #print("LAYOUT",layout)
     maxx,maxy,minx,miny,averagex,averagey,diffx,diffy = 0,0,0,0,0,0,0,0
     averageScale,scale = 1,1
