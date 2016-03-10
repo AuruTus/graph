@@ -73,33 +73,46 @@ def to_main_graph(body, gid, gfilter=None):
     # Если передан массив фильтрующих атрибутов, 
     # декодируем json-объект gfilter - массив параметров, полученных из url 
     # и производим фильтрацию в соответствии с полученными данными:
-    try: 
-        gfilter = json.loads(gfilter) # Получаем ассоциативный массив данных фильтра в формате json 
-        #print('FGin',FG.nodes())
-        FG = GFilterNodeData(FG, BG, gfilter.get('data')) # Оставляем в графе только те узлы, атрибут data которых совпадает с переданной строкой
-        FG = GFilterTaxonomy(FG, BG, gfilter.get('taxonomy')) # Производим фильтрацию узлов графа по переданному массиву терминов таксономии
-        #print('FG1',FG.nodes())
-        #G = GFilterAttributes(FG, gfilter.get('attributes')) # Производим фильтрацию графа по атрибутам узла
-        #FG = GFilterNodes(FG, gfilter.get('nodes')) # Производим фильтрацию графа по переданным в списке nodes узлам
-        #print('FG2',FG.nodes())
-        #for nid in FG.nodes(): print('neighbors',nid,'>', FG.neighbors(nid))
-        FG = GJoinPersons(FG, gfilter.get('joinPersons')) # Объединяем узлы типа Персона по значению атрибута Фамилия
-        #FG = GJoinByNodeData(FG, gfilter.get('joinPersons')) # Объединяем узлы по значению атрибута data
-        print("JOINED")
-        print('FG joined',FG.nodes())
-        FG = GIncludeNeighbors(FG, BG, nx.Graph(), int(gfilter.get('depth'))) # Включаем в граф соседей для текущих узлов
-        print("INCLUDED")
-        print('FG included',FG.nodes())
-        #print('FGout',FG.nodes())
-        layoutArgument = gfilter.get('layout') # Получаем массив данных для выбранного способа компоновки (layout)
-        layout = get_graph_layout(FG, gid, layoutArgument)
+    #try: 
+    gfilter = json.loads(gfilter) # Получаем ассоциативный массив данных фильтра в формате json 
+    #print('FGin',FG.nodes())
+    FG = GFilterNodeData(FG, BG, gfilter.get('data')) # Оставляем в графе только те узлы, атрибут data которых совпадает с переданной строкой
+    FG = GFilterTaxonomy(FG, BG, gfilter.get('taxonomy')) # Производим фильтрацию узлов графа по переданному массиву терминов таксономии
+    #print('FG1',FG.nodes())
+    #G = GFilterAttributes(FG, gfilter.get('attributes')) # Производим фильтрацию графа по атрибутам узла
+    #FG = GFilterNodes(FG, gfilter.get('nodes')) # Производим фильтрацию графа по переданным в списке nodes узлам
+    #print('FG2',FG.nodes())
+    #for nid in FG.nodes(): print('neighbors',nid,'>', FG.neighbors(nid))
+    FG = GJoinPersons(FG, gfilter.get('joinPersons')) # Объединяем узлы типа Персона по значению атрибута Фамилия
+    #FG = GJoinByNodeData(FG, gfilter.get('joinPersons')) # Объединяем узлы по значению атрибута data
+    print("JOINED")
+    print('FG joined',FG.nodes())
+
+    print('---- GIncludeNeighbors ----')
+    FG = GIncludeNeighbors(FG, BG, nx.Graph(), int(gfilter.get('depth'))) # Включаем в граф соседей для текущих узлов
+    print('---- /GIncludeNeighbors ----')
+    print("INCLUDED")
+    print('FG included',FG.nodes())
+
+    #print('FGout',FG.nodes())
+    layoutArgument = gfilter.get('layout') # Получаем массив данных для выбранного способа компоновки (layout)
+    layout = get_graph_layout(FG, gid, layoutArgument)
+    """
     except:
         print("! GFILTER EXCEPTION")
         layout = get_graph_layout(FG, gid, 'undefined', True)
         #warnings.warn('Ошибка при обработке json-массива gfilter', UserWarning)
         pass
-    print("FILTERED")
+    """
+    #print("---- FILTERED ----")
     #for nid in FG.nodes(): print('neighbors',nid,'>', FG.neighbors(nid))
+    for nid in FG.nodes(): 
+        try:
+            pass
+            #print('neighbors',nid,'>', FG.neighbors(nid))
+        except  nx.NetworkXError as e:
+            print(e)
+    #print("---- /FILTERED ----")
     #print("LAYOUT",layout)
     maxx,maxy,minx,miny,averagex,averagey,diffx,diffy = 0,0,0,0,0,0,0,0
     averageScale,scale = 1,1
