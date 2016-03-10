@@ -69,6 +69,7 @@ def to_main_graph(body, gid, gfilter=None):
     #print('Base Graph',BG.nodes(data=True))
     #print('\nBase Graph',BG[1],'\n')
     FG = json_graph.node_link_graph(H) # Получаем граф для последовательной фильтрации на основе базового графа
+    #ABG = json_graph.node_link_graph(H) # Агрегированный граф
 
     # Если передан массив фильтрующих атрибутов, 
     # декодируем json-объект gfilter - массив параметров, полученных из url 
@@ -83,7 +84,7 @@ def to_main_graph(body, gid, gfilter=None):
     #FG = GFilterNodes(FG, gfilter.get('nodes')) # Производим фильтрацию графа по переданным в списке nodes узлам
     #print('FG2',FG.nodes())
     #for nid in FG.nodes(): print('neighbors',nid,'>', FG.neighbors(nid))
-    FG = GJoinPersons(FG, gfilter.get('joinPersons')) # Объединяем узлы типа Персона по значению атрибута Фамилия
+    FG = GAggregatePersons(FG, BG, gfilter.get('joinPersons')) # Объединяем узлы типа Персона по значению атрибута Фамилия
     #FG = GJoinByNodeData(FG, gfilter.get('joinPersons')) # Объединяем узлы по значению атрибута data
     print("JOINED")
     print('FG joined',FG.nodes())

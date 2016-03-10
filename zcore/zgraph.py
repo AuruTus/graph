@@ -29,7 +29,8 @@ def GIncludeNeighbors(OG, BG, MG, depth=1, noSkip=True):
         for nid in nodesToCheck:
             #print("     NID",nid)
             nodes.append(nid) # Добавляем узел в отфильтрованный массив узлов
-            if OG.node[nid].get('mergedNodes'):
+            #if OG.node[nid].get('mergedNodes'):
+            if None:
                 node = OG.node[nid]
                 #print("MNODE",node)
                 merged = node.get('mergedNodes')
@@ -54,8 +55,9 @@ def GIncludeNeighbors(OG, BG, MG, depth=1, noSkip=True):
                             pass
                             #print("     -",MG.node[neighbor])
                         #nodes.append(neighbor)
-                NG = nx.compose(MG,BG.subgraph(nodes))
-                for nid in NG.nodes(): print('Complete NGraph: ',nid,'>', NG.neighbors(nid))
+                NG = BG.subgraph(nodes)
+                #NG = nx.compose(MG,BG.subgraph(nodes))
+                #for nid in NG.nodes(): print('Complete NGraph: ',nid,'>', NG.neighbors(nid))
                 #UG = nx.union((BG.subgraph(nodes)), MG)
                 #subGraph = GIncludeNeighbors(UG, BG, MG, depth, False) # Получаем рекурсивно объединённый, включающий соседние узлы, подграф
                 #subGraph = GIncludeNeighborsOnce(UG, BG)
@@ -221,12 +223,12 @@ def GJoinByNodeData(FG, joinPersons):
 
 
 # Агрегирование узлов графа различного тип по определенным параметрам
-def GJoinPersons(FG, joinPersons):
+def GAggregatePersons(OG, BG, aggregate):
     #print('JOIN edges',FG.edges())
-    if joinPersons:
+    if aggregate:
         d = {}
         count = 0
-        for node in FG.nodes(data=True):
+        for node in OG.nodes(data=True):
             nid = int(node[0])
             attributes = node[1]['attributes']
             for attr in attributes:
@@ -244,30 +246,34 @@ def GJoinPersons(FG, joinPersons):
             #print('FG2',FG.nodes(data=True))
             #print('JOIN edges',FG.edges())
             #print("EDGES",FG.neighbors(nid),
-            FG = GMergeNodes(FG, nodes)
+            OG = GMergeNodes(OG, BG, nodes)
 
         #print('graph:\n',FG.nodes(data=True),'\n')
         #print('FG2',FG.edges(data=True))
         #print("DONE JOINING")
-    return FG
+    return OG
 
 
 # Объединение узлов графа, id которых переданны в списке nodes, в один новый узел. Переданные узлы при этом удаляются из графа.
-def GMergeNodes(FG,nodes):
+def GMergeNodes(OG, BG, nodes):
     new_node = int('10'+str(nodes[0]))
-    data = FG.node[nodes[0]]
+    data = OG.node[nodes[0]]
     data.update({'mergedNodes': nodes})
     data.update({'mergedCount': len(nodes)})
-    FG.add_node(new_node, data)
-    for n1,n2,data in FG.edges(data=True):
+    OG.add_node(new_node, data)
+    BG.add_node(new_node, data)
+    for n1,n2,data in OG.edges(data=True):
         if n1 in nodes:
-            FG.add_edge(new_node,n2,data)
+            OG.add_edge(new_node,n2,data)
+            BG.add_edge(new_node,n2,data)
         elif n2 in nodes:
-            FG.add_edge(n1,new_node,data)
+            OG.add_edge(n1,new_node,data)
+            BG.add_edge(n1,new_node,data)
     for n in nodes: # remove the merged nodes
-        #print("MERGED EDGES",FG.neighbors(n))
-        FG.remove_node(n)
+        #print("MERGED EDGES",OG.neighbors(n))
+        OG.remove_node(n)
+        BG.remove_node(n)
         #print("DONE")
-    return FG
+    return OG
 
 
