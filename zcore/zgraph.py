@@ -15,6 +15,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 
 # Выборка соседей всех узлов графа FG с заданной глубиной
 def GIncludeNeighbors(OG, BG, MG, depth=1, noSkip=True):
+    print(depth,'OG',OG.nodes())
     #for nid in MG.nodes(): print('MGraph: ',nid,'>', MG.neighbors(nid))
     #print('MG in',MG.nodes())
     #print("DEPTH",depth)
@@ -29,8 +30,8 @@ def GIncludeNeighbors(OG, BG, MG, depth=1, noSkip=True):
         for nid in nodesToCheck:
             #print("     NID",nid)
             nodes.append(nid) # Добавляем узел в отфильтрованный массив узлов
-            #if OG.node[nid].get('mergedNodes'):
-            if None:
+            if OG.node[nid].get('mergedNodes'):
+            #if None:
                 node = OG.node[nid]
                 #print("MNODE",node)
                 merged = node.get('mergedNodes')
@@ -41,7 +42,7 @@ def GIncludeNeighbors(OG, BG, MG, depth=1, noSkip=True):
                 for mid in merged:
                     try:
                         neighbors = nx.all_neighbors(BG, mid)
-                    except: print("     Для узла %d в базовом графе соседних узлов не найдено" % mid)
+                    except: print("     Для агрегированного узла %d в базовом графе соседних узлов не найдено" % mid)
                     for neighbor in neighbors:
                         nodes.append(neighbor) # Добавляем каждого соседа в отфильтрованный массив узлов
                         #MG.add_node(nid,BG.node[neighbor])
@@ -261,18 +262,18 @@ def GMergeNodes(OG, BG, nodes):
     data.update({'mergedNodes': nodes})
     data.update({'mergedCount': len(nodes)})
     OG.add_node(new_node, data)
-    BG.add_node(new_node, data)
+    #BG.add_node(new_node, data)
     for n1,n2,data in OG.edges(data=True):
         if n1 in nodes:
             OG.add_edge(new_node,n2,data)
-            BG.add_edge(new_node,n2,data)
+            #BG.add_edge(new_node,n2,data)
         elif n2 in nodes:
             OG.add_edge(n1,new_node,data)
-            BG.add_edge(n1,new_node,data)
+            #BG.add_edge(n1,new_node,data)
     for n in nodes: # remove the merged nodes
         #print("MERGED EDGES",OG.neighbors(n))
         OG.remove_node(n)
-        BG.remove_node(n)
+        #BG.remove_node(n)
         #print("DONE")
     return OG
 
