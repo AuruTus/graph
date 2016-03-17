@@ -25,7 +25,8 @@ def GIncludeNeighbors(OG, BG, MG, depth=1, aggregated=[], done=[]):
         nodes = []
         for nid in OG.nodes():
             #print("     NID ",nid, end='\r')
-            if nid not in done: # Если узел ещё не находится в списке обработанных, то выполняем обработку:
+            if 1:
+            #if nid not in done: # Если узел ещё не находится в списке обработанных, то выполняем обработку:
                 done.append(nid) # Добавляем узел в список обработанных
                 nodes.append(nid) # Добавляем узел в отфильтрованный массив узлов
                 if OG.node[nid].get('mergedNodes'):
@@ -54,8 +55,6 @@ def GIncludeNeighbors(OG, BG, MG, depth=1, aggregated=[], done=[]):
                     NG = BG.subgraph(nodes)
                 OG = nx.compose(OG,NG)
                 OG = GIncludeNeighbors(OG, BG, MG, depth, aggregated, done) # Получаем рекурсивно объединённый, включающий соседние узлы, подграф
-        #aggregated.clear()
-        #done.clear()
         return OG
 
 def GIncludeNeighborsOnce(FG, BG):

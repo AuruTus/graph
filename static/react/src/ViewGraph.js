@@ -21,8 +21,7 @@ var Graph = React.createClass({
             if(xhr.readyState == 4) { // `DONE`
                 this.setState({data: xhr.response, gfilter: filter})
                 var data = xhr.response
-                //eval('this.refs.theSVGScene').setView([0 - 200,0 - 200], data.averageScale)
-                //eval('this.refs.theSVGScene').setView([data.averagex,data.averagey], data.averageScale)
+                eval('this.refs.theSVGScene').setView([data.averagex,data.averagey], data.averageScale)
             }
         }.bind(this)
     },
@@ -306,7 +305,7 @@ var AttributesLabel = React.createClass({
 
 var Depth = React.createClass({
     getInitialState: function() {
-        return {value: '2'}
+        return {value: '1'}
     },
     handleChange: function(event) {
         this.setState({value: event.target.value});
@@ -492,11 +491,8 @@ var SVGScene = React.createClass({
         }
     },
     setView(point, scale) {
-        var x = point[0] + this.props.svgdx + this.props.svgWidth/2
-        var y = point[1] + this.props.svgdy + this.props.svgHeight/2
-
-        var vx = (x + this.state.dx - this.props.svgdx) / (this.props.svgWidth*scale)
-        var vy = (y + this.state.dy - this.props.svgdy) / (this.props.svgHeight*scale)
+        var vx = point[0]
+        var vy = point[1]
 
         var vxs = vx * this.props.svgWidth*scale
         var vys = vy * this.props.svgHeight*scale
@@ -507,6 +503,23 @@ var SVGScene = React.createClass({
         //console.log('setView: dx ',dx,' dy',dy)
 
         this.setState({dx: dx, dy: dy, vx: vx, vy: vy, scale: scale})
+    },
+    setCam(point) {
+        var x = point[0] + this.props.svgdx + this.props.svgWidth/2
+        var y = point[1] + this.props.svgdy + this.props.svgHeight/2
+
+        var vx = (x + this.state.dx - this.props.svgdx) / (this.props.svgWidth*this.state.scale)
+        var vy = (y + this.state.dy - this.props.svgdy) / (this.props.svgHeight*this.state.scale)
+
+        var vxs = vx * this.props.svgWidth*this.state.scale
+        var vys = vy * this.props.svgHeight*this.state.scale
+        //console.log('setView: vxs ',vxs,' vys',vys)
+
+        var dx = vxs - this.props.svgWidth/2
+        var dy = vys - this.props.svgHeight/2
+        //console.log('setView: dx ',dx,' dy',dy)
+
+        this.setState({dx: dx, dy: dy, vx: vx, vy: vy})
     },
     project(_point) {
         var point = {}
@@ -521,17 +534,12 @@ var SVGScene = React.createClass({
     componentDidMount: function() {
     },
     handleSceneClick(e) {
-        var clickSvgx = e.pageX
-        var clickSvgy = e.pageY
-        console.log('clickx',clickSvgx,' clicky',clickSvgy)
-        var xs = clickSvgx
-        var xy = clickSvgy
         var cx = (e.pageX - this.props.svgdx) -this.props.svgWidth/2
         var cy = (e.pageY - this.props.svgdy) -this.props.svgHeight/2
         if (this.constructor.clicked) {
             this.constructor.clicked = false
         } else {
-            this.setView([cx,cy], this.state.scale)
+            this.setCam([cx,cy])
         }
     },
     handleMouseMove(e) {
@@ -555,30 +563,15 @@ var SVGScene = React.createClass({
         this.constructor.clicked = false
         scale = eval(scale + sign + scaleStep)
 
-
-        var clickSvgx = e.pageX - this.props.svgdx
-        var clickSvgy = e.pageY - this.props.svgdy
-
         var cx = (e.pageX - this.props.svgdx) -this.props.svgWidth/2
         var cy = (e.pageY - this.props.svgdy) -this.props.svgHeight/2
-        //console.log("CX",cx,"CY",cy)
-
-        var xs = clickSvgx + this.state.dx
-        var xy = clickSvgy + this.state.dy
-        var vx = xs / (this.props.svgWidth*this.state.scale)
-        var vy = xy / (this.props.svgHeight*this.state.scale)
-        //console.log("VX",vx,"VY",vy)
-
-        //var vx = cx / (this.props.svgWidth*this.state.scale)
-        //var vy = cy / (this.props.svgHeight*this.state.scale)
-
+        var dx = cx - cx * scale
+        var dy = cy - cy * scale
+        console.log("SCALE",scale,"CX",cx,"CY",cy)
         if (scale > 0) {
+            this.setCam([cx,cy])
             this.setState({scale: scale})
-            //this.setView([vx,vy], this.state.scale)
-            //this.setView([cx,cy], this.state.scale)
-            //this.handleSceneClick(e)
         }
-        //console.log('scale',scale)
     },
     handleScaleClick(e, sign) {
         console.log('sign',sign)
@@ -683,7 +676,8 @@ var SVGScene = React.createClass({
                 //onClick={this.handleSceneClick}
                 onDoubleClick={this.handleSceneClick}
                 onWheel={this.handleWheel}
-                onMouseMove={this.handleMouseMove}
+                //onMouseMove={this.handleMouseMove}
+                onMouseDown={this.handleMouseMove}
                 //className='col-md-6'
             >
                 {edgeRows}
