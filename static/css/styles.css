@@ -141,11 +141,18 @@ svg .node {
             stroke: #bbb;
             stroke-width: 1px;
         }
-        .graph svg .person {
+        .graph .person {
             //fill: #264294;
             fill: green;
         }
+        .graph .person.aggregated {
+            fill: purple;
+        }
         .graph .circle {
+            stroke: #C2D6E6;
+            fill: #4682B4;
+        }
+        .graph .event {
             stroke: #C2D6E6;
             fill: #4682B4;
         }

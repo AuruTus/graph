@@ -7,6 +7,7 @@ from random import randint
 import numpy as np
 import warnings
 import requests
+import copy
 
 from django.db import models
 from django.db import connections
@@ -14,7 +15,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 
 
 # Выборка соседей всех узлов графа FG с заданной глубиной
-def GIncludeNeighbors(OG, BG, MG, depth=1, aggregated=[], done=[]):
+def GIncludeNeighbors(OG, BG, AG, depth=1, aggregated=[], done=[]):
     #print("     DEPTH ",depth)
     #print(depth,'OG',OG.nodes())
     if depth == 0:
@@ -42,19 +43,19 @@ def GIncludeNeighbors(OG, BG, MG, depth=1, aggregated=[], done=[]):
                             if neighbor not in aggregated: # Если узел не находится в списке агрегированных узлов, то:
                                 nodes.append(neighbor) # Добавляем каждого соседа в отфильтрованный массив узлов
                             if not neighbor in OG:
-                                OG.add_node(neighbor,BG.node[neighbor])
+                                OG.add_node(neighbor,AG.node[neighbor])
                                 OG.add_edge(nid,neighbor)
-                    NG = BG.subgraph(nodes)
+                    NG = AG.subgraph(nodes)
                 else:
                     try: 
-                        neighbors = nx.all_neighbors(BG, nid) # Для каждого из узлов графа получаем массив его соседей
+                        neighbors = nx.all_neighbors(AG, nid) # Для каждого из узлов графа получаем массив его соседей
                     except: print("     Для узла %d в базовом графе соседних узлов не найдено" % nid)
                     for neighbor in neighbors:
                         if neighbor not in aggregated: # Если узел не находится в списке агрегированных узлов, то:
                             nodes.append(neighbor) # Добавляем каждого соседа в отфильтрованный массив узлов
-                    NG = BG.subgraph(nodes)
+                    NG = AG.subgraph(nodes)
                 OG = nx.compose(OG,NG)
-                OG = GIncludeNeighbors(OG, BG, MG, depth, aggregated, done) # Получаем рекурсивно объединённый, включающий соседние узлы, подграф
+                OG = GIncludeNeighbors(OG, BG, AG, depth, aggregated, done) # Получаем рекурсивно объединённый, включающий соседние узлы, подграф
         return OG
 
 def GIncludeNeighborsOnce(FG, BG):
@@ -194,7 +195,7 @@ def GJoinByNodeData(FG, joinPersons):
 
 
 # Агрегирование узлов графа различного тип по определенным параметрам
-def GAggregatePersons(OG, BG, aggregate):
+def GAggregatePersons(OG, AG, aggregate):
     #print('JOIN edges',FG.edges())
     if aggregate:
         d = {}
@@ -217,7 +218,7 @@ def GAggregatePersons(OG, BG, aggregate):
             #print('FG2',FG.nodes(data=True))
             #print('JOIN edges',FG.edges())
             #print("EDGES",FG.neighbors(nid),
-            OG = GMergeNodes(OG, BG, nodes)
+            OG = GMergeNodes(OG, AG, nodes)
 
         #print('graph:\n',FG.nodes(data=True),'\n')
         #print('FG2',FG.edges(data=True))
@@ -226,24 +227,24 @@ def GAggregatePersons(OG, BG, aggregate):
 
 
 # Объединение узлов графа, id которых переданны в списке nodes, в один новый узел. Переданные узлы при этом удаляются из графа.
-def GMergeNodes(OG, BG, nodes):
+def GMergeNodes(OG, AG, nodes):
     new_node = int('10'+str(nodes[0]))
-    data = OG.node[nodes[0]]
+    data = copy.deepcopy(OG.node[nodes[0]])
     data.update({'mergedNodes': nodes})
     data.update({'mergedCount': len(nodes)})
     OG.add_node(new_node, data)
-    #BG.add_node(new_node, data)
+    AG.add_node(new_node, data)
     for n1,n2,data in OG.edges(data=True):
         if n1 in nodes:
             OG.add_edge(new_node,n2,data)
-            #BG.add_edge(new_node,n2,data)
+            AG.add_edge(new_node,n2,data)
         elif n2 in nodes:
             OG.add_edge(n1,new_node,data)
-            #BG.add_edge(n1,new_node,data)
+            AG.add_edge(n1,new_node,data)
     for n in nodes: # remove the merged nodes
         #print("MERGED EDGES",OG.neighbors(n))
         OG.remove_node(n)
-        #BG.remove_node(n)
+        AG.remove_node(n)
         #print("DONE")
     return OG
 

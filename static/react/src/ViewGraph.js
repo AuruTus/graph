@@ -627,6 +627,7 @@ var SVGScene = React.createClass({
                     key={nid}
                     ref={"theGraphNode"+nid}
                     nid={nid}
+                    type={node.type}
                     data={node.data}
                     x={point.x}
                     y={point.y}
@@ -900,8 +901,7 @@ var GraphNodePerson = React.createClass({
         }
         return (
             <g 
-                fill='green'
-                className={'person ' + this.props.checked}
+                className={'person ' + this.props.checked + ' ' + this.props.type}
                 transform={transform}
                 onMouseOver={this.props._onMouseOver}
                 //onClick={this.props._onClick}
@@ -968,7 +968,7 @@ var GraphNodeEvent = React.createClass({
     render: function() {
         //console.log('data',this.props.data)
         var text = []
-        this.color = 'purple'
+        //this.color = 'purple'
         var translate = "translate("+(-4)+","+(-4)+") "
         var rotate = "rotate(45 " + this.props.cx + " " + this.props.cy + ") "
         var scale = ''

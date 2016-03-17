@@ -68,8 +68,8 @@ def to_main_graph(body, gid, gfilter=None):
     BG = json_graph.node_link_graph(H) # Получаем базовый граф: преобразуем структурy графа в формате json в объект типа граф библиотеки NetworkX
     #print('Base Graph',BG.nodes(data=True))
     #print('\nBase Graph',BG[1],'\n')
-    FG = json_graph.node_link_graph(H) # Получаем граф для последовательной фильтрации на основе базового графа
-    #ABG = json_graph.node_link_graph(H) # Агрегированный граф
+    OG = json_graph.node_link_graph(H) # Получаем граф для последовательной фильтрации на основе базового графа
+    AG = json_graph.node_link_graph(H) # Агрегированный граф
 
     # Если передан массив фильтрующих атрибутов, 
     # декодируем json-объект gfilter - массив параметров, полученных из url 
@@ -77,35 +77,35 @@ def to_main_graph(body, gid, gfilter=None):
     try: 
         gfilter = json.loads(gfilter) # Получаем ассоциативный массив данных фильтра в формате json 
         #print('FGin',FG.nodes())
-        FG = GFilterNodeData(FG, BG, gfilter.get('data')) # Оставляем в графе только те узлы, атрибут data которых совпадает с переданной строкой
-        FG = GFilterTaxonomy(FG, BG, gfilter.get('taxonomy')) # Производим фильтрацию узлов графа по переданному массиву терминов таксономии
+        OG = GFilterNodeData(OG, BG, gfilter.get('data')) # Оставляем в графе только те узлы, атрибут data которых совпадает с переданной строкой
+        OG = GFilterTaxonomy(OG, BG, gfilter.get('taxonomy')) # Производим фильтрацию узлов графа по переданному массиву терминов таксономии
         #print('FG1',FG.nodes())
         #G = GFilterAttributes(FG, gfilter.get('attributes')) # Производим фильтрацию графа по атрибутам узла
         #FG = GFilterNodes(FG, gfilter.get('nodes')) # Производим фильтрацию графа по переданным в списке nodes узлам
         #print('FG2',FG.nodes())
         #for nid in FG.nodes(): print('neighbors',nid,'>', FG.neighbors(nid))
-        FG = GAggregatePersons(FG, BG, gfilter.get('joinPersons')) # Объединяем узлы типа Персона по значению атрибута Фамилия
+        OG = GAggregatePersons(OG, AG, gfilter.get('joinPersons')) # Объединяем узлы типа Персона по значению атрибута Фамилия
         #FG = GJoinByNodeData(FG, gfilter.get('joinPersons')) # Объединяем узлы по значению атрибута data
         print("JOINED")
         #print('FG joined',FG.nodes())
 
         #print('---- GIncludeNeighbors ----')
-        FG = GIncludeNeighbors(FG, BG, nx.Graph(), int(gfilter.get('depth')), [], []) # Включаем в граф соседей для текущих узлов
+        OG = GIncludeNeighbors(OG, BG, AG, int(gfilter.get('depth')), [], []) # Включаем в граф соседей для текущих узлов
         #print('---- /GIncludeNeighbors ----')
         print("\nINCLUDED")
         #print('FG included',FG.nodes())
 
         #print('FGout',FG.nodes())
         layoutArgument = gfilter.get('layout') # Получаем массив данных для выбранного способа компоновки (layout)
-        layout = get_graph_layout(FG, gid, layoutArgument)
+        layout = get_graph_layout(OG, gid, layoutArgument)
     except:
         print("! GFILTER EXCEPTION")
-        layout = get_graph_layout(FG, gid, 'undefined', True)
+        layout = get_graph_layout(OG, gid, 'undefined', True)
         #warnings.warn('Ошибка при обработке json-массива gfilter', UserWarning)
         pass
     #print("---- FILTERED ----")
     #for nid in FG.nodes(): print('neighbors',nid,'>', FG.neighbors(nid))
-    for nid in FG.nodes(): 
+    for nid in OG.nodes(): 
         try:
             pass
             #print('neighbors',nid,'>', FG.neighbors(nid))
@@ -133,17 +133,20 @@ def to_main_graph(body, gid, gfilter=None):
         scale = diffx if diffx > diffy else diffy
         if scale != 0:
             averageScale = 0.8 / scale
+        nodeType = 'aggregated' if OG.node[nid].get('mergedNodes') else 'normul'
+        #nodeType = 'aggregated' + str(FG.node[nid].get('mergedNodes')) if FG.node[nid].get('mergedNodes') else 'normul'
 
         #print("DATA",FG.node[nid]['data'])
         data['nodes'][nid] = {
             'id': nid, 
-            'data': FG.node[nid]['data'], 
-            'degree': FG.degree(nid),
+            'type': nodeType,
+            'data': OG.node[nid]['data'], 
+            'degree': OG.degree(nid),
             'x':str(x),
             'y':str(y), 
-            'taxonomy': FG.node[nid]['taxonomy'],
-            'attributes': FG.node[nid]['attributes'],
-            'neighbors': FG.neighbors(nid),
+            'taxonomy': OG.node[nid]['taxonomy'],
+            'attributes': OG.node[nid]['attributes'],
+            'neighbors': OG.neighbors(nid),
         }
         #print('neighbors',nid,'>', FG.neighbors(nid))
     data.update({'maxx': str(maxx), 'maxy': str(maxy), 'minx': str(minx), 'miny': str(miny)})
