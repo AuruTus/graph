@@ -1,11 +1,12 @@
 /* цвета, которые нельзя передать SVG export'ом */
 var color01 = "#000080"
+var events = [50,60,70,75,80,90,100,110,115,120,130,140]
 
 // Главный компонент для визуализации в виде графа
 var Graph = React.createClass({
     loadDataFromServer: function(filter) {
         // Преобразовываем массив json-данных gfilter для передачи через url 
-        console.log("FILTER",filter)
+        //console.log("FILTER",filter)
         var filterJSONed = encodeURIComponent(JSON.stringify(filter))
         // Формируем адрес, по которому будет производится REST-запрос
         var url = '/json-main-graph/' + gid + '/' + filterJSONed
@@ -20,7 +21,8 @@ var Graph = React.createClass({
             if(xhr.readyState == 4) { // `DONE`
                 this.setState({data: xhr.response, gfilter: filter})
                 var data = xhr.response
-                eval('this.refs.theSVGScene').setView([data.averagex,data.averagey], data.averageScale)
+                //eval('this.refs.theSVGScene').setView([0 - 200,0 - 200], data.averageScale)
+                //eval('this.refs.theSVGScene').setView([data.averagex,data.averagey], data.averageScale)
             }
         }.bind(this)
     },
@@ -68,11 +70,15 @@ var Graph = React.createClass({
         var info = $('.graph .info')
         //var bordersOnBothSides = graphFilter.outerWidth() - graphFilter.innerWidth()
         //console.log('bb',bordersOnBothSides)
-        var svgdx = graphFilter.width() + 80 + info.width()
-        var svgdy = $('.navbar-header').height() + 8
-        var sceneWidth = $(window).width() - svgdx - scrollbarWidth()
+
+        var svgdx = graphFilter.width() + 33
+        var svgdy = $('.navbar-header').height() + 3
+
+        var dx = graphFilter.width() + 80 + info.width()
+        var dy = $('.navbar-header').height() + 8
+        var sceneWidth = $(window).width() - dx - scrollbarWidth()
         //sceneWidth = 400
-        var sceneHeight = $(window).height() - svgdy
+        var sceneHeight = $(window).height() - dy
         //sceneHeight = 400
         return (
             <div className="graph">
@@ -300,11 +306,11 @@ var AttributesLabel = React.createClass({
 
 var Depth = React.createClass({
     getInitialState: function() {
-        return {value: '1'}
+        return {value: '2'}
     },
     handleChange: function(event) {
-		this.setState({value: event.target.value});
-	},
+        this.setState({value: event.target.value});
+    },
     render: function() {
         return (
             <label className='data'>
@@ -486,14 +492,20 @@ var SVGScene = React.createClass({
         }
     },
     setView(point, scale) {
-        var vx = point[0]
-        var vy = point[1]
+        var x = point[0] + this.props.svgdx + this.props.svgWidth/2
+        var y = point[1] + this.props.svgdy + this.props.svgHeight/2
+
+        var vx = (x + this.state.dx - this.props.svgdx) / (this.props.svgWidth*scale)
+        var vy = (y + this.state.dy - this.props.svgdy) / (this.props.svgHeight*scale)
+
         var vxs = vx * this.props.svgWidth*scale
         var vys = vy * this.props.svgHeight*scale
         //console.log('setView: vxs ',vxs,' vys',vys)
+
         var dx = vxs - this.props.svgWidth/2
         var dy = vys - this.props.svgHeight/2
         //console.log('setView: dx ',dx,' dy',dy)
+
         this.setState({dx: dx, dy: dy, vx: vx, vy: vy, scale: scale})
     },
     project(_point) {
@@ -507,27 +519,25 @@ var SVGScene = React.createClass({
         return point
     },
     componentDidMount: function() {
-        /*
-        var maxx = this.props.data.maxx
-        console.log('maxx', maxx)
-        this.setView([0,0], 1)
-        */
     },
     handleSceneClick(e) {
-        var clickSvgx = e.pageX - this.props.svgdx
-        var clickSvgy = e.pageY - this.props.svgdy
-        //console.log('clickx',clickSvgx,' clicky',clickSvgy)
-        var xs = clickSvgx + this.state.dx
-        var xy = clickSvgy + this.state.dy
-        var vx = xs / (this.props.svgWidth*this.state.scale)
-        var vy = xy / (this.props.svgHeight*this.state.scale)
-        //console.log('vx',vx,' vy',vy)
-        //console.log('thisvx ',this.state.vx,' thisvy',this.state.vy)
+        var clickSvgx = e.pageX
+        var clickSvgy = e.pageY
+        console.log('clickx',clickSvgx,' clicky',clickSvgy)
+        var xs = clickSvgx
+        var xy = clickSvgy
+        var cx = (e.pageX - this.props.svgdx) -this.props.svgWidth/2
+        var cy = (e.pageY - this.props.svgdy) -this.props.svgHeight/2
         if (this.constructor.clicked) {
             this.constructor.clicked = false
         } else {
-            this.setView([vx,vy], this.state.scale)
+            this.setView([cx,cy], this.state.scale)
         }
+    },
+    handleMouseMove(e) {
+        var cx = (e.pageX - this.props.svgdx) -this.props.svgWidth/2
+        var cy = (e.pageY - this.props.svgdy) -this.props.svgHeight/2
+        console.log("CX",cx,"CY",cy)
     },
     handleWheel(e) {
         e.preventDefault() 
@@ -544,8 +554,29 @@ var SVGScene = React.createClass({
         var scale = this.state.scale
         this.constructor.clicked = false
         scale = eval(scale + sign + scaleStep)
+
+
+        var clickSvgx = e.pageX - this.props.svgdx
+        var clickSvgy = e.pageY - this.props.svgdy
+
+        var cx = (e.pageX - this.props.svgdx) -this.props.svgWidth/2
+        var cy = (e.pageY - this.props.svgdy) -this.props.svgHeight/2
+        //console.log("CX",cx,"CY",cy)
+
+        var xs = clickSvgx + this.state.dx
+        var xy = clickSvgy + this.state.dy
+        var vx = xs / (this.props.svgWidth*this.state.scale)
+        var vy = xy / (this.props.svgHeight*this.state.scale)
+        //console.log("VX",vx,"VY",vy)
+
+        //var vx = cx / (this.props.svgWidth*this.state.scale)
+        //var vy = cy / (this.props.svgHeight*this.state.scale)
+
         if (scale > 0) {
             this.setState({scale: scale})
+            //this.setView([vx,vy], this.state.scale)
+            //this.setView([cx,cy], this.state.scale)
+            //this.handleSceneClick(e)
         }
         //console.log('scale',scale)
     },
@@ -652,6 +683,7 @@ var SVGScene = React.createClass({
                 //onClick={this.handleSceneClick}
                 onDoubleClick={this.handleSceneClick}
                 onWheel={this.handleWheel}
+                onMouseMove={this.handleMouseMove}
                 //className='col-md-6'
             >
                 {edgeRows}
@@ -811,14 +843,16 @@ var GraphNode = React.createClass({
         }
     },
     render: function() {
-        switch(this.props.taxonomy.tid) {
-            case 10:
-                NodeType = GraphNodePerson
-                break
-            default:
-                NodeType = GraphNodeCircle
-                //NodeType = GraphNodeRect
-                break
+        //console.log("TID",this.props.taxonomy.tid)
+        var tid = this.props.taxonomy.tid
+        //switch(this.props.taxonomy.tid) {
+        //console.log("TID",tid)
+        if (tid == 10) {
+            NodeType = GraphNodePerson
+        } else if (inArray(tid, events)) {
+            NodeType = GraphNodeEvent
+        } else {
+            NodeType = GraphNodeCircle
         }
 
         return (
@@ -876,8 +910,8 @@ var GraphNodePerson = React.createClass({
                 className={'person ' + this.props.checked}
                 transform={transform}
                 onMouseOver={this.props._onMouseOver}
-                onClick={this.props._onClick}
-                onDoubleClick={this.handleDoubleClick}
+                //onClick={this.props._onClick}
+                //onDoubleClick={this.handleDoubleClick}
                 >
                 <path
                     transform={scale}
@@ -887,6 +921,7 @@ var GraphNodePerson = React.createClass({
         )
     }
 })
+
 
 var GraphNodeCircle = React.createClass({
     /*
@@ -916,7 +951,7 @@ var GraphNodeCircle = React.createClass({
         }
         return (
             <g
-                className={'Circle ' + this.props.checked}
+                className={'circle ' + this.props.checked}
                 onMouseOver={this.props._onMouseOver}
                 onClick={this.props._onClick}
                 //onMouseDown={this.onMouseDown}
@@ -929,6 +964,45 @@ var GraphNodeCircle = React.createClass({
                 transform={scale}
             />
             {text}
+            </g>
+        )
+    }
+})
+
+
+var GraphNodeEvent = React.createClass({
+    render: function() {
+        //console.log('data',this.props.data)
+        var text = []
+        this.color = 'purple'
+        var translate = "translate("+(-4)+","+(-4)+") "
+        var rotate = "rotate(45 " + this.props.cx + " " + this.props.cy + ") "
+        var scale = ''
+        if (this.props.degree > 2) {
+            text.push(
+                <text 
+                    x={this.props.cx}
+                    y={this.props.cy+15}
+                >
+                    {this.props.data}
+                </text>)
+        }
+        return (
+            <g
+                //transform={translate}
+                className={'event ' + this.props.checked}
+                onMouseOver={this.props._onMouseOver}
+                onClick={this.props._onClick}
+            >
+                <rect 
+                    transform={rotate + translate}
+                    fill={this.color}
+                    x={this.props.cx}
+                    y={this.props.cy}
+                    height="8"
+                    width="8"
+                />
+                {text}
             </g>
         )
     }

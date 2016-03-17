@@ -14,78 +14,49 @@ from django.http import HttpResponse, HttpResponseRedirect
 
 
 # Выборка соседей всех узлов графа FG с заданной глубиной
-def GIncludeNeighbors(OG, BG, MG, depth=1, noSkip=True):
-    print(depth,'OG',OG.nodes())
-    #for nid in MG.nodes(): print('MGraph: ',nid,'>', MG.neighbors(nid))
-    #print('MG in',MG.nodes())
-    #print("DEPTH",depth)
+def GIncludeNeighbors(OG, BG, MG, depth=1, aggregated=[], done=[]):
+    #print("     DEPTH ",depth)
+    #print(depth,'OG',OG.nodes())
     if depth == 0:
         return OG
     else:
         depth = depth - 1
         neighbors = []
         nodes = []
-        #print('     FG befor include',FG.nodes())
-        nodesToCheck = OG.nodes()
-        for nid in nodesToCheck:
-            #print("     NID",nid)
-            nodes.append(nid) # Добавляем узел в отфильтрованный массив узлов
-            if OG.node[nid].get('mergedNodes'):
-            #if None:
-                node = OG.node[nid]
-                #print("MNODE",node)
-                merged = node.get('mergedNodes')
-                MG.add_node(nid,node)
-                #print('     MNODE',MG.node[eval(nid)]))
-                #print('    merged:',merged)
-                # Обрабатываем массив нод, которые являются исходными для агрегированной ноды 
-                for mid in merged:
-                    try:
-                        neighbors = nx.all_neighbors(BG, mid)
-                    except: print("     Для агрегированного узла %d в базовом графе соседних узлов не найдено" % mid)
+        for nid in OG.nodes():
+            #print("     NID ",nid, end='\r')
+            if nid not in done: # Если узел ещё не находится в списке обработанных, то выполняем обработку:
+                done.append(nid) # Добавляем узел в список обработанных
+                nodes.append(nid) # Добавляем узел в отфильтрованный массив узлов
+                if OG.node[nid].get('mergedNodes'):
+                    node = OG.node[nid]
+                    merged = node.get('mergedNodes')
+                    # Обрабатываем массив нод, которые являются исходными для агрегированной ноды 
+                    for mid in merged:
+                        aggregated.append(mid)
+                        try:
+                            neighbors = nx.all_neighbors(BG, mid)
+                        except: print("     Для агрегированного узла %d в базовом графе соседних узлов не найдено" % mid)
+                        for neighbor in neighbors:
+                            if neighbor not in aggregated: # Если узел не находится в списке агрегированных узлов, то:
+                                nodes.append(neighbor) # Добавляем каждого соседа в отфильтрованный массив узлов
+                            if not neighbor in OG:
+                                OG.add_node(neighbor,BG.node[neighbor])
+                                OG.add_edge(nid,neighbor)
+                    NG = BG.subgraph(nodes)
+                else:
+                    try: 
+                        neighbors = nx.all_neighbors(BG, nid) # Для каждого из узлов графа получаем массив его соседей
+                    except: print("     Для узла %d в базовом графе соседних узлов не найдено" % nid)
                     for neighbor in neighbors:
-                        nodes.append(neighbor) # Добавляем каждого соседа в отфильтрованный массив узлов
-                        #MG.add_node(nid,BG.node[neighbor])
-                        #print("     nbr",BG.node[neighbor])
-                        #print("     IN GRAPH",neighbor in MG)
-                        if not neighbor in MG:
-                            #print("     NEIGHBOR",neighbor)
-                            MG.add_node(neighbor,BG.node[neighbor])
-                            MG.add_edge(nid,neighbor)
-                        else:
-                            pass
-                            #print("     -",MG.node[neighbor])
-                        #nodes.append(neighbor)
-                NG = BG.subgraph(nodes)
-                #NG = nx.compose(MG,BG.subgraph(nodes))
-                #for nid in NG.nodes(): print('Complete NGraph: ',nid,'>', NG.neighbors(nid))
-                #UG = nx.union((BG.subgraph(nodes)), MG)
-                #subGraph = GIncludeNeighbors(UG, BG, MG, depth, False) # Получаем рекурсивно объединённый, включающий соседние узлы, подграф
-                #subGraph = GIncludeNeighborsOnce(UG, BG)
-                #subGraph = UG
-            else:
-                try: 
-                    neighbors = nx.all_neighbors(BG, nid) # Для каждого из узлов графа получаем массив его соседей
-                except: print("     Для узла %d в базовом графе соседних узлов не найдено" % nid)
-                for neighbor in neighbors:
-                    nodes.append(neighbor) # Добавляем каждого соседа в отфильтрованный массив узлов
-                NG = BG.subgraph(nodes)
-
-            #print("     D:",depth,"> ",nodes)
-            OG = nx.compose(OG,NG)
-            #print("     OG nodes",OG.nodes())
-            #print("     OG edges",OG.edges())
-            #subGraph = OG
-            subGraph = GIncludeNeighbors(OG, BG, MG, depth) # Получаем рекурсивно объединённый, включающий соседние узлы, подграф
-
-
-
-            #subGraph = GIncludeNeighbors(BG.subgraph(nodes), BG, MG, depth) # Получаем рекурсивно объединённый, включающий соседние узлы, подграф
-         
-        #for nid in MG.nodes(): print('out MGraph: ',nid,'>', MG.neighbors(nid))
-        #print('MG out',MG.nodes())
-        #for rid in subGraph.nodes(): print('d',depth,'nid',rid,':',subGraph.node[rid]['data'],'neighbors>', subGraph.neighbors(rid))
-        return subGraph
+                        if neighbor not in aggregated: # Если узел не находится в списке агрегированных узлов, то:
+                            nodes.append(neighbor) # Добавляем каждого соседа в отфильтрованный массив узлов
+                    NG = BG.subgraph(nodes)
+                OG = nx.compose(OG,NG)
+                OG = GIncludeNeighbors(OG, BG, MG, depth, aggregated, done) # Получаем рекурсивно объединённый, включающий соседние узлы, подграф
+        #aggregated.clear()
+        #done.clear()
+        return OG
 
 def GIncludeNeighborsOnce(FG, BG):
     neighbors = []
