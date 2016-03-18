@@ -156,6 +156,10 @@ svg .node {
             stroke: #C2D6E6;
             fill: #4682B4;
         }
+        .graph .organization {
+            stroke: #C2D6E6;
+            fill: #4682B4;
+        }
         .graph svg text {
             fill: #333;
             stroke: #333;

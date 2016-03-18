@@ -483,6 +483,7 @@ var SVGScene = React.createClass({
         var scale = 1
         return {
             clicked: false,
+            dragging: false,
             scale: scale,
             vx: 0.5,
             vy: 0.5,
@@ -542,10 +543,31 @@ var SVGScene = React.createClass({
             this.setCam([cx,cy])
         }
     },
+    handleMouseDown(e) {
+        console.log("D",this.state.dragging)
+        if (e.button !== 0) return // only left mouse button
+        var pos = $(this.getDOMNode()).offset()
+        this.setState({
+            dragging: true,
+            rel: {
+                x: e.pageX - pos.left,
+                y: e.pageY - pos.top
+            }
+        })
+        e.stopPropagation()
+        e.preventDefault()
+    },
+    handleMouseUp(e) {
+        this.setState({dragging: false})
+        e.stopPropagation()
+        e.preventDefault()
+    },
     handleMouseMove(e) {
-        var cx = (e.pageX - this.props.svgdx) -this.props.svgWidth/2
-        var cy = (e.pageY - this.props.svgdy) -this.props.svgHeight/2
-        console.log("CX",cx,"CY",cy)
+        if (this.state.dragging) {
+            var cx = (e.pageX - this.props.svgdx) -this.props.svgWidth/2
+            var cy = (e.pageY - this.props.svgdy) -this.props.svgHeight/2
+            console.log("CX",cx,"CY",cy)
+        }
     },
     handleWheel(e) {
         e.preventDefault() 
@@ -641,7 +663,6 @@ var SVGScene = React.createClass({
                     _sceneClicked={this.clicked}
                     _handleNodeClick={this.props._handleNodeClick}
                     _handleNodeTip={this.props._handleNodeTip}
-                    //onMouseDown={this.onMouseDown}
                 />)
             }.bind(this))
 
@@ -677,8 +698,9 @@ var SVGScene = React.createClass({
                 //onClick={this.handleSceneClick}
                 onDoubleClick={this.handleSceneClick}
                 onWheel={this.handleWheel}
-                //onMouseMove={this.handleMouseMove}
-                onMouseDown={this.handleMouseMove}
+                onMouseMove={this.handleMouseMove}
+                onMouseDown={this.handleMouseDown}
+                onMouseUp={this.handleMouseUp}
                 //className='col-md-6'
             >
                 {edgeRows}
@@ -844,6 +866,8 @@ var GraphNode = React.createClass({
         //console.log("TID",tid)
         if (tid == 10) {
             NodeType = GraphNodePerson
+        } else if (tid == 30) {
+            NodeType = GraphNodeOrganization
         } else if (inArray(tid, events)) {
             NodeType = GraphNodeEvent
         } else {
@@ -911,6 +935,38 @@ var GraphNodePerson = React.createClass({
                     transform={scale}
                     d="M 24.827,0 C 11.138,0 0.001,11.138 0.001,24.827 c 0,13.689 11.137,24.827 24.826,24.827 13.688,0 24.826,-11.138 24.826,-24.827 C 49.653,11.138 38.517,0 24.827,0 Z m 14.315,38.51 c 0,-0.574 0,-0.979 0,-0.979 0,-3.386 -3.912,-4.621 -6.006,-5.517 -0.758,-0.323 -2.187,-1.011 -3.653,-1.728 -0.495,-0.242 -0.941,-0.887 -0.997,-1.438 l -0.162,-1.604 c 1.122,-1.045 2.133,-2.5 2.304,-4.122 l 0.253,0 c 0.398,0 0.773,-0.298 0.832,-0.663 l 0.397,-2.453 c 0.053,-0.524 -0.442,-0.842 -0.843,-0.842 0.011,-0.052 0.02,-0.105 0.025,-0.149 0.051,-0.295 0.082,-0.58 0.102,-0.857 0.025,-0.223 0.045,-0.454 0.056,-0.693 0.042,-1.158 -0.154,-2.171 -0.479,-2.738 -0.33,-0.793 -0.83,-1.563 -1.526,-2.223 -1.939,-1.836 -4.188,-2.551 -6.106,-1.075 -1.306,-0.226 -2.858,0.371 -3.979,1.684 -0.612,0.717 -0.993,1.537 -1.156,2.344 -0.146,0.503 -0.243,1.112 -0.267,1.771 -0.026,0.733 0.046,1.404 0.181,1.947 -0.382,0.024 -0.764,0.338 -0.764,0.833 l 0.396,2.453 c 0.059,0.365 0.434,0.663 0.832,0.663 l 0.227,0 c 0.36,1.754 1.292,3.194 2.323,4.198 l -0.156,1.551 c -0.056,0.55 -0.502,1.193 -0.998,1.438 -1.418,0.692 -2.815,1.358 -3.651,1.703 -1.97,0.812 -6.006,2.131 -6.006,5.517 l 0,0.766 C 7.033,34.756 5.005,30.031 5.005,24.83 c 0,-10.932 8.894,-19.826 19.826,-19.826 10.933,0 19.826,8.894 19.826,19.826 -0.004,5.303 -2.109,10.116 -5.515,13.68 z"/>
                 {text}
+            </g>
+        )
+    }
+})
+
+
+var GraphNodeOrganization = React.createClass({
+    render: function() {
+        var text = []
+        if (this.props.degree > 2) {
+            text.push(<text x={-30} y={35} >
+                        {this.props.data}
+                </text>)
+        }
+        var translate = "translate("+(this.props.cx)+","+(this.props.cy)+")"
+        var scale = "scale(.6,.6)"
+        return (
+            <g 
+                className={'organization ' + this.props.checked + ' ' + this.props.type}
+                transform={translate}
+                >
+                <path
+                    transform={scale}
+                    d="M 261.47266 248.89844 L 246.33789 256.0918 L 253.42188 256.08398 L 253.42188 271.26172 L 269.83789 271.26172 L 269.83789 255.875 L 276.15039 255.875 L 261.47266 248.89844 z M 257.5 258.79102 L 265.97461 258.79102 L 265.97461 265.57617 L 257.5 265.57617 L 257.5 258.79102 z "
+                />
+                {text}
+                <circle 
+                    cx={this.props.cx}
+                    cy={this.props.cy}
+                    r={5}
+                    fill={'purple'}
+                />
             </g>
         )
     }
