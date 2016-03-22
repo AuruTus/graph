@@ -33,7 +33,7 @@ def GIncludeNeighbors(OG, BG, AG, depth=1, aggregated=[], done=[]):
                 if OG.node[nid].get('mergedNodes'):
                     node = OG.node[nid]
                     merged = node.get('mergedNodes')
-                    # Обрабатываем массив нод, которые являются исходными для агрегированной ноды 
+                    # Обрабатываем массив нод, которые являются исходными для агрегированной ноды
                     for mid in merged:
                         aggregated.append(mid)
                         try:
@@ -47,7 +47,7 @@ def GIncludeNeighbors(OG, BG, AG, depth=1, aggregated=[], done=[]):
                                 OG.add_edge(nid,neighbor)
                     NG = AG.subgraph(nodes)
                 else:
-                    try: 
+                    try:
                         neighbors = nx.all_neighbors(AG, nid) # Для каждого из узлов графа получаем массив его соседей
                     except: print("     Для узла %d в базовом графе соседних узлов не найдено" % nid)
                     for neighbor in neighbors:
@@ -88,13 +88,13 @@ def GFilterZero(G, check):
     # Если check имеет строковый тип и значение 'true', производим фильтрацию узлов
     elif len(str(check)) > 0 and str(check) == 'true':
         removeZero = True
-    if removeZero:    
+    if removeZero:
         for nid in G.nodes():
             if G.degree(nid) < 1:
                 G.remove_node(nid)
 
     return G
-    
+
 
 # Производим фильтрацию узлов графа по переданным в ассоциативном массивe attributes атрибутам узлов;
 # где формат атрибутов {'attribute1': True, 'attribute2': False, ...}
@@ -164,7 +164,7 @@ def GFilterNodeData(FG, BG, data):
         FG = BG.subgraph(nodes)
 
     return FG
-    
+
 # Агрегирование узлов по атрибуту data
 def GJoinByNodeData(FG, joinPersons):
     if joinPersons:
@@ -184,7 +184,7 @@ def GJoinByNodeData(FG, joinPersons):
                     nids = d.get(data)
                     if nids == None:
                         nids = []
-                    nids.append(nid) 
+                    nids.append(nid)
                     d[data] = nids
         for data in d:
             nodes = d[data]
@@ -211,7 +211,7 @@ def GAggregatePersons(OG, AG, aggregate):
                         nids = d.get(surname)
                         if nids == None:
                             nids = []
-                        nids.append(nid) 
+                        nids.append(nid)
                         d[surname] = nids
         for surname in d:
             nodes = d[surname]

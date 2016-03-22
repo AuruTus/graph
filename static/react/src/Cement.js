@@ -557,3 +557,15 @@ var TaxonomyFilter = React.createClass({
             '5': {'x': 1.00, 'y': 1.00, 'taxonomy': {'name': 'Организация', 'parent_tid': null, 'tid': 30}, "data": "test", "attributes": [],}, 
         }
 
+
+
+/*
+                <path
+                    transform="translate(-1.2,-1036.1925)"
+                    d="m 10.211467,1034.1973 -10.07732338,4.9015 4.71679858,-0.01 0,10.342 10.9304238,0 0,-10.4845 4.203111,0 -9.77301,-4.7538 z m -2.6451522,6.7408 c 3.1250002,-2.1875 5.6427282,0 5.6427282,0 l 0,4.6234 -5.6427282,0 z"
+                />
+
+
+            <g dangerouslySetInnerHTML={{__html: useTag }} ></g>
+                <use xlinkHref="/static/org.vg"></use>
+*/

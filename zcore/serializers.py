@@ -5,18 +5,11 @@ import networkx as nx
 from networkx.readwrite import json_graph
 from random import randint
 import numpy as np
-from numpy import array, float32
-import warnings
-import requests
 
-from django.db import models
-from django.db import connections
 from django.http import HttpResponse, HttpResponseRedirect
-from django.forms import widgets
-from django.contrib.auth.models import User
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404
 
-from rest_framework import serializers
+#from rest_framework import serializers
 
 from app.settings import LAYOUT
 from .zgraph import *
@@ -27,12 +20,12 @@ from .zdb import db_heap_info, db_json_attributes, Taxonomy
 
 # Получение способа компоновки средствами библиотеки NetworkX; способ может меняться на основе параметра, выбранного пользователем
 def get_graph_layout(G, gid, argument, load=False):
-    print("ARGUMENT",argument)
+    print("ARGUMENT", argument)
     layouts = {
-        'spring': nx.spring_layout(G,scale=0.9),
-        'shell': nx.shell_layout(G,scale=0.9),
+        'spring': nx.spring_layout(G, scale=0.9),
+        'shell': nx.shell_layout(G, scale=0.9),
         'random': nx.random_layout(G),
-        'spectral': nx.spectral_layout(G,scale=0.7),
+        'spectral': nx.spectral_layout(G, scale=0.7),
     }
     """
     if argument == 'undefined':
@@ -60,22 +53,22 @@ def get_graph_layout(G, gid, argument, load=False):
 
 # Формирование модели данных для их дальнейшей визуализации в виде графа: обработка и фильтрация графа; формирование и добавление данных, не рассчитываемых на этапе создания способа компоновки, но необходимых для визуализации в нашем конкретном случае.
 def to_main_graph(body, gid, gfilter=None):
-    print("GFILTER",gfilter)
-    data = {} # Объявляем словарь, в который будет записана вся необходимая для вывода графа информация
-    data.update({'nodes':{}})
-    #layoutArgument = '' # Объявляем способ компоновки по-умолчанию
-    H = json.loads(body) # Декодируем json-объект - структуру графа
-    BG = json_graph.node_link_graph(H) # Получаем базовый граф: преобразуем структурy графа в формате json в объект типа граф библиотеки NetworkX
+    print("GFILTER", gfilter)
+    data = {}  # Объявляем словарь, в который будет записана вся необходимая для вывода графа информация
+    data.update({'nodes': {}})
+    # layoutArgument = '' # Объявляем способ компоновки по-умолчанию
+    H = json.loads(body)  # Декодируем json-объект - структуру графа
+    BG = json_graph.node_link_graph(H)  # Получаем базовый граф: преобразуем структурy графа в формате json в объект типа граф библиотеки NetworkX
     #print('Base Graph',BG.nodes(data=True))
     #print('\nBase Graph',BG[1],'\n')
     OG = json_graph.node_link_graph(H) # Получаем граф для последовательной фильтрации на основе базового графа
     AG = json_graph.node_link_graph(H) # Агрегированный граф
 
-    # Если передан массив фильтрующих атрибутов, 
-    # декодируем json-объект gfilter - массив параметров, полученных из url 
+    # Если передан массив фильтрующих атрибутов,
+    # декодируем json-объект gfilter - массив параметров, полученных из url
     # и производим фильтрацию в соответствии с полученными данными:
-    try: 
-        gfilter = json.loads(gfilter) # Получаем ассоциативный массив данных фильтра в формате json 
+    try:
+        gfilter = json.loads(gfilter) # Получаем ассоциативный массив данных фильтра в формате json
         #print('FGin',FG.nodes())
         OG = GFilterNodeData(OG, BG, gfilter.get('data')) # Оставляем в графе только те узлы, атрибут data которых совпадает с переданной строкой
         OG = GFilterTaxonomy(OG, BG, gfilter.get('taxonomy')) # Производим фильтрацию узлов графа по переданному массиву терминов таксономии
@@ -101,11 +94,10 @@ def to_main_graph(body, gid, gfilter=None):
     except:
         print("! GFILTER EXCEPTION")
         layout = get_graph_layout(OG, gid, 'undefined', True)
-        #warnings.warn('Ошибка при обработке json-массива gfilter', UserWarning)
         pass
     #print("---- FILTERED ----")
     #for nid in FG.nodes(): print('neighbors',nid,'>', FG.neighbors(nid))
-    for nid in OG.nodes(): 
+    for nid in OG.nodes():
         try:
             pass
             #print('neighbors',nid,'>', FG.neighbors(nid))
@@ -138,12 +130,12 @@ def to_main_graph(body, gid, gfilter=None):
 
         #print("DATA",FG.node[nid]['data'])
         data['nodes'][nid] = {
-            'id': nid, 
+            'id': nid,
             'type': nodeType,
-            'data': OG.node[nid]['data'], 
+            'data': OG.node[nid]['data'],
             'degree': OG.degree(nid),
             'x':str(x),
-            'y':str(y), 
+            'y':str(y),
             'taxonomy': OG.node[nid]['taxonomy'],
             'attributes': OG.node[nid]['attributes'],
             'neighbors': OG.neighbors(nid),
@@ -156,23 +148,18 @@ def to_main_graph(body, gid, gfilter=None):
     return data
 
 
-# Преобразование входного массива данных в формат JSON c использованием объекта django.http.HttpResponse 
+# Преобразование входного массива данных в формат JSON c использованием объекта django.http.HttpResponse
 def responseJSON(data):
     try:
         # Преобразуем переданные данные в формат json
         jsonContent = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
-
         # Создаём объект response для динамического создания html-страницы
-        response = HttpResponse() 
-
+        response = HttpResponse()
         # Объявляем основные мета-данные html-страницы
-        response['Content-Type'] = "text/javascript; charset=utf-8" 
-
+        response['Content-Type'] = "text/javascript; charset=utf-8"
         # Записываем в объкт response полученную структуру графа в json-формате
-        response.write(jsonContent) 
-
+        response.write(jsonContent)
         responseJSON = response
-
     except:
         print('Неправильный формат данных для преобразования в json-формат')
         responseJSON = False
@@ -184,8 +171,8 @@ countries = "Австрия, Андорра, Албания, Беларусь, �
 trash = countries.split(', ')
 
 
-# Преобразование данных, полученных путем sql-запроса и представленных в виде словаря, 
-# в формат ключ: значение 
+# Преобразование данных, полученных путем sql-запроса и представленных в виде словаря,
+# в формат ключ: значение
 def dictfetchall(cursor):
     desc = cursor.description
     return [
@@ -237,7 +224,7 @@ def make_random(request):
     methods = [
         'lollipop_graph',
         'dense_gnm_random_graph',
-        'gnp_random_graph', 
+        'gnp_random_graph',
         'fast_gnp_random_graph',
 
         #'erdos_renyi_graph',
@@ -290,7 +277,7 @@ def to_plane_graph(body):
     return data
 
 
-# Для отладки: формирование модели данных для их дальнейшей визуализации методом force-direct средствами библиотеки d3js 
+# Для отладки: формирование модели данных для их дальнейшей визуализации методом force-direct средствами библиотеки d3js
 def to_force(body, graphFilter, removeStandalone=True):
     #attributes_filter = ['last_name', 'first_name']
     H = json.loads(body)
@@ -440,11 +427,11 @@ def json_transfers(request, gid, nid, gfilter=None):
         print(node)
         nid = node[0]
         data['nodes'][nid] = {
-            'id': nid, 
-            'data': FG.node[nid]['data'], 
+            'id': nid,
+            'data': FG.node[nid]['data'],
             #'degree': FG.degree(nid),
             #'x':str(x),
-            #'y':str(y), 
+            #'y':str(y),
             #'taxonomy': FG.node[nid]['taxonomy'],
             #'attributes': FG.node[nid]['attributes'],
             #'neighbors': FG.neighbors(nid),
@@ -452,7 +439,7 @@ def json_transfers(request, gid, nid, gfilter=None):
 
     data = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
     response.write(data)
-    return response 
+    return response
 
 
 # Для отладки: визуализация графа по алгоритму force-direct с использованием библиотеки d3js
@@ -535,13 +522,13 @@ def json_force_d3(request, id, graphFilter, nodesList, color):
     response['Content-Type'] = "text/javascript; charset=utf-8"
     response.write(content)
 
-    return response 
+    return response
 
 
 # Для отладки: визуализация графа по алгоритму force-direct
 def json_force_react(request, id, gfilter):
-    try: 
-        # Преобразуем в объект json-массив параметров, полученных из url 
+    try:
+        # Преобразуем в объект json-массив параметров, полученных из url
         gfilter = json.loads(gfilter)
         print_json(gfilter)
     except:
@@ -593,13 +580,13 @@ def json_force_react(request, id, gfilter):
     response = HttpResponse()
     response['Content-Type'] = "text/javascript; charset=utf-8"
     response.write(content)
-    return response 
+    return response
 
 
 # Визуализация графа методом круговой диаграмы с использование библиотеки d3js
 def json_chord(request, id, gfilter):
-    try: 
-        # Преобразуем в объект json-массив параметров, полученных из url 
+    try:
+        # Преобразуем в объект json-массив параметров, полученных из url
         gfilter = json.loads(gfilter)
         print_json(gfilter)
     except: returnErrorMessage('Неправильный json-массив gfilter')
@@ -629,7 +616,7 @@ def json_chord(request, id, gfilter):
     # /Блок работы с данными в графовом представлении
     #
     #
-        
+
     # Экспортируем данные графа NetworkX в простое текстовое представление в формате json
     gdata = json_graph.node_link_data(G)
     #gdata = graphData
@@ -641,7 +628,7 @@ def json_chord(request, id, gfilter):
         r = link['source']
         c = link['target']
 
-        # Добавляем случайное значение в качестве числового значения дуги 
+        # Добавляем случайное значение в качестве числового значения дуги
         # так как в предоставленной "семантической куче" такие данные пока отсутствуют
         v = randint(1,10)
 
@@ -670,13 +657,13 @@ def json_chord(request, id, gfilter):
     response = HttpResponse()
     response['Content-Type'] = "text/javascript; charset=utf-8"
     response.write(content)
-    return response 
+    return response
 
 
 # Формирование модели данных для их дальнейшей визуализации в виде многомерного тренда на примере отображения кол-ва перемещений как за выбранный месяц, так и за выбранный период
 def json_timeline(request, id, gfilter):
-    try: 
-        # Преобразуем в объект json-массив параметров, полученных из url 
+    try:
+        # Преобразуем в объект json-массив параметров, полученных из url
         gfilter = json.loads(gfilter)
         print_json(gfilter)
     except: returnErrorMessage('Неправильный json-массив gfilter')
@@ -709,7 +696,7 @@ def json_timeline(request, id, gfilter):
     # /Блок работы с данными в графовом представлении
     #
     #
-        
+
     # Экспортируем данные графа NetworkX в простое текстовое представление в формате json
     gdata = json_graph.node_link_data(G)
     #gdata = graphData
@@ -731,7 +718,7 @@ def json_timeline(request, id, gfilter):
     response = HttpResponse()
     response['Content-Type'] = "text/javascript; charset=utf-8"
     response.write(content)
-    return response 
+    return response
 
 
 # Обработка http запроса:
@@ -742,7 +729,7 @@ def json_circular(request, id):
     response['Content-Type'] = "text/javascript; charset=utf-8"
     circular = to_circular(graph.body)
     response.write(circular)
-    return response 
+    return response
 
 
 # Обработка http запроса:
@@ -753,11 +740,11 @@ def json_main_graph(request, id, gfilter=None):
     response['Content-Type'] = "text/javascript; charset=utf-8"
     data = to_main_graph(graph.body, id, gfilter)
     response.write(data)
-    return response 
+    return response
 
 
 # Обработка http запроса:
-# Получение общей информации об исходных связанных данных 
+# Получение общей информации об исходных связанных данных
 def heap_info(request):
     data = db_heap_info()
 
@@ -796,16 +783,9 @@ def json_taxonomy(request):
     content = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False) # Преобразуем данные в json-формат
     response = HttpResponse() # Создаём объект response для динамического создания html-страницы
     response['Content-Type'] = "text/javascript; charset=utf-8" # Объявляем основные мета-данные html-страницы
-    response.write(content) # Записываем в объкт response полученную структуру графа в json-формате response.write(HTMLPREFIX+content+HTMLSUFFIX) 
+    response.write(content) # Записываем в объкт response полученную структуру графа в json-формате response.write(HTMLPREFIX+content+HTMLSUFFIX)
     return response # возвращаем все необходимые фреймворку Django данные для окончательной генерации html-страницы
 
 
-"""
-class Layout(serializers.ModelSerializer):
-    class Meta:
-        model = Layout
-        fields = ('pk', 'title', 'body')
-        order_by = 'pk'
-"""
 
 
