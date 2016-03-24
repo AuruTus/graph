@@ -64,6 +64,14 @@ var Graph = React.createClass({
         text += ' nid: ' + nid
         eval('this.refs.theInfo').updateState(text)
     },
+    setNode(nid, x, y) {
+        console.log(x,'|',this.state.data.nodes[nid].x)
+        console.log(y,'|',this.state.data.nodes[nid].y)
+        var data = this.state.data
+        data.nodes[nid].x = x
+        data.nodes[nid].y = y
+        this.setState({ data: x, data })
+    },
     render: function() {
         var graphFilter = $('.graph .filter')
         var info = $('.graph .info')
@@ -96,11 +104,15 @@ var Graph = React.createClass({
                     sceneHeight={sceneHeight}
                     svgWidth={sceneWidth}
                     svgHeight={sceneHeight}
+                    offsetX={sceneWidth/2}
+                    offsetY={sceneHeight/2}
                     svgdx={svgdx}
                     svgdy={svgdy}
                     _handleNodeClick={this.handleNodeClick}
                     _handleNodeTip={this.handleNodeTip}
                     _handleSceneClick={this.handleNodeClick}
+                    updateNode={this.handleUpdateNode}
+                    setNode={this.setNode}
                 />
                 <Info ref={'theInfo'} 
                     sceneHeight={sceneHeight}
@@ -526,13 +538,26 @@ var SVGScene = React.createClass({
         var point = {}
         var x = _point[0]
         var y = _point[1]
-        var xs = x * this.props.svgWidth*this.state.scale
-        var ys = y * this.props.svgHeight*this.state.scale
-        point.x = xs - this.state.dx
-        point.y = ys - this.state.dy
+        var sx = x * this.props.svgWidth*this.state.scale
+        var sy = y * this.props.svgHeight*this.state.scale
+        point.x = sx - this.state.dx
+        point.y = sy - this.state.dy
         return point
     },
-    componentDidMount: function() {
+    reProject(_point) {
+        var point = {}
+        var x = _point[0]
+        var y = _point[1]
+        //console.log(x)
+        //console.log(x+this.state.dx)
+        point.x = (x+this.state.dx) / (this.props.svgWidth*this.state.scale)
+        point.y = (y+this.state.dy) / (this.props.svgHeight*this.state.scale)
+        return point
+    },
+    setNode(nid, x, y) {
+        console.log("X",x,"Y",y)
+        var point = this.reProject([x,y])
+        if (typeof (func = this.props.setNode) === 'function') { func(nid, point.x, point.y) }
     },
     handleSceneClick(e) {
         var cx = (e.pageX - this.props.svgdx) -this.props.svgWidth/2
@@ -544,7 +569,7 @@ var SVGScene = React.createClass({
         }
     },
     handleMouseDown(e) {
-        console.log("D",this.state.dragging)
+        console.log("Scene dragging...")
         if (e.button !== 0) return // only left mouse button
         var pos = $(this.getDOMNode()).offset()
         this.setState({
@@ -561,6 +586,7 @@ var SVGScene = React.createClass({
         e.preventDefault()
     },
     handleMouseUp(e) {
+        console.log("Stop scene dragging")
         this.setState({
             dragging: false,
             mouseDown: '',
@@ -632,14 +658,20 @@ var SVGScene = React.createClass({
         value = (typeof _value === 'undefined') ? false: _value
         this.constructor.clicked = value
     },
+    mouseClick(e) {
+        console.log("CLICKED")
+    
+            var x = (e.pageX - this.props.svgdx)
+            var y = (e.pageY - this.props.svgdy)
+            console.log(x,y)
+            if (typeof (func = this.props.setNode) === 'function') { 
+                func(this.props.nid, x, y) 
+            }
+    },
     render: function() {
         var sceneHeight = this.props.sceneWidth/2
         var scale = this.props.sceneWidth/10
-        var xOffset = this.props.sceneWidth/2
-        var yOffset = this.props.sceneHeight/2
         var r = 5
-        var width = 16
-        var height = 12
         var nodeRows = []
         var edgeRows = []
 
@@ -648,11 +680,10 @@ var SVGScene = React.createClass({
             var nodes = this.props.data.nodes
             // Создаём массив объектов типа GraphNode
             Object.keys(nodes).forEach(function(key) {
-                // В данном случае, специально, id узла совпадает с порядковым ключом ассоциативного массива объектов
+                // В данном случае, специально, id узла совпадает 
+                // с порядковым ключом ассоциативного массива объектов.
                 nid = key
                 var node = nodes[nid]
-                var x = node.x*scale+xOffset 
-                var y = node.y*scale+yOffset 
                 var point = this.project([node.x,node.y])
                 nodeRows.push(<GraphNode
                     key={nid}
@@ -660,29 +691,31 @@ var SVGScene = React.createClass({
                     nid={nid}
                     type={node.type}
                     data={node.data}
+                    offsetX={this.props.offsetX}
+                    offsetY={this.props.offsetY}
+                    svgdx={this.props.svgdx}
+                    svgdy={this.props.svgdy}
                     x={point.x}
                     y={point.y}
                     taxonomy={node.taxonomy}
                     attributes={node.attributes}
                     degree={node.degree}
                     r={r}
-                    width={width}
-                    height={height}
-                    _sceneDoubleClick={this.handleSceneClick}
-                    _sceneClicked={this.clicked}
-                    _handleNodeClick={this.props._handleNodeClick}
-                    _handleNodeTip={this.props._handleNodeTip}
+                    //_sceneDoubleClick={this.handleSceneClick}
+                    //_sceneClicked={this.clicked}
+                    //_handleNodeClick={this.props._handleNodeClick}
+                    //_handleNodeTip={this.props._handleNodeTip}
+                    onMouseClick={this.mouseClick}
+                    setNode={this.setNode}
                 />)
             }.bind(this))
 
             // Создаём массив объектов типа GraphEdge
             Object.keys(nodes).forEach(function(key) {
                 var node = nodes[key]
-                var x1 = node.x*scale+xOffset
-                var y1 = node.y*scale+yOffset
+                var x1 = node.x*scale+this.props.offsetX
+                var y1 = node.y*scale+this.props.offsetY
                 node.neighbors.forEach(function(nid) {
-                    var x2 = nodes[nid].x*scale+xOffset
-                    var y2 = nodes[nid].y*scale+yOffset
                     var eid = key+nid
                     var startPoint = this.project([node.x,node.y])
                     var endPoint = this.project([nodes[nid].x,nodes[nid].y])
@@ -707,19 +740,33 @@ var SVGScene = React.createClass({
                 //onClick={this.handleSceneClick}
                 onDoubleClick={this.handleSceneClick}
                 onWheel={this.handleWheel}
-                onMouseMove={this.handleMouseMove}
-                onMouseDown={this.handleMouseDown}
                 onMouseUp={this.handleMouseUp}
+                onMouseDown={this.handleMouseDown}
+                onMouseMove={this.handleMouseMove}
                 className={'' + this.state.mouseDown}
             >
                 <symbol id="organization-icon" viewBox="0 0 22 22">
                     <path d="M32 6.076c-1.177 0.522-2.443 0.875-3.771 1.034 1.355-0.813 2.396-2.099 2.887-3.632-1.269 0.752-2.674 1.299-4.169 1.593-1.198-1.276-2.904-2.073-4.792-2.073-3.626 0-6.565 2.939-6.565 6.565 0 0.515 0.058 1.016 0.17 1.496-5.456-0.274-10.294-2.888-13.532-6.86-0.565 0.97-0.889 2.097-0.889 3.301 0 2.278 1.159 4.287 2.921 5.465-1.076-0.034-2.088-0.329-2.974-0.821-0.001 0.027-0.001 0.055-0.001 0.083 0 3.181 2.263 5.834 5.266 6.437-0.551 0.15-1.131 0.23-1.73 0.23-0.423 0-0.834-0.041-1.235-0.118 0.835 2.608 3.26 4.506 6.133 4.559-2.247 1.761-5.078 2.81-8.154 2.81-0.53 0-1.052-0.031-1.566-0.092 2.905 1.863 6.356 2.95 10.064 2.95 12.076 0 18.679-10.004 18.679-18.68 0-0.285-0.006-0.568-0.019-0.849 1.283-0.926 2.396-2.082 3.276-3.398z" fill="#000000"></path>
                 </symbol>
-                {edgeRows}
+                <g className='edges'>{edgeRows}</g>
                 {nodeRows}
                 <ScaleNav 
                     _handleClick={this.handleScaleClick}
                     _sceneClicked={this.clicked}
+                />
+                <line 
+                    x1={-5 + this.props.offsetX} 
+                    y1={0 + this.props.offsetY} 
+                    x2={5 + this.props.offsetX} 
+                    y2={0 + this.props.offsetY} 
+                    stroke='purple'
+                />
+                <line 
+                    x1={0 + this.props.offsetX} 
+                    y1={-5 + this.props.offsetY} 
+                    x2={0 + this.props.offsetX} 
+                    y2={5 + this.props.offsetY} 
+                    stroke='purple'
                 />
             </svg>
         );
@@ -775,20 +822,14 @@ var ScaleNavMinus = React.createClass({
 
 var GraphNode = React.createClass({
     getInitialState: function() {
-        //console.log('x',this.props.x,'y',this.props.y)
         return {
-            x: this.props.x,
-            y: this.props.y,
             checked: false,
-            //dragging: false,
+            dragging: false,
         }
     },
+    componentWillMount() {
+    },
     componentDidUpdate: function (props, state) {
-        state.checked = false
-        //console.log('x',this.state.x,'y',this.state.y)
-        //console.log('x',state.x,'y',state.y)
-        //state.x = this.props.x
-        //state.y = this.props.y
         /*
         if (this.state.dragging && !state.dragging) {
             //console.log(state)
@@ -842,7 +883,7 @@ var GraphNode = React.createClass({
             // Отменяет действия браузера по умолчанию
             e.preventDefault()
         },
-        */
+    */
     onMouseOver: function () {
         // Передача обработки родительскому компоненту
         if (typeof this.props._handleNodeTip === 'function') {
@@ -871,11 +912,65 @@ var GraphNode = React.createClass({
             this.props.attributes) 
         }
     },
+    handleMouseDown(e) {
+        console.log("X",this.props.x - this.props.offsetX)
+        if (e.button !== 0) return // only left mouse button
+        //var pos = $(this.getDOMNode()).offset()
+        this.setState({
+            dragging: true,
+            mouseDown: 'mouse-down',
+            /*
+            rel: {
+                x: (e.pageX - this.props.svgdx),
+                y: (e.pageY - this.props.svgdy),
+            }
+            */
+        })
+        e.stopPropagation()
+        e.preventDefault()
+    },
+    handleMouseUp(e) {
+        this.setState({
+            dragging: false,
+            mouseDown: '',
+        })
+        e.stopPropagation()
+        e.preventDefault()
+    },
+    handleMouseMove(e) {
+        if (this.state.dragging) {
+            var x = (e.pageX - this.props.svgdx)
+            var y = (e.pageY - this.props.svgdy)
+            if (typeof (func = this.props.setNode) === 'function') { 
+                //func(this.props.nid, this.state.rel.x, this.state.rel.y) 
+                func(this.props.nid, x, y) 
+            }
+            /*
+            this.setState({
+                rel: {
+                    x: (e.pageX - this.props.svgdx),
+                    y: (e.pageY - this.props.svgdy),
+                }
+            })
+            */
+        }
+    },
+    dragStart(e) {
+            var x = (e.pageX - this.props.svgdx)
+            var y = (e.pageY - this.props.svgdy)
+            console.log(x,y)
+            if (typeof (func = this.props.setNode) === 'function') { 
+                func(this.props.nid, x, y) 
+            }
+    },
+    click(e) {
+        console.log("CLICKED")
+    },
     render: function() {
         var tid = this.props.taxonomy.tid
         if (tid == 10) {
             NodeType = GraphNodePerson
-        } else if (tid == 30) {
+        } else if (tid == 300) {
             NodeType = GraphNodeOrganization
         } else if (inArray(tid, events)) {
             NodeType = GraphNodeEvent
@@ -886,39 +981,39 @@ var GraphNode = React.createClass({
         var text = []
         var scaleX = 1.1
         var scaleY = 1.1
-
         if (this.props.degree > 2) {
-            scaleX = 1.5
-            scaleY = 1.5
+            scaleX = 1.9
+            scaleY = 1.9
             text.push(
                 <text 
-                    x={this.props.x}
-                    y={this.props.y+15}
+                    x={this.state.x}
+                    y={this.state.y+15}
                 >
                     {this.props.data}
                 </text>)
         }
-
-        var preTranslate = 'translate(' + this.props.x*-1 + ', ' + this.props.y*-1 + ') '
-        var translate = 'translate(' + this.props.x/scaleX + ', ' + this.props.y/scaleY + ') '
-        //var rotate = 'rotate(45, ' + this.props.x/scaleX + ', ' + this.props.y/scaleY + ') '
         var scale = 'scale(' + scaleX + ',' + scaleY +') '
+        var translateX = this.props.x/scaleX
+        var translateY = this.props.y/scaleY
+        var translate = 'translate(' + translateX + ', ' + translateY + ') '
         var transform =  scale + translate
 
         return (
-            <g 
+            <g
                 transform={transform} 
+                draggable='true'
+                //onDragStart={this.dragStart}
+                //onMouseClick={this.props.mouseClick}
             >
                 <NodeType
                     {...this.props}
-                    //cx={this.props.x}
-                    //cy={this.props.y}
-                    //r={this.props.r}
+                    r={this.props.r}
                     checked={this.state.checked}
                     text={text}
-                    //onMouseDown={this.onMouseDown}
-                    //_onMouseOver={this.onMouseOver}
-                    //_onClick={this.onClick}
+                    onMouseDown={this.handleMouseDown}
+                    onMouseUp={this.handleMouseUp}
+                    onMouseMove={this.handleMouseMove}
+                    onClick={this.click}
                 />
             </g>
         )
@@ -927,13 +1022,6 @@ var GraphNode = React.createClass({
 
 
 var GraphNodePerson = React.createClass({
-    /*
-    handleClick: function(e) {
-        if (typeof this.props.handleClick === 'function') {
-            this.props.handleClick()
-        }
-    },
-    */
     handleDoubleClick() {
         console.log('nid',this.props.nid)
         //location = "/map/" + this.props.nid
@@ -942,80 +1030,48 @@ var GraphNodePerson = React.createClass({
         //window.open('/json-transfers/' + gid +'/'  + this.props.nid, '_blank')
     },
     render: function() {
-        //var transform = "scale(.7,.7) translate("+this.props.cx+","+this.props.cy+")"
-        //var transform = "translate("+(this.props.cx-15)+","+(this.props.cy-15)+")"
-        if (this.props.degree > 2) {
-            var scale = "scale(.8,.8)"
-            var transform = "translate("+(this.props.cx-19)+","+(this.props.cy-18)+")"
-        } else {
-            var scale = "scale(.5,.5)"
-            var transform = "translate("+(this.props.cx-12)+","+(this.props.cy-15)+")"
-        }
-        var text = []
-        if (this.props.degree > 2) {
-            text.push(<text x={-30} y={35} >
-                        {this.props.data}
-                </text>)
-        }
         return (
             <g 
                 className={'person ' + this.props.checked + ' ' + this.props.type}
-                transform={transform}
-                onMouseOver={this.props._onMouseOver}
-                //onClick={this.props._onClick}
-                //onDoubleClick={this.handleDoubleClick}
                 >
                 <path
-                    transform={scale}
+                    transform="scale(.3) translate(-25,-25)"
                     d="M 24.827,0 C 11.138,0 0.001,11.138 0.001,24.827 c 0,13.689 11.137,24.827 24.826,24.827 13.688,0 24.826,-11.138 24.826,-24.827 C 49.653,11.138 38.517,0 24.827,0 Z m 14.315,38.51 c 0,-0.574 0,-0.979 0,-0.979 0,-3.386 -3.912,-4.621 -6.006,-5.517 -0.758,-0.323 -2.187,-1.011 -3.653,-1.728 -0.495,-0.242 -0.941,-0.887 -0.997,-1.438 l -0.162,-1.604 c 1.122,-1.045 2.133,-2.5 2.304,-4.122 l 0.253,0 c 0.398,0 0.773,-0.298 0.832,-0.663 l 0.397,-2.453 c 0.053,-0.524 -0.442,-0.842 -0.843,-0.842 0.011,-0.052 0.02,-0.105 0.025,-0.149 0.051,-0.295 0.082,-0.58 0.102,-0.857 0.025,-0.223 0.045,-0.454 0.056,-0.693 0.042,-1.158 -0.154,-2.171 -0.479,-2.738 -0.33,-0.793 -0.83,-1.563 -1.526,-2.223 -1.939,-1.836 -4.188,-2.551 -6.106,-1.075 -1.306,-0.226 -2.858,0.371 -3.979,1.684 -0.612,0.717 -0.993,1.537 -1.156,2.344 -0.146,0.503 -0.243,1.112 -0.267,1.771 -0.026,0.733 0.046,1.404 0.181,1.947 -0.382,0.024 -0.764,0.338 -0.764,0.833 l 0.396,2.453 c 0.059,0.365 0.434,0.663 0.832,0.663 l 0.227,0 c 0.36,1.754 1.292,3.194 2.323,4.198 l -0.156,1.551 c -0.056,0.55 -0.502,1.193 -0.998,1.438 -1.418,0.692 -2.815,1.358 -3.651,1.703 -1.97,0.812 -6.006,2.131 -6.006,5.517 l 0,0.766 C 7.033,34.756 5.005,30.031 5.005,24.83 c 0,-10.932 8.894,-19.826 19.826,-19.826 10.933,0 19.826,8.894 19.826,19.826 -0.004,5.303 -2.109,10.116 -5.515,13.68 z"/>
-                {text}
+                {/*this.props.text*/}
             </g>
         )
+                //<circle cx='0' cy='0' r='1' fill={'purple'} />
     }
 })
 
 
 var GraphNodeCircle = React.createClass({
-    /*
-    onMouseDown: function(e) {
-        if (typeof this.props.onMouseDown === 'function') {
-            this.props.onMouseDown(e, this.props.nid)
-        }
+    dragStart(e) {
+        console.log("node drag")
+            var x = (e.pageX - this.props.svgdx)
+            var y = (e.pageY - this.props.svgdy)
+            console.log(x,y)
+            if (typeof (func = this.props.setNode) === 'function') { 
+                func(this.props.nid, x, y) 
+            }
     },
-        */
     render: function() {
-        //console.log('data',this.props.data)
-        //var transform = "translate("+(this.props.cx-12)+","+(this.props.cy-15)+")"
-        //transform={transform}
-        var text = []
-        var scale = ''
-        this.color = '#4682B4'
-        if (this.props.degree > 2) {
-            this.color = color01
-            //var scale = "scale(1.5,1.5)"
-            text.push(
-                <text 
-                    x={this.props.cx}
-                    y={this.props.cy+15}
-                >
-                    {this.props.data}
-                </text>)
-        }
         return (
             <g
+                //draggable='true'
                 className={'circle ' + this.props.checked}
-                onMouseOver={this.props._onMouseOver}
-                onClick={this.props._onClick}
-                //onMouseDown={this.onMouseDown}
+                onMouseDown={this.props.onMouseDown}
+                onMouseUp={this.props.onMouseUp}
+                onMouseMove={this.props.onMouseMove}
+                //onDragStart={this.dragStart}
+                onClick={this.props.click}
             >
-            <circle 
-                fill={this.color}
-                cx={this.props.cx}
-                cy={this.props.cy}
-                r={this.props.r}
-                transform={scale}
-            />
-            {text}
+                <circle 
+                    cx='0'
+                    cy='0'
+                    r={this.props.r}
+                />
+            {/*this.props.text*/}
             </g>
         )
     }
@@ -1030,7 +1086,7 @@ var GraphNodeOrganization = React.createClass({
             <g
                 className={'organization ' + this.props.checked}
             >
-                {this.props.text}
+                {/*this.props.text*/}
                 <circle 
                     cx='0'
                     cy='0'
@@ -1045,47 +1101,22 @@ var GraphNodeOrganization = React.createClass({
 
 var GraphNodeEvent = React.createClass({
     render: function() {
-        //var rotate = "rotate(45 0 -2) "
-        var rotate = 'rotate(45, ' + this.props.x + ', ' + this.props.y + ') '
         return (
             <g
                 className={'event ' + this.props.checked}
             >
                 <rect 
-                    //transform={rotate}
-                    transform='translate(-4, -4) rotate(45)'
+                    transform='scale(1, 1.3) rotate(45) translate(-4, -4)'
                     x='0'
                     y='0'
                     height="8"
                     width="8"
                 />
-                {this.props.text}
+                {/*this.props.text*/}
             </g>
         )
     }
 })
-
-
-/*
-var GraphNodeRect = React.createClass({
-    onMouseDown: function(e) {
-        if (typeof this.props.onMouseDown === 'function') {
-            this.props.onMouseDown(e, this.props.nid)
-        }
-    },
-    render: function() {
-        return (
-            <rect 
-                x={this.props.cx-this.props.width/2}
-                y={this.props.cy-this.props.height/2}
-                width={this.props.width}
-                height={this.props.height}
-                //onMouseDown={this.onMouseDown}
-            />
-        )
-    }
-})
-*/
 
 
 var GraphEdge = React.createClass({
@@ -1100,27 +1131,6 @@ var GraphEdge = React.createClass({
         )
     }
 })
-
-
-/*
-var GraphNodePoly = React.createClass({
-    render: function() {
-        //points={"50,75 58,137.5 58,262.5 50,325 42,262.6 42,137.5"}
-        var op = this.props.r
-        var tf = Math.tan(Math.PI/4)
-        var mp = tf*op 
-        var r = Math.sqrt(op*op + mp*mp)
-
-        //console.log(r)
-
-        return (
-            <polygon
-            />
-        )
-    }
-})
-*/
-
 
 
 React.render( <Graph/>, mountGraph)

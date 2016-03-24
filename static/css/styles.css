@@ -136,8 +136,7 @@ svg .node {
         display: block;
         overflow: hidden;
     }
-        line,
-        .graph line {
+        .graph .edges line {
             stroke: #bbb;
             stroke-width: 1px;
         }
