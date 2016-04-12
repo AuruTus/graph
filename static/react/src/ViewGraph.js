@@ -501,6 +501,7 @@ var SVGScene = React.createClass({
             vy: 0.5,
             dx: 0,
             dy: 0,
+            node: {},
         }
     },
     setView(point, scale) {
@@ -568,26 +569,34 @@ var SVGScene = React.createClass({
             this.setCam([cx,cy])
         }
     },
-    handleMouseDown(e) {
-        console.log("Scene dragging...")
+    handleMouseDown(e, node) {
+        //console.log("Scene dragging...")
         if (e.button !== 0) return // only left mouse button
-        var pos = $(this.getDOMNode()).offset()
-        this.setState({
-            dragging: true,
-            mouseDown: 'mouse-down',
-            rel: {
-                x: (e.pageX - this.props.svgdx) -this.props.svgWidth/2,
-                y: (e.pageY - this.props.svgdy) -this.props.svgHeight/2,
-                //x: e.pageX - pos.left,
-                //y: e.pageY - pos.top
-            }
-        })
+        //console.log("TYPE", typeof node)
+        if (typeof node === 'object') {
+            this.setState({node: node,})
+        } else {
+            var pos = $(this.getDOMNode()).offset()
+            this.setState({
+                dragging: true,
+                mouseDown: 'mouse-down',
+                rel: {
+                    x: (e.pageX - this.props.svgdx) -this.props.svgWidth/2,
+                    y: (e.pageY - this.props.svgdy) -this.props.svgHeight/2,
+                    //x: e.pageX - pos.left,
+                    //y: e.pageY - pos.top
+                }
+            })
+        }
         e.stopPropagation()
         e.preventDefault()
     },
     handleMouseUp(e) {
-        console.log("Stop scene dragging")
+        //console.log("Stop dragging")
+        var node = {}
+        node.dragging = 'false'
         this.setState({
+            node: node,
             dragging: false,
             mouseDown: '',
         })
@@ -595,7 +604,13 @@ var SVGScene = React.createClass({
         e.preventDefault()
     },
     handleMouseMove(e) {
-        if (this.state.dragging) {
+        if (this.state.node.dragging === 'true') {
+            console.log("NODEDRAG",this.state.node.nid)
+            var x = (e.pageX - this.state.node.svgdx)
+            var y = (e.pageY - this.state.node.svgdy)
+            this.setNode(this.state.node.nid, x, y) 
+        } else if (this.state.dragging) {
+            //console.log("SCENEDRAG",this.state.dragging)
             var cx = (e.pageX - this.props.svgdx) -this.props.svgWidth/2
             var cy = (e.pageY - this.props.svgdy) -this.props.svgHeight/2
             var dx = this.state.rel.x - cx
@@ -700,12 +715,14 @@ var SVGScene = React.createClass({
                     taxonomy={node.taxonomy}
                     attributes={node.attributes}
                     degree={node.degree}
+                    handleMouseDown={this.handleMouseDown}
+                    handleMouseUp={this.handleMouseUp}
                     r={r}
                     //_sceneDoubleClick={this.handleSceneClick}
                     //_sceneClicked={this.clicked}
                     //_handleNodeClick={this.props._handleNodeClick}
                     //_handleNodeTip={this.props._handleNodeTip}
-                    onMouseClick={this.mouseClick}
+                    //onMouseClick={this.mouseClick}
                     setNode={this.setNode}
                 />)
             }.bind(this))
@@ -913,12 +930,12 @@ var GraphNode = React.createClass({
         }
     },
     handleMouseDown(e) {
-        console.log("X",this.props.x - this.props.offsetX)
+        //console.log("X",this.props.x - this.props.offsetX)
         if (e.button !== 0) return // only left mouse button
         //var pos = $(this.getDOMNode()).offset()
         this.setState({
             dragging: true,
-            mouseDown: 'mouse-down',
+            //mouseDown: 'mouse-down',
             /*
             rel: {
                 x: (e.pageX - this.props.svgdx),
@@ -928,15 +945,29 @@ var GraphNode = React.createClass({
         })
         e.stopPropagation()
         e.preventDefault()
+        if (typeof (func = this.props.handleMouseDown) === 'function') {
+            var node = {}
+            node.dragging = 'true'
+            node.nid = this.props.nid
+            node.x = (e.pageX - this.props.svgdx)
+            node.y = (e.pageY - this.props.svgdy)
+            node.svgdx = this.props.svgdx
+            node.svgdy = this.props.svgdy
+            func(e, node)
+        } 
     },
     handleMouseUp(e) {
         this.setState({
             dragging: false,
-            mouseDown: '',
+            //mouseDown: '',
         })
         e.stopPropagation()
         e.preventDefault()
+        if (typeof (func = this.props.handleMouseUp) === 'function') {
+            func(e)
+        }
     },
+    /*
     handleMouseMove(e) {
         if (this.state.dragging) {
             var x = (e.pageX - this.props.svgdx)
@@ -945,16 +976,11 @@ var GraphNode = React.createClass({
                 //func(this.props.nid, this.state.rel.x, this.state.rel.y) 
                 func(this.props.nid, x, y) 
             }
-            /*
-            this.setState({
-                rel: {
-                    x: (e.pageX - this.props.svgdx),
-                    y: (e.pageY - this.props.svgdy),
-                }
-            })
-            */
+            // this.setState({ rel: { x: (e.pageX - this.props.svgdx), y: (e.pageY - this.props.svgdy), } })
         }
     },
+    */
+    /*
     dragStart(e) {
             var x = (e.pageX - this.props.svgdx)
             var y = (e.pageY - this.props.svgdy)
@@ -963,14 +989,12 @@ var GraphNode = React.createClass({
                 func(this.props.nid, x, y) 
             }
     },
-    click(e) {
-        console.log("CLICKED")
-    },
+    */
     render: function() {
         var tid = this.props.taxonomy.tid
         if (tid == 10) {
             NodeType = GraphNodePerson
-        } else if (tid == 300) {
+        } else if (tid == 30) {
             NodeType = GraphNodeOrganization
         } else if (inArray(tid, events)) {
             NodeType = GraphNodeEvent
@@ -1001,7 +1025,7 @@ var GraphNode = React.createClass({
         return (
             <g
                 transform={transform} 
-                draggable='true'
+                //draggable='true'
                 //onDragStart={this.dragStart}
                 //onMouseClick={this.props.mouseClick}
             >
@@ -1012,8 +1036,7 @@ var GraphNode = React.createClass({
                     text={text}
                     onMouseDown={this.handleMouseDown}
                     onMouseUp={this.handleMouseUp}
-                    onMouseMove={this.handleMouseMove}
-                    onClick={this.click}
+                    //onMouseMove={this.handleMouseMove}
                 />
             </g>
         )
@@ -1033,6 +1056,9 @@ var GraphNodePerson = React.createClass({
         return (
             <g 
                 className={'person ' + this.props.checked + ' ' + this.props.type}
+                onMouseDown={this.props.onMouseDown}
+                onMouseUp={this.props.onMouseUp}
+                onMouseMove={this.props.onMouseMove}
                 >
                 <path
                     transform="scale(.3) translate(-25,-25)"
@@ -1046,6 +1072,7 @@ var GraphNodePerson = React.createClass({
 
 
 var GraphNodeCircle = React.createClass({
+    /*
     dragStart(e) {
         console.log("node drag")
             var x = (e.pageX - this.props.svgdx)
@@ -1055,6 +1082,7 @@ var GraphNodeCircle = React.createClass({
                 func(this.props.nid, x, y) 
             }
     },
+    */
     render: function() {
         return (
             <g
@@ -1064,7 +1092,7 @@ var GraphNodeCircle = React.createClass({
                 onMouseUp={this.props.onMouseUp}
                 onMouseMove={this.props.onMouseMove}
                 //onDragStart={this.dragStart}
-                onClick={this.props.click}
+                //onClick={this.props.click}
             >
                 <circle 
                     cx='0'
@@ -1085,13 +1113,23 @@ var GraphNodeOrganization = React.createClass({
         return (<g>
             <g
                 className={'organization ' + this.props.checked}
+                onMouseDown={this.props.onMouseDown}
+                onMouseUp={this.props.onMouseUp}
+                onMouseMove={this.props.onMouseMove}
             >
                 {/*this.props.text*/}
+                <rect 
+                    transform='translate(-5, -5)'
+                    x='0'
+                    y='0'
+                    height="10"
+                    width="10"
+                />
                 <circle 
                     cx='0'
                     cy='0'
-                    r='3'
-                    fill='orange'
+                    r='2'
+                    fill='gray'
                 />
             </g>
         </g>)
@@ -1104,6 +1142,9 @@ var GraphNodeEvent = React.createClass({
         return (
             <g
                 className={'event ' + this.props.checked}
+                onMouseDown={this.props.onMouseDown}
+                onMouseUp={this.props.onMouseUp}
+                onMouseMove={this.props.onMouseMove}
             >
                 <rect 
                     transform='scale(1, 1.3) rotate(45) translate(-4, -4)'
