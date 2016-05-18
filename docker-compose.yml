@@ -1,0 +1,17 @@
+version: '2'
+services:
+  postgres:
+    image: postgres:9.4
+  mysql:
+    image: mysql:5.7
+  backend:
+    image: novosti/backend
+    build: ./docker/backend/.
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./backend:/backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - mysql

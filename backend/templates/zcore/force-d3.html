@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+
+{% block side_bar %}
+<div id="example"></div>
+<div id="force-filterd3"></div>
+
+
+<br />
+</div>
+
+<script>
+
+/* Блок для вывода графа ************************************************************/
+
+var nodesList = "{{ nodes }}".split(',')
+var filterAttributesID = '.filter .attributes'
+var gid = {{ graph.id }} 
+var filter = "{{ filter }}"
+var color = "{{ color }}"
+
+function ForceLayout(containerID, id, attributesFilter){
+    scale = 550
+    width = 600
+    height = 600
+
+    this.color = d3.scale.category20()
+
+    this.force = d3.layout.force()
+        .charge(-20)
+        .linkDistance(30)
+        .size([width, height])
+
+    this.svg = d3.select(containerID)
+        .append("svg")
+            .attr("width", width)
+            .attr("height", height)
+            .append("g")
+                //.attr('transform', 'translate(15,15)')
+}
+
+ForceLayout.prototype.update = function(gid, graphFilter) {
+    // Преобразовываем массив json-данных graphFilter для передачи через url 
+    //console.log('graphFilter attributesState', graphFilter.attributesState)
+    //graphFilter = encodeURIComponent(JSON.stringify(graphFilter))
+    //console.log('graphFilter', graphFilter)
+
+    var url = '/json-force-d3/' + gid + '/' + graphFilter + '/' + nodesList + '/' + color + '/'
+    d3.json(url, function(error, graph) {
+        this.force
+            .nodes(graph.nodes)
+            .links(graph.links)
+            .start()
+
+        var link = this.svg.selectAll("line").data(graph.links)
+        link.enter().append("line")
+            .attr("class", "link")
+            //.style("stroke", function(d) { return color(d.attribute); })
+            //.style("stroke-width", function(d) { return Math.sqrt(d.attribute); })
+            //.text(function(d) { return d.title; });
+        link.exit().remove()
+
+        var node = this.svg.selectAll("circle").data(graph.nodes)
+
+        node.enter().append("circle")
+            //.attr("id", function(d) { return d.id })
+            .attr("class", "node")
+            //.attr("r", 5)
+            .attr("r", function(d) { return d.radius/3 + 5 })
+            //.attr("r", function(d) { return Math.pow(d.degree+1, 1.1) })
+            .style("fill", function(d) { 
+                var value = 'steelblue'
+                var attributes = d.attributes
+                if (attributes) {
+                    //console.log('----------------------------- >')
+                    attributes.forEach(function(attr, key) {
+                        //console.log('attribute ',attr.val)
+                        if (attr.val == color) {
+                            value = 'green'
+                        }
+                    })
+                }
+                //console.log('----------------------------- ^')
+                return value
+            })
+            //.style("fill", 'steelblue')
+            .call(this.force.drag)
+            /*
+            .style("fill", function() {
+                console.log('nodeslistrest > ',nodesListReset)
+                var color = false
+                if (nodesListReset === true) {
+                    color = "steelblue"
+                }
+                //console.log(' > ',color)
+                return color
+            })
+            */
+            .on('click', function(d) {
+                if (inArray(d.id, nodesList)) {
+                    nodesList.pop(d.id)
+                    d3.select(this).style("fill", "steelblue")
+                } else {
+                    nodesList.push(d.id)
+                    d3.select(this).style("fill", "orange")
+                }
+            })
+        node.exit().remove()
+
+        node.append("title")
+            .text(function(d) { 
+                var attributes = d.attributes
+                //console.log(attributes)
+                //return d.data + '_' + d.id + ': ' + d.degree + '. Свойства: ' + attributes.color
+                return d.data + ' id:' + d.id
+            }) 
+            //.attr("transform", function(d){ return "translate("+d.x+","+d.y+")"; })
+
+        this.force.on("tick", function() {
+            link.attr("x1", function(d) { return d.source.x; })
+                .attr("y1", function(d) { return d.source.y; })
+                .attr("x2", function(d) { return d.target.x; })
+                .attr("y2", function(d) { return d.target.y; });
+
+            node.attr("cx", function(d) { return d.x; })
+                .attr("cy", function(d) { return d.y; })        
+        })
+    }.bind(this))
+    //console.log(' --------------------------------------------------------- ^ ','graph has been updated')
+}
+/* /Блок для вывода графа ************************************************************/
+
+var toggleColor = (function(){
+   var currentColor = "lightblue";
+
+    return function(){
+        currentColor = currentColor == "lightblue" ? "magenta" : "lightblue";
+        d3.select(this).style("fill", currentColor);
+    }
+})();
+
+</script>
+{% endblock side_bar %}
+
+
+{% block content %}
+<div class='scene'></div>
+
+<script>
+var force = new ForceLayout('.scene', gid, 'no;first_name;full_name')
+force.update(gid, filter)
+
+
+</script>
+<script src="{% static 'react/build/Cement.js' %}"></script>
+<script src="{% static 'react/build/ForceFilter-d3.js' %}"></script>
+{% endblock content %}
+
+
