@@ -1,6 +1,6 @@
-app/__pycache__/
-syscheck/__pycache__/
-zcore/__pycache__/
-db.sqlite3
-node_modules/
-zcore/migrations/__pycache__
+backend/app/__pycache__/
+backend/syscheck/__pycache__/
+backend/zcore/__pycache__/
+backend/zcore/migrations/__pycache__/
+
+frontend/node_modules/
