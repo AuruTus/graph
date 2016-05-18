@@ -1,2 +1,2 @@
 # graph
-D3js, NetworkX
+NetworkX, React, Django, Node.js
