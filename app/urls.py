@@ -7,7 +7,6 @@ import app.settings as settings
 
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
-    url(r'^syscheck/', include('syscheck.urls', namespace='syscheck')),
 ]
 
 urlpatterns += [

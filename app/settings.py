@@ -46,7 +46,6 @@ INSTALLED_APPS = (
 
     # Подключение собственных приложений
     'zcore',
-    'syscheck',
 )
 
 MIDDLEWARE_CLASSES = (
