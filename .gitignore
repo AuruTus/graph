@@ -3,3 +3,4 @@ syscheck/__pycache__/
 zcore/__pycache__/
 node_modules/
 zcore/migrations/__pycache__/
+static/react/build/.module-cache/
