@@ -7,3 +7,9 @@ backend/static/react/build/.module-cache/
 frontend/node_modules/
 
 docker/mysql/20151117.sql
+docker/mysql/dump.sql
+
+vimm
+vimj
+vimt
+vimd
