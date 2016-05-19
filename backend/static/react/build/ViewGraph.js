@@ -530,7 +530,8 @@ var SVGScene = React.createClass({
             vx: 0.5,
             vy: 0.5,
             dx: 0,
-            dy: 0
+            dy: 0,
+            node: {}
         };
     },
     setView(point, scale) {
@@ -600,26 +601,34 @@ var SVGScene = React.createClass({
             this.setCam([cx, cy]);
         }
     },
-    handleMouseDown(e) {
-        console.log("Scene dragging...");
+    handleMouseDown(e, node) {
+        //console.log("Scene dragging...")
         if (e.button !== 0) return; // only left mouse button
-        var pos = $(this.getDOMNode()).offset();
-        this.setState({
-            dragging: true,
-            mouseDown: 'mouse-down',
-            rel: {
-                x: e.pageX - this.props.svgdx - this.props.svgWidth / 2,
-                y: e.pageY - this.props.svgdy - this.props.svgHeight / 2
-            }
-        });
+        //console.log("TYPE", typeof node)
+        if (typeof node === 'object') {
+            this.setState({ node: node });
+        } else {
+            var pos = $(this.getDOMNode()).offset();
+            this.setState({
+                dragging: true,
+                mouseDown: 'mouse-down',
+                rel: {
+                    x: e.pageX - this.props.svgdx - this.props.svgWidth / 2,
+                    y: e.pageY - this.props.svgdy - this.props.svgHeight / 2
+                }
+            });
+        }
         //x: e.pageX - pos.left,
         //y: e.pageY - pos.top
         e.stopPropagation();
         e.preventDefault();
     },
     handleMouseUp(e) {
-        console.log("Stop scene dragging");
+        //console.log("Stop dragging")
+        var node = {};
+        node.dragging = 'false';
         this.setState({
+            node: node,
             dragging: false,
             mouseDown: ''
         });
@@ -627,7 +636,13 @@ var SVGScene = React.createClass({
         e.preventDefault();
     },
     handleMouseMove(e) {
-        if (this.state.dragging) {
+        if (this.state.node.dragging === 'true') {
+            console.log("NODEDRAG", this.state.node.nid);
+            var x = e.pageX - this.state.node.svgdx;
+            var y = e.pageY - this.state.node.svgdy;
+            this.setNode(this.state.node.nid, x, y);
+        } else if (this.state.dragging) {
+            //console.log("SCENEDRAG",this.state.dragging)
             var cx = e.pageX - this.props.svgdx - this.props.svgWidth / 2;
             var cy = e.pageY - this.props.svgdy - this.props.svgHeight / 2;
             var dx = this.state.rel.x - cx;
@@ -732,13 +747,15 @@ var SVGScene = React.createClass({
                     taxonomy: node.taxonomy,
                     attributes: node.attributes,
                     degree: node.degree,
+                    handleMouseDown: this.handleMouseDown,
+                    handleMouseUp: this.handleMouseUp,
                     r: r
                     //_sceneDoubleClick={this.handleSceneClick}
                     //_sceneClicked={this.clicked}
                     //_handleNodeClick={this.props._handleNodeClick}
-                    //_handleNodeTip={this.props._handleNodeTip}
-                    , onMouseClick: this.mouseClick,
-                    setNode: this.setNode
+                    , _handleNodeTip: this.props._handleNodeTip
+                    //onMouseClick={this.mouseClick}
+                    , setNode: this.setNode
                 }));
             }.bind(this));
 
@@ -974,13 +991,13 @@ var GraphNode = React.createClass({
         }
     },
     handleMouseDown(e) {
-        console.log("X", this.props.x - this.props.offsetX);
+        //console.log("X",this.props.x - this.props.offsetX)
         if (e.button !== 0) return; // only left mouse button
         //var pos = $(this.getDOMNode()).offset()
         this.setState({
-            dragging: true,
-            mouseDown: 'mouse-down'
+            dragging: true
         });
+        //mouseDown: 'mouse-down',
         /*
         rel: {
             x: (e.pageX - this.props.svgdx),
@@ -989,49 +1006,56 @@ var GraphNode = React.createClass({
         */
         e.stopPropagation();
         e.preventDefault();
+        if (typeof (func = this.props.handleMouseDown) === 'function') {
+            var node = {};
+            node.dragging = 'true';
+            node.nid = this.props.nid;
+            node.x = e.pageX - this.props.svgdx;
+            node.y = e.pageY - this.props.svgdy;
+            node.svgdx = this.props.svgdx;
+            node.svgdy = this.props.svgdy;
+            func(e, node);
+        }
     },
     handleMouseUp(e) {
         this.setState({
-            dragging: false,
-            mouseDown: ''
+            dragging: false
         });
+        //mouseDown: '',
         e.stopPropagation();
         e.preventDefault();
+        if (typeof (func = this.props.handleMouseUp) === 'function') {
+            func(e);
+        }
     },
+    /*
     handleMouseMove(e) {
         if (this.state.dragging) {
-            var x = e.pageX - this.props.svgdx;
-            var y = e.pageY - this.props.svgdy;
-            if (typeof (func = this.props.setNode) === 'function') {
-                //func(this.props.nid, this.state.rel.x, this.state.rel.y)
-                func(this.props.nid, x, y);
+            var x = (e.pageX - this.props.svgdx)
+            var y = (e.pageY - this.props.svgdy)
+            if (typeof (func = this.props.setNode) === 'function') { 
+                //func(this.props.nid, this.state.rel.x, this.state.rel.y) 
+                func(this.props.nid, x, y) 
             }
-            /*
-            this.setState({
-                rel: {
-                    x: (e.pageX - this.props.svgdx),
-                    y: (e.pageY - this.props.svgdy),
-                }
-            })
-            */
+            // this.setState({ rel: { x: (e.pageX - this.props.svgdx), y: (e.pageY - this.props.svgdy), } })
         }
     },
+    */
+    /*
     dragStart(e) {
-        var x = e.pageX - this.props.svgdx;
-        var y = e.pageY - this.props.svgdy;
-        console.log(x, y);
-        if (typeof (func = this.props.setNode) === 'function') {
-            func(this.props.nid, x, y);
-        }
+            var x = (e.pageX - this.props.svgdx)
+            var y = (e.pageY - this.props.svgdy)
+            console.log(x,y)
+            if (typeof (func = this.props.setNode) === 'function') { 
+                func(this.props.nid, x, y) 
+            }
     },
-    click(e) {
-        console.log("CLICKED");
-    },
+    */
     render: function () {
         var tid = this.props.taxonomy.tid;
         if (tid == 10) {
             NodeType = GraphNodePerson;
-        } else if (tid == 300) {
+        } else if (tid == 30) {
             NodeType = GraphNodeOrganization;
         } else if (inArray(tid, events)) {
             NodeType = GraphNodeEvent;
@@ -1048,6 +1072,7 @@ var GraphNode = React.createClass({
             text.push(React.createElement(
                 'text',
                 {
+                    transform: 'scale(.5)',
                     x: this.state.x,
                     y: this.state.y + 15
                 },
@@ -1063,19 +1088,19 @@ var GraphNode = React.createClass({
         return React.createElement(
             'g',
             {
-                transform: transform,
-                draggable: 'true'
+                transform: transform
+                //draggable='true'
                 //onDragStart={this.dragStart}
                 //onMouseClick={this.props.mouseClick}
+                , onMouseOver: this.onMouseOver
             },
             React.createElement(NodeType, _extends({}, this.props, {
                 r: this.props.r,
                 checked: this.state.checked,
                 text: text,
                 onMouseDown: this.handleMouseDown,
-                onMouseUp: this.handleMouseUp,
-                onMouseMove: this.handleMouseMove,
-                onClick: this.click
+                onMouseUp: this.handleMouseUp
+                //onMouseMove={this.handleMouseMove}
             }))
         );
     }
@@ -1095,11 +1120,15 @@ var GraphNodePerson = React.createClass({
         return React.createElement(
             'g',
             {
-                className: 'person ' + this.props.checked + ' ' + this.props.type
+                className: 'person ' + this.props.checked + ' ' + this.props.type,
+                onMouseDown: this.props.onMouseDown,
+                onMouseUp: this.props.onMouseUp,
+                onMouseMove: this.props.onMouseMove
             },
             React.createElement('path', {
                 transform: 'scale(.3) translate(-25,-25)',
-                d: 'M 24.827,0 C 11.138,0 0.001,11.138 0.001,24.827 c 0,13.689 11.137,24.827 24.826,24.827 13.688,0 24.826,-11.138 24.826,-24.827 C 49.653,11.138 38.517,0 24.827,0 Z m 14.315,38.51 c 0,-0.574 0,-0.979 0,-0.979 0,-3.386 -3.912,-4.621 -6.006,-5.517 -0.758,-0.323 -2.187,-1.011 -3.653,-1.728 -0.495,-0.242 -0.941,-0.887 -0.997,-1.438 l -0.162,-1.604 c 1.122,-1.045 2.133,-2.5 2.304,-4.122 l 0.253,0 c 0.398,0 0.773,-0.298 0.832,-0.663 l 0.397,-2.453 c 0.053,-0.524 -0.442,-0.842 -0.843,-0.842 0.011,-0.052 0.02,-0.105 0.025,-0.149 0.051,-0.295 0.082,-0.58 0.102,-0.857 0.025,-0.223 0.045,-0.454 0.056,-0.693 0.042,-1.158 -0.154,-2.171 -0.479,-2.738 -0.33,-0.793 -0.83,-1.563 -1.526,-2.223 -1.939,-1.836 -4.188,-2.551 -6.106,-1.075 -1.306,-0.226 -2.858,0.371 -3.979,1.684 -0.612,0.717 -0.993,1.537 -1.156,2.344 -0.146,0.503 -0.243,1.112 -0.267,1.771 -0.026,0.733 0.046,1.404 0.181,1.947 -0.382,0.024 -0.764,0.338 -0.764,0.833 l 0.396,2.453 c 0.059,0.365 0.434,0.663 0.832,0.663 l 0.227,0 c 0.36,1.754 1.292,3.194 2.323,4.198 l -0.156,1.551 c -0.056,0.55 -0.502,1.193 -0.998,1.438 -1.418,0.692 -2.815,1.358 -3.651,1.703 -1.97,0.812 -6.006,2.131 -6.006,5.517 l 0,0.766 C 7.033,34.756 5.005,30.031 5.005,24.83 c 0,-10.932 8.894,-19.826 19.826,-19.826 10.933,0 19.826,8.894 19.826,19.826 -0.004,5.303 -2.109,10.116 -5.515,13.68 z' })
+                d: 'M 24.827,0 C 11.138,0 0.001,11.138 0.001,24.827 c 0,13.689 11.137,24.827 24.826,24.827 13.688,0 24.826,-11.138 24.826,-24.827 C 49.653,11.138 38.517,0 24.827,0 Z m 14.315,38.51 c 0,-0.574 0,-0.979 0,-0.979 0,-3.386 -3.912,-4.621 -6.006,-5.517 -0.758,-0.323 -2.187,-1.011 -3.653,-1.728 -0.495,-0.242 -0.941,-0.887 -0.997,-1.438 l -0.162,-1.604 c 1.122,-1.045 2.133,-2.5 2.304,-4.122 l 0.253,0 c 0.398,0 0.773,-0.298 0.832,-0.663 l 0.397,-2.453 c 0.053,-0.524 -0.442,-0.842 -0.843,-0.842 0.011,-0.052 0.02,-0.105 0.025,-0.149 0.051,-0.295 0.082,-0.58 0.102,-0.857 0.025,-0.223 0.045,-0.454 0.056,-0.693 0.042,-1.158 -0.154,-2.171 -0.479,-2.738 -0.33,-0.793 -0.83,-1.563 -1.526,-2.223 -1.939,-1.836 -4.188,-2.551 -6.106,-1.075 -1.306,-0.226 -2.858,0.371 -3.979,1.684 -0.612,0.717 -0.993,1.537 -1.156,2.344 -0.146,0.503 -0.243,1.112 -0.267,1.771 -0.026,0.733 0.046,1.404 0.181,1.947 -0.382,0.024 -0.764,0.338 -0.764,0.833 l 0.396,2.453 c 0.059,0.365 0.434,0.663 0.832,0.663 l 0.227,0 c 0.36,1.754 1.292,3.194 2.323,4.198 l -0.156,1.551 c -0.056,0.55 -0.502,1.193 -0.998,1.438 -1.418,0.692 -2.815,1.358 -3.651,1.703 -1.97,0.812 -6.006,2.131 -6.006,5.517 l 0,0.766 C 7.033,34.756 5.005,30.031 5.005,24.83 c 0,-10.932 8.894,-19.826 19.826,-19.826 10.933,0 19.826,8.894 19.826,19.826 -0.004,5.303 -2.109,10.116 -5.515,13.68 z' }),
+            this.props.text
         );
         //<circle cx='0' cy='0' r='1' fill={'purple'} />
     }
@@ -1108,16 +1137,17 @@ var GraphNodePerson = React.createClass({
 var GraphNodeCircle = React.createClass({
     displayName: 'GraphNodeCircle',
 
+    /*
     dragStart(e) {
-        console.log("node drag");
-        var x = e.pageX - this.props.svgdx;
-        var y = e.pageY - this.props.svgdy;
-        console.log(x, y);
-        if (typeof (func = this.props.setNode) === 'function') {
-            func(this.props.nid, x, y);
-        }
+        console.log("node drag")
+            var x = (e.pageX - this.props.svgdx)
+            var y = (e.pageY - this.props.svgdy)
+            console.log(x,y)
+            if (typeof (func = this.props.setNode) === 'function') { 
+                func(this.props.nid, x, y) 
+            }
     },
-    render: function () {
+    */render: function () {
         return React.createElement(
             'g',
             {
@@ -1127,7 +1157,7 @@ var GraphNodeCircle = React.createClass({
                 onMouseUp: this.props.onMouseUp,
                 onMouseMove: this.props.onMouseMove
                 //onDragStart={this.dragStart}
-                , onClick: this.props.click
+                //onClick={this.props.click}
             },
             React.createElement('circle', {
                 cx: '0',
@@ -1150,13 +1180,23 @@ var GraphNodeOrganization = React.createClass({
             React.createElement(
                 'g',
                 {
-                    className: 'organization ' + this.props.checked
+                    className: 'organization ' + this.props.checked,
+                    onMouseDown: this.props.onMouseDown,
+                    onMouseUp: this.props.onMouseUp,
+                    onMouseMove: this.props.onMouseMove
                 },
+                React.createElement('rect', {
+                    transform: 'translate(-5, -5)',
+                    x: '0',
+                    y: '0',
+                    height: '10',
+                    width: '10'
+                }),
                 React.createElement('circle', {
                     cx: '0',
                     cy: '0',
-                    r: '3',
-                    fill: 'orange'
+                    r: '2',
+                    fill: 'gray'
                 })
             )
         );
@@ -1170,7 +1210,10 @@ var GraphNodeEvent = React.createClass({
         return React.createElement(
             'g',
             {
-                className: 'event ' + this.props.checked
+                className: 'event ' + this.props.checked,
+                onMouseDown: this.props.onMouseDown,
+                onMouseUp: this.props.onMouseUp,
+                onMouseMove: this.props.onMouseMove
             },
             React.createElement('rect', {
                 transform: 'scale(1, 1.3) rotate(45) translate(-4, -4)',
@@ -1178,7 +1221,8 @@ var GraphNodeEvent = React.createClass({
                 y: '0',
                 height: '8',
                 width: '8'
-            })
+            }),
+            this.props.text
         );
     }
 });
@@ -1197,4 +1241,3 @@ var GraphEdge = React.createClass({
 });
 
 React.render(React.createElement(Graph, null), mountGraph);
-React.render(React.createElement(Test, null), mountTest);

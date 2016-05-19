@@ -2,5 +2,8 @@ backend/app/__pycache__/
 backend/syscheck/__pycache__/
 backend/zcore/__pycache__/
 backend/zcore/migrations/__pycache__/
+backend/static/react/build/.module-cache/
 
 frontend/node_modules/
+
+docker/mysql/20151117.sql

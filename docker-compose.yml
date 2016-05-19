@@ -3,7 +3,10 @@ services:
   postgres:
     image: postgres:9.4
   mysql:
-    image: mysql:5.7
+    image: novosti/mysql
+    build: ./docker/mysql/.
+    ports:
+      - "3306:3306"
   backend:
     image: novosti/backend
     build: ./docker/backend/.
