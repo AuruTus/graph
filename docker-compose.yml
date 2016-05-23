@@ -1,12 +1,12 @@
 version: '2'
 services:
-  postgres:
-    image: postgres:9.4
   mysql:
     image: novosti/mysql
     build: ./docker/mysql/.
     ports:
       - "3306:3306"
+    volumes:
+      - ./mysql:/var/lib/mysql
   backend:
     image: novosti/backend
     build: ./docker/backend/.
@@ -15,6 +15,5 @@ services:
       - ./backend:/backend
     ports:
       - "8000:8000"
-    depends_on:
-      - postgres
+    links:
       - mysql

@@ -90,11 +90,10 @@ DATABASES = {
     },
     'mysql': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': '20151117',
+        'NAME': 'main',
         'USER': 'root',
         'PASSWORD': 'Passw0rd',
-        #'HOST': '10.216.171.5',
-        'HOST': '127.0.0.1',
+        'HOST': 'mysql',
         'PORT': '3306',
     },
 }

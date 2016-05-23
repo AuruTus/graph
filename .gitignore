@@ -4,10 +4,9 @@ backend/zcore/__pycache__/
 backend/zcore/migrations/__pycache__/
 backend/static/react/build/.module-cache/
 
-frontend/node_modules/
+mysql/
 
-docker/mysql/20151117.sql
-docker/mysql/dump.sql
+frontend/node_modules/
 
 vimm
 vimj
