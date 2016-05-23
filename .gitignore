@@ -6,6 +6,8 @@ backend/static/react/build/.module-cache/
 
 mysql/
 
+docker/mysql/dump.sql
+
 frontend/node_modules/
 
 vimm
