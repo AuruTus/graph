@@ -14,6 +14,6 @@ services:
     volumes:
       - ./backend:/backend
     ports:
-      - "80:8000"
+      - "8000:8000"
     links:
       - mysql
