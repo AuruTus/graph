@@ -1,7 +1,5 @@
 backend/app/__pycache__/
 backend/zcore/__pycache__/
 
-docker/mysql/dump.sql
-
 mysql/
 vimd
