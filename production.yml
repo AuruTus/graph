@@ -1,12 +1,5 @@
 version: '2'
 services:
-  mysql:
-    image: novosti/mysql
-    build: ./docker/mysql/.
-    ports:
-      - "3306:3306"
-    volumes:
-      - ./mysql:/var/lib/mysql
   backend:
     image: novosti/backend
     build: ./docker/backend/.
