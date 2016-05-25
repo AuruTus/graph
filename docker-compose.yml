@@ -7,6 +7,11 @@ services:
       - "3306:3306"
     volumes:
       - ./mysql:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: "main"
+      MYSQL_USER: "django"
+      MYSQL_PASSWORD: "Passw0rd"
+      MYSQL_ROOT_PASSWORD: "Passw0rd"
   backend:
     image: novosti/backend
     build: ./docker/backend/.
