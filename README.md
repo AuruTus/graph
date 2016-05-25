@@ -11,7 +11,7 @@ You need to install [docker] (https://docs.docker.com/engine/installation/) and 
 ```
 docker-compose up
 ```
-3. Start using with browser at http://127.0.0.1/
+Start using with browser at http://127.0.0.1/
 
 ## Running as daemon
 If you need it's possible to run project as daemon, like at production:
