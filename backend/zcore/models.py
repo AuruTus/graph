@@ -19,7 +19,7 @@ from .zcommon import *
 
 class StorageGraph(models.Model):
     def __str__(self):
-        name = 'id_' + str(self.pk) + ': ' + self.title
+        name = str(self.pk) + ': ' + self.title
         return name
 
     title = models.CharField(max_length=200, default='граф')
