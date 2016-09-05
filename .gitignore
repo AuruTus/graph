@@ -14,5 +14,3 @@ tmp/
 app/__pycache__/
 zcore/__pycache__/
 
-dump.sql.gz
-dump.sql.tar.gz
