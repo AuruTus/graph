@@ -2,23 +2,35 @@ version: '2'
 services:
   mysql:
     image: novosti/mysql
-    build: ./docker/mysql/.
+    build: ./mysql/.
     ports:
       - "3306:3306"
     volumes:
-      - ./mysql:/var/lib/mysql
+      - ./volumes/mysql:/var/lib/mysql
     environment:
       MYSQL_DATABASE: "main"
       MYSQL_USER: "django"
       MYSQL_PASSWORD: "Passw0rd"
       MYSQL_ROOT_PASSWORD: "Passw0rd"
-  backend:
-    image: novosti/backend
-    build: ./docker/backend/.
+  django:
+    image: novosti/django
+    build: ./django/.
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
-      - ./backend:/backend
+      - ./django:/workdir
     ports:
       - "28001:8000"
     links:
       - mysql
+  nodejs:
+    image: novosti/nodejs
+    build: ./nodejs/.
+    volumes:
+      - ./nodejs:/workdir
+    ports:
+      - "23001:3000"
+    command: /bin/bash start.sh
+    depends_on:
+      - django
+
+

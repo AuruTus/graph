@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+
+{% block side_bar %}
+{% endblock side_bar %}
+
+
+{% block content %}
+    <div id='mountGraph'></div>
+{% endblock content %}
+
+
+{% block js %}
+    <script src="{% static 'react/build/ViewGraph.js' %}"></script>
+{% endblock js %}
+
+

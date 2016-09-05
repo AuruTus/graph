@@ -1,0 +1,93 @@
+@base: #f938ab;
+
+body { 
+    margin:0; 
+    padding:0; 
+    font-family: Tahoma;
+}
+
+.header {
+    width: 97%;
+    padding: 15px;
+    margin: 0 0 10px 0;
+    background-color: gray;
+    color: darkblue;
+}
+
+.clearfix {
+  display: block;
+  zoom: 1;
+
+  &:after {
+    content: " ";
+    display: block;
+    font-size: 0;
+    height: 0;
+    clear: both;
+    visibility: hidden;
+  }
+}
+
+
+.box-shadow(@style, @c) when (iscolor(@c)) {
+  -webkit-box-shadow: @style @c;
+  box-shadow:         @style @c;
+}
+.box-shadow(@style, @alpha: 50%) when (isnumber(@alpha)) {
+  .box-shadow(@style, rgba(0, 0, 0, @alpha));
+}
+.box {
+  color: saturate(@base, 5%);
+  border-color: lighten(@base, 30%);
+  div { .box-shadow(0 0 5px, 30%) }
+}
+
+
+.sidebar {
+    border: solid 1px gray;
+    padding: 5px 10px;
+    width: 340px;
+    height: 97%;
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background:rgba(0,0,0,0.5);
+    color:#333;
+    font-size:12px;
+    line-height:18px;
+    border-radius:3px;
+    overflow: auto;
+    .well {
+        padding: 5px 10px;
+    }
+    .thumbnail {
+        padding: 5px;
+        width: 280px;
+    }
+    .thumb {
+        margin: 15px 0 15px 0;
+        width: 280px;
+        height: 280px;
+        background-size: 280px 280px;
+        background-repeat: none;
+        .progress-indicator {
+            float: right;
+            margin: 245px 5px 0 0;
+            width: 30px;
+            height: 30px;
+            background-color: #fff;
+            color: #111;
+            border-radius: 4px;
+            box-shadow: 1px 1px 3px #888888;
+        }
+        img {
+            float: left;
+        }
+        a {
+            display: block;
+            font-size: 24px;
+            padding: 90px 40px;
+        }
+    }
+}
+

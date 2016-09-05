@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+
+{% block side_bar %}
+    <div id="example"></div>
+    <div id="force-filter">Force filter</div>
+    <br /></div>
+
+    <script src="{% static 'react/build/ViewForce.js' %}"></script>
+{% endblock side_bar %}
+
+
+{% block content %}
+    <div class='scene'></div>
+{{ filter }}
+
+    <script>
+    var gid = {{ graph.id }}
+    var nodeRadius = 'byDegree'
+    //var filter = JSON.stringify({{ filter }})
+    //var filter = eval({{ filter }})
+    var test = {"filterAttributes":{"doc_name":true,"doc_timestamp":true,"last_name":false,"first_name":false,"middle_name":false,"timestamp":false,"full_name":true},"filterNodes":[],"filterOptions":{"zero":"yes","radius":"byDegree"}}
+
+    var nodesList = []
+    //var force = new ForceLayout('.scene', gid, test)
+    //var force = new ForceLayout('.scene', gid)
+    </script>
+    <script src="{% static 'react/build/ForceFilter-react.js' %}"></script>
+{% endblock content %}
+
+
